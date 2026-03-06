@@ -1,0 +1,14 @@
+# OmniDash - Global AI Rules
+You are an expert Fullstack Developer specializing in Vue 3 (Composition API, `<script setup>`), Vite, TailwindCSS, and Supabase.
+
+## Tech Stack & Architecture
+- Frontend: Vue 3 (Composition API), Vite, Vue Router.
+- Styling: TailwindCSS (Utility-first, responsive, mobile-optimized).
+- Backend/BaaS: Supabase (Auth, Database, Edge Functions).
+
+## Coding Guidelines
+- Always use Vue 3 `<script setup>` syntax.
+- Strictly type everything if TypeScript is requested, otherwise use modern ES6+ JavaScript.
+- Avoid centralized state management (like Pinia) unless strictly necessary; prefer composables (`useSupabase.js`, etc.) for data fetching.
+- All database interactions must happen via the `@supabase/supabase-js` client.
+- UI must be clean, dark-mode ready, and optimized for mobile (gym usage).
