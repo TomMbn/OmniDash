@@ -1,19 +1,35 @@
 <template>
-  <div class="animate-fade-in max-w-4xl mx-auto pb-24">
-    <div class="flex justify-between items-center mb-6 px-1">
-      <h2 class="text-2xl font-bold text-gray-900">Sommeil</h2>
-    </div>
+  <div class="animate-fade-in max-w-5xl mx-auto pb-24 px-4 sm:px-6 lg:px-8">
+    <!-- Header -->
+    <header class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6 mb-12 pt-6">
+      <div>
+        <h2 class="text-3xl font-black text-slate-900 tracking-tight flex items-center gap-3">
+          <div class="p-2.5 bg-indigo-600 rounded-2xl text-white shadow-lg shadow-indigo-100/50">
+            <Moon :size="24" stroke-width="2.5" />
+          </div>
+          Sommeil
+        </h2>
+        <p class="text-slate-400 font-bold text-xs uppercase tracking-[0.2em] mt-2 ml-1">Analyse de Récupération</p>
+      </div>
+    </header>
 
     <!-- Sync Action Widget -->
-    <div class="bg-indigo-600 rounded-3xl shadow-sm overflow-hidden relative mb-8">
-      <div class="absolute top-0 right-0 -mr-8 -mt-8 w-32 h-32 rounded-full bg-white opacity-10"></div>
-      <div class="absolute bottom-0 left-0 -ml-8 -mb-8 w-24 h-24 rounded-full bg-white opacity-10"></div>
+    <div class="bg-slate-900 rounded-[2.5rem] p-8 md:p-10 relative overflow-hidden mb-12 shadow-2xl shadow-slate-900/20 group">
+      <div class="absolute top-0 right-0 -mr-16 -mt-16 w-64 h-64 rounded-full bg-indigo-500/10 blur-3xl transition-all duration-700 group-hover:scale-110"></div>
+      <div class="absolute bottom-0 left-0 -ml-12 -mb-12 w-48 h-48 rounded-full bg-slate-800 opacity-50 blur-2xl"></div>
       
-      <div class="p-6 md:p-8 relative z-10 flex flex-col md:flex-row items-center justify-between text-white">
-        <div class="mb-6 md:mb-0 text-center md:text-left">
-          <h3 class="text-xl font-bold mb-1">Withings Sleep Analyzer</h3>
-          <p class="text-indigo-100 text-sm">Synchronisez vos données de sommeil de la nuit dernière.</p>
-          <div v-if="errorMsg" class="mt-3 bg-red-500/20 text-red-100 px-3 py-2 rounded-lg text-sm border border-red-500/30">
+      <div class="relative z-10 flex flex-col md:flex-row items-center justify-between gap-8">
+        <div class="text-center md:text-left">
+          <div class="flex items-center justify-center md:justify-start gap-3 mb-3">
+            <div class="p-2 bg-slate-800 rounded-xl">
+              <Zap :size="20" class="text-indigo-400" />
+            </div>
+            <h3 class="text-xl font-black text-white tracking-tight">Withings Sleep Analyzer</h3>
+          </div>
+          <p class="text-slate-400 font-medium text-sm max-w-sm">Synchronisez vos cycles de sommeil pour optimiser votre récupération musculaire.</p>
+          
+          <div v-if="errorMsg" class="mt-4 bg-rose-500/10 text-rose-400 px-4 py-3 rounded-2xl text-xs font-bold border border-rose-500/20 flex items-center gap-2">
+            <div class="w-1.5 h-1.5 bg-rose-400 rounded-full animate-pulse"></div>
             {{ errorMsg }}
           </div>
         </div>
@@ -21,95 +37,118 @@
         <button 
           @click="syncSleep()" 
           :disabled="syncing"
-          class="bg-white text-indigo-600 hover:bg-gray-50 px-6 py-3 rounded-xl font-bold flex items-center justify-center transition-transform active:scale-95 shadow-md w-full md:w-auto"
+          class="bg-indigo-600 text-white hover:bg-indigo-500 px-8 py-4 rounded-2xl font-black flex items-center justify-center transition-all active:scale-95 shadow-xl shadow-indigo-600/20 w-full md:w-auto disabled:opacity-50 disabled:cursor-not-allowed group/btn"
         >
-          <svg v-if="syncing" class="animate-spin -ml-1 mr-2 h-5 w-5 text-indigo-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-          </svg>
-          <span v-else class="mr-2">🔄</span>
-          {{ syncing ? 'Synchronisation...' : 'Synchroniser' }}
+          <RefreshCw v-if="syncing" class="animate-spin -ml-1 mr-3 h-5 w-5" :stroke-width="3" />
+          <RefreshCw v-else class="mr-3 h-5 w-5 transition-transform group-hover/btn:rotate-180 duration-500" :stroke-width="3" />
+          {{ syncing ? 'SYNCHRONISATION...' : 'SYNCHRONISER' }}
         </button>
       </div>
     </div>
 
     <!-- Loading Data -->
-    <div v-if="loadingRecords" class="flex justify-center py-12">
-      <svg class="animate-spin h-8 w-8 text-indigo-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-      </svg>
+    <div v-if="loadingRecords" class="flex flex-col items-center justify-center py-24 gap-4">
+      <div class="relative">
+        <div class="absolute inset-0 bg-indigo-400/20 rounded-full animate-ping"></div>
+        <RefreshCw class="animate-spin h-10 w-10 text-indigo-600 relative z-10" :stroke-width="2.5" />
+      </div>
+      <p class="text-slate-400 font-bold text-xs uppercase tracking-widest">Chargement des données...</p>
     </div>
 
     <!-- Sleep Metrics List -->
-    <div v-if="sleepRecords.length > 0" class="space-y-12">
-      <div v-for="record in sleepRecords" :key="record.id" class="space-y-6">
-        <div class="flex justify-between items-end px-1">
-          <h3 class="text-xl font-bold text-gray-800">Nuit du {{ formatDate(record.date) }}</h3>
-          <span class="text-sm font-medium bg-green-100 text-green-700 px-3 py-1 rounded-full">
-            Score: {{ record.score }}/100
-          </span>
+    <div v-if="sleepRecords.length > 0" class="space-y-16">
+      <div v-for="record in sleepRecords" :key="record.id" class="space-y-8">
+        <div class="flex justify-between items-center px-2">
+          <div class="flex items-center gap-3">
+            <div class="p-2 bg-slate-100 rounded-xl">
+              <Calendar :size="18" class="text-slate-500" />
+            </div>
+            <h3 class="text-xl font-black text-slate-800 tracking-tight">Nuit du {{ formatDate(record.date) }}</h3>
+          </div>
         </div>
         
-        <div class="grid grid-cols-2 bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden divide-x divide-y divide-gray-100">
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
           <!-- Duration -->
-          <div class="p-6 col-span-2 sm:col-span-1">
-            <div class="text-sm font-medium text-gray-500 mb-1 flex items-center">
-              <span class="mr-2">⏱️</span> Durée Totale
+          <div class="bg-white p-8 rounded-[2rem] border border-slate-100 shadow-sm flex flex-col gap-2 transition-all hover:border-indigo-100 group">
+            <div class="flex items-center gap-2 mb-2">
+              <Clock :size="16" class="text-slate-400" />
+              <span class="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em]">Durée Totale</span>
             </div>
-            <div class="text-2xl font-bold text-gray-900">
-              {{ formatDuration(record.duration_seconds) }}
+            <div class="text-4xl font-semibold text-slate-800 tracking-tight tabular-nums">
+              {{ formatDuration(record.duration_seconds).split(' ')[0] }}<span class="text-xl text-slate-400 ml-1">{{ formatDuration(record.duration_seconds).split(' ')[1] || 'h' }}</span> 
+              <span v-if="formatDuration(record.duration_seconds).split(' ')[2]" class="ml-1">
+                {{ formatDuration(record.duration_seconds).split(' ')[2] }}<span class="text-xl text-slate-400 ml-1">{{ formatDuration(record.duration_seconds).split(' ')[3] || 'm' }}</span>
+              </span>
             </div>
-            <div class="w-full bg-gray-100 h-2 mt-3 rounded-full overflow-hidden">
-               <div class="bg-indigo-500 h-full rounded-full" :style="{ width: Math.min(100, (record.duration_seconds / 28800) * 100) + '%' }"></div>
+            <div class="w-full bg-slate-100 h-1.5 mt-4 rounded-full overflow-hidden">
+               <div class="bg-indigo-600 h-full rounded-full transition-all duration-1000" :style="{ width: Math.min(100, (record.duration_seconds / 28800) * 100) + '%' }"></div>
             </div>
           </div>
           
           <!-- Deep Sleep -->
-          <div class="p-6">
-            <div class="text-sm font-medium text-gray-500 mb-1 flex items-center">
-              <span class="mr-2">🌊</span> Sommeil Profond
+          <div class="bg-white p-8 rounded-[2rem] border border-slate-100 shadow-sm flex flex-col gap-2 transition-all hover:border-indigo-100">
+            <div class="flex items-center gap-2 mb-2">
+              <Waves :size="16" class="text-indigo-400" />
+              <span class="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em]">Profond</span>
             </div>
-            <div class="text-2xl font-bold text-indigo-700">
-              {{ formatDuration(record.deep_sleep_seconds) }}
+            <div class="text-4xl font-semibold text-indigo-700 tracking-tight tabular-nums">
+              {{ formatDuration(record.deep_sleep_seconds).split(' ')[0] }}<span class="text-xl text-indigo-300 ml-1">{{ formatDuration(record.deep_sleep_seconds).split(' ')[1] || 'h' }}</span>
+              <span v-if="formatDuration(record.deep_sleep_seconds).split(' ')[2]" class="ml-1 text-2xl">
+                {{ formatDuration(record.deep_sleep_seconds).split(' ')[2] }}<span class="text-lg text-indigo-300 ml-1">{{ formatDuration(record.deep_sleep_seconds).split(' ')[3] || 'm' }}</span>
+              </span>
             </div>
-            <p class="text-xs text-gray-400 mt-1 font-medium">Récupération physique</p>
+            <p class="text-[10px] font-bold text-slate-400 mt-auto uppercase tracking-wider">Récupération physique</p>
           </div>
           
           <!-- REM Sleep -->
-          <div class="p-6">
-            <div class="text-sm font-medium text-gray-500 mb-1 flex items-center">
-              <span class="mr-2">🧠</span> Sommeil Paradoxal
+          <div class="bg-white p-8 rounded-[2rem] border border-slate-100 shadow-sm flex flex-col gap-2 transition-all hover:border-indigo-100">
+            <div class="flex items-center gap-2 mb-2">
+              <Brain :size="16" class="text-purple-400" />
+              <span class="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em]">Paradoxal</span>
             </div>
-            <div class="text-2xl font-bold text-purple-600">
-              {{ formatDuration(record.rem_sleep_seconds) }}
+            <div class="text-4xl font-semibold text-purple-600 tracking-tight tabular-nums">
+              {{ formatDuration(record.rem_sleep_seconds).split(' ')[0] }}<span class="text-xl text-purple-300 ml-1">{{ formatDuration(record.rem_sleep_seconds).split(' ')[1] || 'h' }}</span>
+              <span v-if="formatDuration(record.rem_sleep_seconds).split(' ')[2]" class="ml-1 text-2xl">
+                {{ formatDuration(record.rem_sleep_seconds).split(' ')[2] }}<span class="text-lg text-purple-300 ml-1">{{ formatDuration(record.rem_sleep_seconds).split(' ')[3] || 'm' }}</span>
+              </span>
             </div>
-            <p class="text-xs text-gray-400 mt-1 font-medium">Récupération mentale</p>
+            <p class="text-[10px] font-bold text-slate-400 mt-auto uppercase tracking-wider">Récupération mentale</p>
           </div>
 
-          <!-- Awake -->
-          <div class="p-6">
-            <div class="text-sm font-medium text-gray-500 mb-1 flex items-center">
-              <span class="mr-2">👀</span> Temps Éveillé
+          <!-- Sleep Score -->
+          <div class="bg-white p-8 rounded-[2rem] border border-slate-100 shadow-sm flex flex-col gap-2 transition-all hover:border-indigo-100">
+            <div class="flex items-center gap-2 mb-2">
+              <Award :size="16" :class="record.score >= 80 ? 'text-emerald-500' : 'text-slate-400'" />
+              <span class="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em]">Sommeil Score</span>
             </div>
-            <div class="text-2xl font-bold text-gray-700">
-              {{ formatDuration(record.awake_seconds) }}
+            <div 
+              class="text-5xl font-black tracking-tighter tabular-nums"
+              :class="record.score >= 80 ? 'text-emerald-500' : record.score >= 60 ? 'text-amber-500' : 'text-slate-800'"
+            >
+              {{ record.score }}<span class="text-xl opacity-40 ml-1">/100</span>
             </div>
-            <p class="text-xs text-gray-400 mt-1 font-medium">Interruptions</p>
+            <p class="text-[10px] font-bold text-slate-400 mt-auto uppercase tracking-wider">Indice de qualité</p>
           </div>
         </div>
       </div>
     </div>
 
     <!-- Empty State -->
-    <div v-else-if="!loadingRecords" class="text-center py-16 bg-white rounded-3xl shadow-sm border border-gray-100">
-      <span class="block text-5xl mb-4">🛏️</span>
-      <h3 class="text-lg font-bold text-gray-900 mb-2">Aucune donnée disponible</h3>
-      <p class="text-gray-500 text-sm max-w-sm mx-auto">
-        Synchronisez vos données Withings pour afficher vos métriques de sommeil.
+    <div v-else-if="!loadingRecords" class="text-center py-24 bg-white rounded-[3rem] border border-slate-100 shadow-sm flex flex-col items-center">
+      <div class="p-6 bg-slate-50 rounded-3xl mb-6">
+        <Bed :size="48" class="text-slate-200" />
+      </div>
+      <h3 class="text-xl font-black text-slate-900 mb-2">Silence radio</h3>
+      <p class="text-slate-400 font-medium text-sm max-w-xs mx-auto mb-8 leading-relaxed">
+        Synchronisez vos données Withings pour décoder vos nuits et booster vos performances.
       </p>
+      <button 
+        @click="syncSleep()" 
+        class="bg-slate-900 text-white px-8 py-4 rounded-2xl font-black text-sm uppercase tracking-widest transition-all hover:bg-slate-800 active:scale-95"
+      >
+        Lancer la synchro
+      </button>
     </div>
-
   </div>
 </template>
 
@@ -117,6 +156,20 @@
 import { ref, onMounted } from 'vue'
 import { supabase } from '@/supabase'
 import { useAuth } from '@/composables/useAuth'
+import { 
+  Moon, 
+  RefreshCw, 
+  Bed, 
+  Activity, 
+  Award, 
+  Calendar, 
+  Zap,
+  Waves,
+  Brain,
+  Eye,
+  Clock,
+  ChevronRight
+} from 'lucide-vue-next'
 
 const { user } = useAuth()
 
