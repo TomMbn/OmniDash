@@ -1,171 +1,365 @@
 <template>
-  <div class="animate-fade-in max-w-4xl mx-auto pb-24">
-    <!-- Header & Toggle Tab -->
-    <div class="flex justify-between items-center mb-6 px-1">
-      <h2 class="text-2xl font-bold text-gray-900">Musculation</h2>
-      <button 
-        @click="activeTab = activeTab === 'workout' ? 'exercises' : 'workout'" 
-        class="text-sm font-medium text-indigo-600 bg-indigo-50 hover:bg-indigo-100 px-4 py-2 rounded-xl transition-colors"
-      >
-        {{ activeTab === 'workout' ? 'Gérer Exercices' : 'Voir Séance' }}
-      </button>
-    </div>
-
-    <!-- Active Tab: Exercises Management -->
-    <div v-if="activeTab === 'exercises'" class="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 md:p-8 mb-6">
-      <h3 class="text-xl font-bold text-gray-800 mb-6">Ajouter un exercice</h3>
-      
-      <!-- Quick Add Muscle Group -->
-      <div class="mb-6 p-4 bg-gray-50 rounded-xl border border-gray-100">
-        <label class="block text-sm font-semibold text-gray-700 mb-2">Créer un nouveau groupe musculaire</label>
-        <div class="flex gap-2">
-          <input 
-            v-model="newMuscleGroup" 
-            type="text" 
-            class="flex-1 px-4 py-3 text-lg border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none" 
-            placeholder="Ex: Pectoraux, Dos..." 
-          />
-          <button 
-            type="button" 
-            @click="handleAddMuscleGroup" 
-            class="bg-white border-2 border-indigo-100 text-indigo-600 hover:bg-indigo-50 px-5 rounded-xl font-bold text-xl transition-colors"
-          >
-            +
-          </button>
-        </div>
+  <div class="animate-fade-in max-w-5xl mx-auto pb-24 px-4 sm:px-6">
+    <!-- Header with Dynamic Tab Switch -->
+    <header class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-10 pt-4">
+      <div>
+        <h2 class="text-3xl font-black text-slate-900 tracking-tight flex items-center gap-3">
+          <div class="p-2.5 bg-indigo-600 rounded-2xl text-white shadow-lg shadow-indigo-100/50">
+            <Dumbbell :size="24" stroke-width="2.5" />
+          </div>
+          Musculation
+        </h2>
+        <p class="text-slate-400 font-bold text-xs uppercase tracking-[0.2em] mt-2 ml-1">Performance & Progression</p>
       </div>
-
-      <form @submit.prevent="addExercise" class="space-y-5">
-        <div>
-          <label class="block text-sm font-semibold text-gray-700 mb-2">Nom de l'exercice</label>
-          <input 
-            v-model="newExercise.name" 
-            required 
-            type="text" 
-            class="w-full px-4 py-3 text-lg border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none placeholder-gray-400" 
-            placeholder="Ex: Développé couché" 
-          />
-        </div>
-        <div>
-          <label class="block text-sm font-semibold text-gray-700 mb-2">Groupe musculaire</label>
-          <select 
-            v-model="newExercise.muscle_group_id" 
-            required 
-            class="w-full px-4 py-3 text-lg border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none bg-white text-gray-800"
-          >
-            <option value="" disabled>Sélectionnez un groupe</option>
-            <option v-for="group in muscleGroups" :key="group.id" :value="group.id">{{ group.name }}</option>
-          </select>
-        </div>
-        
+      
+      <div class="bg-white p-1 rounded-2xl border border-slate-100 flex shadow-sm w-full sm:w-auto">
         <button 
-          type="submit" 
-          :disabled="loading.exercises" 
-          class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-4 rounded-xl transition-transform active:scale-95 text-lg mt-4 disabled:opacity-70 flex justify-center items-center"
+          @click="activeTab = 'workout'" 
+          :class="activeTab === 'workout' ? 'bg-slate-900 text-white shadow-lg shadow-slate-200' : 'text-slate-400 hover:text-slate-600'"
+          class="flex-1 sm:flex-none flex items-center justify-center gap-2 px-6 py-2.5 rounded-[0.9rem] text-sm font-black transition-all"
         >
-          <svg v-if="loading.exercises" class="animate-spin -ml-1 mr-2 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-          </svg>
-          {{ loading.exercises ? 'Ajout...' : "Ajouter l'exercice" }}
+          <Target :size="16" /> Séance
         </button>
-      </form>
+        <button 
+          @click="activeTab = 'exercises'" 
+          :class="activeTab === 'exercises' ? 'bg-slate-900 text-white shadow-lg shadow-slate-200' : 'text-slate-400 hover:text-slate-600'"
+          class="flex-1 sm:flex-none flex items-center justify-center gap-2 px-6 py-2.5 rounded-[0.9rem] text-sm font-black transition-all"
+        >
+          <Layout :size="16" /> Bibliothèque
+        </button>
+      </div>
+    </header>
+
+    <!-- ═══ BIBLIOTHÈQUE TAB ═══ -->
+    <div v-if="activeTab === 'exercises'" class="animate-fade-in group">
+      <div class="bg-white rounded-[2.5rem] border border-slate-100 p-8 shadow-2xl shadow-slate-100/50 mb-8">
+        <h3 class="text-2xl font-black text-slate-900 tracking-tight mb-8">Ajouter un exercice</h3>
+        
+        <!-- Quick Add Muscle Group -->
+        <div class="mb-10 p-6 bg-slate-50 rounded-3xl border border-slate-100">
+          <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 ml-1">Nouveau Groupe Musculaire</label>
+          <div class="flex gap-3">
+            <input 
+              v-model="newMuscleGroup" 
+              type="text" 
+              class="flex-1 px-5 py-4 bg-white border border-slate-200 rounded-2xl focus:ring-2 focus:ring-indigo-500 outline-none placeholder:text-slate-300 font-bold" 
+              placeholder="Ex: Pectoraux, Dos..." 
+            />
+            <button 
+              type="button" 
+              @click="handleAddMuscleGroup" 
+              class="bg-white border border-slate-200 text-slate-900 hover:text-indigo-600 hover:border-indigo-100 px-6 rounded-2xl transition-all active:scale-95 shadow-sm"
+            >
+              <Plus :size="24" />
+            </button>
+          </div>
+        </div>
+
+        <form @submit.prevent="addExercise" class="space-y-6">
+          <div class="space-y-6">
+            <div>
+              <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 ml-1">Nom de l'exercice</label>
+              <input 
+                v-model="newExercise.name" 
+                required 
+                type="text" 
+                class="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-2 focus:ring-indigo-500 outline-none placeholder:text-slate-300 font-bold text-slate-900" 
+                placeholder="Ex: Développé couché" 
+              />
+            </div>
+            <div>
+              <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 ml-1">Groupe musculaire</label>
+              <div class="relative">
+                <select 
+                  v-model="newExercise.muscle_group_id" 
+                  required 
+                  class="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-2 focus:ring-indigo-500 outline-none appearance-none font-bold text-slate-900"
+                >
+                  <option value="" disabled>Sélectionnez un groupe</option>
+                  <option v-for="group in muscleGroups" :key="group.id" :value="group.id">{{ group.name }}</option>
+                </select>
+                <div class="absolute right-5 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
+                  <ChevronRight :size="18" class="rotate-90" />
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <button 
+            type="submit" 
+            :disabled="loading.exercises" 
+            class="w-full bg-slate-900 hover:bg-black text-white py-5 rounded-2xl font-black text-lg transition-all active:scale-[0.98] mt-6 flex justify-center items-center gap-3 shadow-xl"
+          >
+            <div v-if="loading.exercises" class="w-5 h-5 border-4 border-white/20 border-t-white rounded-full animate-spin"></div>
+            <Save v-else :size="22" />
+            {{ loading.exercises ? 'Enregistrement...' : "Ajouter l'exercice" }}
+          </button>
+        </form>
+      </div>
     </div>
 
-    <!-- Active Tab: Workout Logging -->
+    <!-- ═══ TRACKING TAB ═══ -->
     <div v-if="activeTab === 'workout'">
-      <!-- Loading State -->
-      <div v-if="loading.data" class="flex justify-center py-12">
-        <svg class="animate-spin h-8 w-8 text-indigo-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-          <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-        </svg>
+      <div v-if="loading.data" class="flex flex-col items-center justify-center py-24">
+        <div class="w-12 h-12 border-4 border-slate-100 border-t-indigo-600 rounded-full animate-spin"></div>
+        <p class="text-slate-400 font-bold text-xs uppercase tracking-widest mt-4">Chargement des données...</p>
       </div>
       
       <template v-else>
-        <!-- Volume Load Summary Widget -->
-        <div v-if="hasStats" class="mb-6 bg-gradient-to-r from-indigo-50 to-blue-50 rounded-2xl p-5 border border-indigo-100 shadow-sm">
-          <h3 class="text-xs font-bold text-indigo-400 mb-3 uppercase tracking-wider">Volume Load (KG × REP)</h3>
-          <div class="flex flex-wrap gap-2">
-            <div 
-              v-for="(vol, group) in volumeLoadByMuscleGroup" 
-              :key="group" 
-              class="bg-white px-4 py-2 rounded-xl text-sm font-semibold text-gray-800 shadow-sm border border-indigo-50 flex items-center"
+        <!-- Week Navigation Widget -->
+        <div class="mb-10 bg-white rounded-[2.5rem] border border-slate-100 p-2 shadow-sm overflow-hidden">
+          <div class="flex gap-1 overflow-x-auto pb-1 no-scrollbar">
+            <button 
+              v-for="day in weekOverview" 
+              :key="day.dayIndex"
+              @click="selectedDayIndex = day.dayIndex"
+              class="flex-1 min-w-[70px] relative py-5 flex flex-col items-center gap-2 rounded-3xl transition-all active:scale-95"
+              :class="day.dayIndex === selectedDayIndex ? 'bg-indigo-600 text-white shadow-xl shadow-indigo-100/40' : 'text-slate-400 hover:bg-slate-50'"
             >
-              <span class="text-indigo-600 mr-2">{{ group }}</span>
-              <span class="text-base">{{ vol }}</span>
+              <span class="text-[10px] font-black uppercase tracking-widest">{{ day.label.slice(0, 3) }}</span>
+              <div class="p-1.5 rounded-full transition-colors" 
+                :class="[
+                  day.dayIndex === selectedDayIndex 
+                    ? 'bg-white/20' 
+                    : (day.session === 'REPOS' ? 'bg-slate-100' : (day.session === 'MATCH' ? 'bg-amber-100/60' : 'bg-indigo-100/60'))
+                ]"
+              >
+                <component 
+                  :is="day.session === 'REPOS' ? Moon : (day.session === 'MATCH' ? Trophy : Dumbbell)" 
+                  :size="18" 
+                  :stroke-width="day.dayIndex === selectedDayIndex ? 3 : 2.5"
+                  :class="[
+                    day.dayIndex === selectedDayIndex 
+                      ? 'text-white' 
+                      : (day.session === 'REPOS' ? 'text-slate-500' : (day.session === 'MATCH' ? 'text-amber-600' : 'text-indigo-600'))
+                  ]"
+                />
+              </div>
+              <div v-if="day.dayIndex === todayDayIndex" class="absolute top-2 right-2 w-1.5 h-1.5 bg-rose-500 rounded-full"></div>
+            </button>
+          </div>
+        </div>
+
+        <!-- Selected Session Card -->
+        <div v-if="selectedPlan" class="mb-10 group">
+          <div 
+            class="relative rounded-[2.5rem] overflow-hidden border border-slate-100 shadow-2xl shadow-slate-100/50 transition-all hover:border-slate-200"
+            :class="isRestDay ? 'bg-slate-50/50' : 'bg-white'"
+          >
+            <!-- Premium Header -->
+            <div class="p-8 pb-6 flex flex-wrap justify-between items-start gap-4">
+              <div class="flex-1 min-w-[200px]">
+                <div class="flex items-center gap-2 mb-3">
+                  <span class="px-3 py-1 bg-slate-900 text-white text-[10px] font-black uppercase tracking-widest rounded-full">
+                    {{ isSelectedToday ? "Aujourd'hui" : selectedPlan.label }}
+                  </span>
+                  <span v-if="selectedPlan.note" class="px-3 py-1 bg-indigo-50 text-indigo-600 text-[10px] font-black uppercase tracking-widest rounded-full">
+                    {{ selectedPlan.note }}
+                  </span>
+                </div>
+                <h3 class="text-4xl font-black text-slate-900 tracking-tighter leading-tight mb-1">
+                  {{ selectedPlan.template.label }}
+                </h3>
+                <p class="text-slate-400 font-bold text-sm">{{ selectedPlan.template.description }}</p>
+              </div>
+
+              <!-- Action Buttons -->
+              <div class="flex items-center gap-2">
+                <button 
+                  v-if="selectedPlan.template.exercises.length > 0"
+                  @click="editingTemplate = !editingTemplate" 
+                  class="w-12 h-12 rounded-2xl flex items-center justify-center transition-all bg-slate-50 text-slate-400 hover:text-indigo-600 hover:bg-white border border-transparent hover:border-slate-100 shadow-sm"
+                  :title="editingTemplate ? 'Valider' : 'Éditer les charges'"
+                >
+                  <component :is="editingTemplate ? CheckCircle2 : Pencil" :size="22" />
+                </button>
+              </div>
+            </div>
+
+            <!-- Exercises Quick List -->
+            <div v-if="selectedPlan.template.exercises.length > 0" class="px-8 pb-8">
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-8">
+                <div 
+                  v-for="(ex, i) in selectedPlan.template.exercises" 
+                  :key="i"
+                  class="flex items-center justify-between p-5 rounded-3xl transition-all"
+                  :class="editingTemplate ? 'bg-indigo-50/50 border border-indigo-100' : 'bg-slate-50 border border-transparent'"
+                >
+                  <div class="flex items-center gap-4 min-w-0">
+                    <span class="text-xs font-black text-slate-300 w-4 text-center">{{ i + 1 }}</span>
+                    <div class="min-w-0">
+                      <p class="text-sm font-black text-slate-800 truncate">{{ ex.name }}</p>
+                      <p v-if="ex.focus && !editingTemplate" class="text-[9px] font-bold text-slate-400 uppercase tracking-tighter">{{ ex.focus }}</p>
+                    </div>
+                  </div>
+                  
+                  <div class="flex items-center gap-1.5 flex-shrink-0">
+                    <template v-if="editingTemplate">
+                      <input 
+                        type="number" 
+                        :value="ex.sets" 
+                        @change="updateTemplateField(selectedPlan.session, i, 'sets', $event.target.value)"
+                        class="w-8 py-1.5 text-xs font-black text-center bg-white border border-indigo-100 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none"
+                      />
+                      <span class="text-indigo-300 text-[10px] font-black">×</span>
+                      <input 
+                        type="text" 
+                        :value="ex.repsRange" 
+                        @change="updateTemplateField(selectedPlan.session, i, 'repsRange', $event.target.value)"
+                        class="w-12 py-1.5 text-xs font-black text-center bg-white border border-indigo-100 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none"
+                      />
+                      <input 
+                        type="number" 
+                        :value="ex.targetWeight" 
+                        @change="updateExerciseWeight(selectedPlan.session, i, Number($event.target.value))"
+                        class="w-14 py-1.5 text-xs font-black text-center bg-indigo-600 text-white rounded-xl outline-none"
+                        placeholder="kg"
+                      />
+                    </template>
+                    <template v-else>
+                      <span class="px-3 py-1.5 bg-slate-200/50 text-slate-700 text-[10px] font-black rounded-lg">{{ ex.sets }} × {{ ex.repsRange }}</span>
+                      <span class="px-3 py-1.5 bg-indigo-600 text-white text-[10px] font-black rounded-lg">
+                        {{ ex.targetWeight > 0 ? `${ex.targetWeight}kg` : 'PDC' }}
+                      </span>
+                    </template>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Action Start Button -->
+              <button 
+                v-if="isSelectedToday && !currentWorkout"
+                @click="startFromTemplate" 
+                :disabled="loading.workout" 
+                class="w-full bg-slate-900 hover:bg-black text-white py-6 rounded-[2rem] font-black text-lg transition-all active:scale-[0.98] flex items-center justify-center gap-3 shadow-xl group/btn disabled:opacity-50"
+              >
+                <div v-if="loading.workout" class="w-5 h-5 border-4 border-white/20 border-t-white rounded-full animate-spin"></div>
+                <Play v-else :size="24" class="group-hover/btn:translate-x-1 transition-transform" />
+                Démarrer la séance
+              </button>
+
+              <div v-if="isSelectedToday && currentWorkout" class="bg-emerald-50 border border-emerald-100 p-5 rounded-[2rem] flex items-center justify-center gap-3">
+                <div class="p-1.5 bg-emerald-100 text-emerald-600 rounded-full">
+                  <CheckCircle2 :size="18" />
+                </div>
+                <p class="text-sm font-black text-emerald-700 text-center">Séance active — Enregistrez vos performances ci-dessous</p>
+              </div>
+            </div>
+
+            <!-- Rest Day Premium Empty State -->
+            <div v-else class="p-16 flex flex-col items-center text-center">
+              <div class="w-24 h-24 bg-slate-50 rounded-[2.5rem] flex items-center justify-center text-slate-200 mb-6 shadow-inner">
+                <Trophy :size="48" />
+              </div>
+              <p class="text-slate-900 font-black text-2xl tracking-tight">Jour de Récupération</p>
+              <p class="text-slate-400 font-medium text-sm max-w-xs mt-3 leading-relaxed">Votre corps se reconstruit aujourd'hui. Profitez-en pour bien vous hydrater.</p>
             </div>
           </div>
         </div>
 
-        <!-- Start/Current Workout -->
-        <div v-if="!currentWorkout" class="flex justify-center py-16 bg-white rounded-3xl shadow-sm border-2 border-dashed border-gray-200">
+        <!-- Volume Stats Badge Widget -->
+        <div v-if="hasStats" class="mb-10 flex flex-wrap gap-2 animate-fade-in group">
+          <div 
+            v-for="(vol, group) in volumeLoadByMuscleGroup" 
+            :key="group" 
+            class="relative overflow-hidden px-4 py-3 bg-white border border-slate-100 rounded-2xl shadow-sm flex flex-col min-w-[100px]"
+          >
+            <span class="text-[9px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">{{ group }}</span>
+            <span class="text-lg font-black text-slate-900 tracking-tighter">{{ vol }}<span class="text-xs text-slate-300 ml-0.5 font-bold">kg</span></span>
+            <div class="absolute bottom-0 left-0 h-1 bg-indigo-600/20" :style="{ width: '100%' }"></div>
+          </div>
+        </div>
+
+        <!-- Start/Current Workout (free-form or active) -->
+        <div v-if="!currentWorkout && (!todayPlan || isRestDay)" class="mb-10 text-center">
           <button 
             @click="startWorkout" 
             :disabled="loading.workout" 
-            class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-4 px-8 rounded-2xl shadow-lg shadow-indigo-200 text-xl transition-transform active:scale-[0.98] flex items-center"
+            class="w-full bg-slate-50 hover:bg-white border-2 border-dashed border-slate-200 hover:border-indigo-200 p-12 rounded-[2.5rem] transition-all active:scale-[0.99] group shadow-inner"
           >
-            <span class="text-2xl mr-3">🚀</span> 
-            Démarrer ma séance
+            <div class="w-20 h-20 bg-white rounded-3xl flex items-center justify-center text-slate-300 group-hover:text-indigo-600 transition-colors mx-auto mb-6 shadow-sm border border-slate-100">
+              <Flame :size="40" />
+            </div>
+            <p class="text-slate-900 font-black text-xl tracking-tight">Démarrer une séance libre</p>
+            <p class="text-slate-400 font-bold text-xs uppercase tracking-widest mt-2">Aucun programme prévu pour aujourd'hui</p>
           </button>
         </div>
 
-        <div v-else class="space-y-6">
+        <div v-if="currentWorkout" class="space-y-8 relative">
+          <!-- Floating Volume Badge for Active Session -->
+          <div class="sticky top-4 z-40 mb-4 px-6 py-4 bg-slate-900/95 backdrop-blur-md rounded-3xl border border-slate-800 shadow-2xl flex justify-between items-center text-white">
+            <div class="flex items-center gap-3">
+              <div class="p-2 bg-indigo-600 rounded-2xl">
+                <Activity :size="20" />
+              </div>
+              <div>
+                <p class="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Volume Total</p>
+                <p class="text-xl font-black tracking-tighter">{{ Object.values(volumeLoadByMuscleGroup).reduce((a, b) => a + b, 0) }} kg</p>
+              </div>
+            </div>
+            <p class="text-[10px] font-black bg-white/10 px-3 py-1.5 rounded-full uppercase tracking-widest border border-white/5">Séance Active</p>
+          </div>
+
           <!-- Workout Blocks (Exercises) -->
-          <div v-for="(block, bIndex) in workoutBlocks" :key="bIndex" class="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden">
+          <div v-for="(block, bIndex) in workoutBlocks" :key="bIndex" class="bg-white rounded-[2.5rem] border border-slate-100 shadow-xl shadow-slate-100/30 overflow-hidden transition-all hover:border-slate-200">
             <!-- Block Header -->
-            <div class="bg-gray-50/80 px-4 py-4 border-b border-gray-100 flex justify-between items-center">
-              <select 
-                v-model="block.exercise_id" 
-                class="bg-transparent font-bold text-gray-900 text-xl outline-none w-full appearance-none pr-8 cursor-pointer"
-              >
-                <option value="" disabled class="text-gray-400">Choisir un exercice...</option>
-                <option v-for="ex in exercises" :key="ex.id" :value="ex.id">{{ ex.name }}</option>
-              </select>
-              <button @click="removeBlock(bIndex)" class="text-gray-400 hover:text-red-500 p-2 text-xl font-bold bg-white rounded-full w-10 h-10 flex items-center justify-center shadow-sm">
-                ✕
+            <div class="p-6 bg-slate-50/50 border-b border-slate-100 flex justify-between items-center gap-4">
+              <div class="relative flex-1">
+                <select 
+                  v-model="block.exercise_id" 
+                  class="w-full bg-transparent font-black text-slate-900 text-2xl outline-none appearance-none cursor-pointer tracking-tight"
+                >
+                  <option value="" disabled>Choisir un exercice...</option>
+                  <option v-for="ex in exercises" :key="ex.id" :value="ex.id">{{ ex.name }}</option>
+                </select>
+                <div class="absolute right-0 top-1/2 -translate-y-1/2 pointer-events-none text-slate-300">
+                  <ChevronRight :size="20" class="rotate-90" />
+                </div>
+              </div>
+              <button @click="removeBlock(bIndex)" class="w-12 h-12 flex items-center justify-center bg-white border border-slate-100 text-slate-300 hover:text-rose-500 rounded-2xl shadow-sm transition-colors">
+                <Trash2 :size="20" />
               </button>
             </div>
             
-            <div class="p-4" v-if="block.exercise_id">
+            <div class="p-6 md:p-8" v-if="block.exercise_id">
               <!-- Sets Headers -->
-              <div class="grid grid-cols-[3rem_1fr_1fr_1fr_2rem] gap-2 mb-3 text-[11px] font-bold text-gray-400 uppercase tracking-wider text-center pr-2">
-                <div>Set</div>
-                <div>Poids</div>
-                <div>Reps</div>
-                <div>RPE</div>
+              <div class="hidden md:grid grid-cols-[3.5rem_1fr_1fr_1fr_3rem] gap-4 mb-4 px-2">
+                <div class="text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Set</div>
+                <div class="text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Poids (kg)</div>
+                <div class="text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Repétitions</div>
+                <div class="text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Intensité (RPE)</div>
                 <div></div>
               </div>
               
               <!-- Sets Data -->
-              <transition-group name="list" tag="div">
-                <div v-for="(set, sIndex) in block.sets" :key="sIndex" class="grid grid-cols-[3rem_1fr_1fr_1fr_2rem] gap-2 mb-3 items-center group">
-                  <div class="text-center font-bold text-gray-500 bg-gray-50 rounded-xl h-12 flex items-center justify-center">
+              <transition-group name="list" tag="div" class="space-y-4">
+                <div v-for="(set, sIndex) in block.sets" :key="sIndex" class="grid grid-cols-[3.5rem_1fr_1fr_1fr_3rem] md:grid-cols-[3.5rem_1fr_1fr_1fr_3rem] gap-3 md:gap-4 items-center">
+                  <div class="h-14 flex items-center justify-center font-black text-slate-400 bg-slate-50 rounded-2xl text-sm border border-slate-100">
                     {{ sIndex + 1 }}
                   </div>
                   <input 
                     v-model.number="set.weight" 
                     @blur="saveSet(set, block.exercise_id)" 
                     type="number" 
-                    class="w-full text-center h-12 text-lg font-bold text-gray-900 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none transition-shadow" 
-                    placeholder="kg" 
+                    class="w-full text-center h-14 text-xl font-black text-slate-900 bg-white border border-slate-100 rounded-2xl focus:ring-2 focus:ring-indigo-500 outline-none transition-shadow shadow-sm placeholder:text-slate-200" 
+                    placeholder="0" 
                   />
                   <input 
                     v-model.number="set.reps" 
                     @blur="saveSet(set, block.exercise_id)" 
                     type="number" 
-                    class="w-full text-center h-12 text-lg font-bold text-gray-900 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none transition-shadow" 
-                    placeholder="reps" 
+                    class="w-full text-center h-14 text-xl font-black text-slate-900 bg-white border border-slate-100 rounded-2xl focus:ring-2 focus:ring-indigo-500 outline-none transition-shadow shadow-sm placeholder:text-slate-200" 
+                    placeholder="0" 
                   />
                   <input 
                     v-model.number="set.rpe" 
                     @blur="saveSet(set, block.exercise_id)" 
                     type="number" 
-                    class="w-full text-center h-12 text-lg font-bold text-gray-600 bg-gray-50 border border-gray-100 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none transition-shadow" 
-                    placeholder="RPE" 
+                    class="w-full text-center h-14 text-xl font-black text-slate-500 bg-slate-50/50 border border-slate-100 rounded-2xl focus:ring-2 focus:ring-indigo-500 outline-none transition-shadow placeholder:text-slate-200" 
+                    placeholder="0" 
                   />
-                  <button @click="removeSet(block, sIndex)" class="text-gray-300 hover:text-red-400 flex items-center justify-center h-12">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" /></svg>
+                  <button @click="removeSet(block, sIndex)" class="h-14 w-full flex items-center justify-center text-slate-200 hover:text-rose-400 transition-colors">
+                    <X :size="18" />
                   </button>
                 </div>
               </transition-group>
@@ -173,9 +367,9 @@
               <!-- Add Set Button -->
               <button 
                 @click="addSet(block)" 
-                class="mt-4 w-full py-3.5 bg-indigo-50/50 text-indigo-600 hover:bg-indigo-50 rounded-xl font-bold transition-colors text-base flex items-center justify-center"
+                class="mt-8 w-full py-5 bg-indigo-50 border border-indigo-100 text-indigo-600 hover:bg-white rounded-3xl font-black text-sm uppercase tracking-widest transition-all shadow-sm flex items-center justify-center gap-2"
               >
-                + Ajouter une série
+                <Plus :size="16" /> Ajouter une série
               </button>
             </div>
           </div>
@@ -183,8 +377,9 @@
           <!-- Add Exercise Block -->
           <button 
             @click="addBlock" 
-            class="w-full bg-gray-900 hover:bg-gray-800 text-white font-bold py-5 rounded-3xl shadow-md text-lg transition-transform active:scale-[0.98] flex items-center justify-center mt-8"
+            class="w-full bg-slate-900 hover:bg-black text-white py-8 rounded-[2.5rem] font-black text-xl transition-all active:scale-[0.98] flex items-center justify-center gap-4 shadow-2xl shadow-indigo-200/50 mt-12 mb-20"
           >
+            <Plus :size="28" />
             Nouvel Exercice
           </button>
         </div>
@@ -198,8 +393,53 @@ import { ref, computed, onMounted } from 'vue'
 import { supabase } from '@/supabase'
 import { useAuth } from '@/composables/useAuth'
 import { useWorkoutStats } from '@/composables/useWorkoutStats'
+import { useWorkoutPrograms } from '@/composables/useWorkoutPrograms'
+import { 
+  Dumbbell, 
+  Plus, 
+  Trash2, 
+  Play, 
+  Calendar, 
+  Settings, 
+  Activity, 
+  ChevronLeft, 
+  ChevronRight, 
+  CheckCircle2, 
+  X,
+  Pencil,
+  Save,
+  Trophy,
+  History,
+  Target,
+  Flame,
+  Layout
+} from 'lucide-vue-next'
 
 const { user } = useAuth()
+const { 
+  planningMode, 
+  selectedDayIndex,
+  todayDayIndex, 
+  weekOverview, 
+  selectedPlan, 
+  isSelectedToday,
+  isRestDay, 
+  templates,
+  updateExerciseWeight,
+  generateBlocks 
+} = useWorkoutPrograms()
+
+const editingTemplate = ref(false)
+
+const updateTemplateField = (sessionKey, exerciseIndex, field, value) => {
+  if (templates.value[sessionKey]?.exercises[exerciseIndex]) {
+    if (field === 'sets') {
+      templates.value[sessionKey].exercises[exerciseIndex].sets = Number(value) || 1
+    } else if (field === 'repsRange') {
+      templates.value[sessionKey].exercises[exerciseIndex].repsRange = value
+    }
+  }
+}
 
 // Core State
 const activeTab = ref('workout')
@@ -215,20 +455,26 @@ const newExercise = ref({ name: '', muscle_group_id: '' })
 
 // Stats Integration
 const flatSets = computed(() => {
-  return workoutBlocks.value.flatMap(b => b.sets)
-    .filter(s => s.weight > 0 && s.reps > 0 && b.exercise_id)
-    .map(s => ({
-       exercise_id: b.exercise_id,
-       weight: s.weight,
-       reps: s.reps
-    }))
+  const result = []
+  workoutBlocks.value.forEach(b => {
+    if (!b.exercise_id) return
+    b.sets.forEach(s => {
+      if (s.weight > 0 && s.reps > 0) {
+        result.push({
+          exercise_id: b.exercise_id,
+          weight: s.weight,
+          reps: s.reps
+        })
+      }
+    })
+  })
+  return result
 })
 
 const { volumeLoadByMuscleGroup } = useWorkoutStats(flatSets, exercises, muscleGroups)
 const hasStats = computed(() => Object.keys(volumeLoadByMuscleGroup.value).length > 0)
 
 onMounted(async () => {
-  // Wait explicitly to ensure session is loaded if needed
   const { data: { session } } = await supabase.auth.getSession()
   const userId = session?.user?.id || user.value?.id
 
@@ -241,7 +487,6 @@ const loadData = async (userId) => {
   loading.value.data = true
   
   try {
-    // Parallelize data fetching
     const [mgResponse, exResponse] = await Promise.all([
       supabase.from('muscle_groups').select('*'),
       supabase.from('exercises').select('*')
@@ -250,10 +495,8 @@ const loadData = async (userId) => {
     if (mgResponse.data) muscleGroups.value = mgResponse.data
     if (exResponse.data) exercises.value = exResponse.data
     
-    // Check for today's workout
     const todayStr = new Date().toISOString().split('T')[0]
     
-    // We check between start and end of day local timezone approx
     const { data: w } = await supabase.from('workouts')
       .select('*')
       .eq('user_id', userId)
@@ -264,14 +507,12 @@ const loadData = async (userId) => {
       
     if (w) {
       currentWorkout.value = w
-      // Load sets for today's workout
       const { data: sets } = await supabase.from('workout_sets')
         .select('*')
         .eq('workout_id', w.id)
-        .order('id', { ascending: true }) // use ID to maintain order of insertion
+        .order('id', { ascending: true })
         
       if (sets && sets.length > 0) {
-        // Reconstruct blocks by exercise_id
         const blocksMap = new Map()
         sets.forEach(set => {
           if (!blocksMap.has(set.exercise_id)) {
@@ -286,6 +527,34 @@ const loadData = async (userId) => {
     console.error("Error loading workout data:", err)
   } finally {
     loading.value.data = false
+  }
+}
+
+// ═══ Template-based Workout Start ═══
+const startFromTemplate = async () => {
+  if (!selectedPlan.value || isRestDay.value || !isSelectedToday.value) return
+  
+  loading.value.workout = true
+  try {
+    // 1. Create workout in DB
+    const { data, error } = await supabase.from('workouts').insert({
+      date: new Date().toISOString(),
+      user_id: user.value.id
+    }).select()
+
+    if (error) throw error
+    if (!data || data.length === 0) return
+
+    currentWorkout.value = data[0]
+
+    // 2. Generate pre-filled blocks from template
+    const blocks = generateBlocks(selectedPlan.value.session, exercises.value)
+    workoutBlocks.value = blocks
+
+  } catch (e) {
+    console.error("Error starting template workout:", e)
+  } finally {
+    loading.value.workout = false
   }
 }
 
@@ -363,10 +632,8 @@ const saveSet = async (set, exercise_id) => {
   
   try {
     if (set.id) {
-      // Update existing
       await supabase.from('workout_sets').update(payload).eq('id', set.id)
     } else {
-      // Insert new
       const { data } = await supabase.from('workout_sets').insert(payload).select()
       if (data && data.length > 0) {
         set.id = data[0].id
@@ -379,7 +646,6 @@ const saveSet = async (set, exercise_id) => {
 
 const removeBlock = async (bIndex) => {
   const block = workoutBlocks.value[bIndex]
-  // Delete all persisted sets in this block
   const setIds = block.sets.filter(s => s.id).map(s => s.id)
   if (setIds.length > 0) {
     await supabase.from('workout_sets').delete().in('id', setIds)
@@ -394,7 +660,6 @@ const removeSet = async (block, sIndex) => {
    }
    block.sets.splice(sIndex, 1)
    
-   // If it was the last set, maybe we want to keep one empty set row
    if (block.sets.length === 0) {
      block.sets.push({ weight: null, reps: null, rpe: null })
    }
