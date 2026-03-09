@@ -1,18 +1,18 @@
 <template>
   <div class="animate-fade-in max-w-7xl mx-auto pb-24 px-4 sm:px-6 lg:px-8">
-    <!-- Header Piet Piet Piet -->
-    <header class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6 mb-12 pt-6">
+    <!-- Header -->
+    <header class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8 md:mb-12 pt-4 md:pt-6">
       <div>
-        <h2 class="text-3xl font-black text-slate-900 tracking-tight flex items-center gap-3">
-          <div class="p-2.5 bg-indigo-600 rounded-2xl text-white shadow-lg shadow-indigo-100/50">
-            <LayoutDashboard :size="24" stroke-width="2.5" />
+        <h2 class="text-2xl md:text-3xl font-black text-slate-900 tracking-tight flex items-center gap-3">
+          <div class="p-2 md:p-2.5 bg-indigo-600 rounded-xl md:rounded-2xl text-white shadow-lg shadow-indigo-100/50">
+            <LayoutDashboard :size="20" md:size="24" stroke-width="2.5" />
           </div>
           Tableau de bord
         </h2>
-        <p class="text-slate-400 font-bold text-xs uppercase tracking-[0.2em] mt-2 ml-1">Analyse de Performance Hebdomadaire</p>
+        <p class="text-slate-400 font-bold text-[10px] uppercase tracking-[0.2em] mt-2 ml-1">Analyse de Performance Hebdomadaire</p>
       </div>
       
-      <div class="flex items-center gap-4 bg-white p-2 pr-6 rounded-3xl border border-slate-100 shadow-sm transition-all hover:border-slate-200">
+      <div class="hidden sm:flex items-center gap-4 bg-white p-2 pr-6 rounded-3xl border border-slate-100 shadow-sm transition-all hover:border-slate-200">
         <div class="h-12 w-12 bg-indigo-50 border border-indigo-100 rounded-2xl flex items-center justify-center text-xl font-black text-indigo-600">
           {{ userInitials }}
         </div>
@@ -39,81 +39,81 @@
       </div>
     </template>
 
-    <!-- ═══ CHARTS GRID ═══ Piet Piet Piet -->
+    <!-- ═══ CHARTS GRID ═══ -->
     <template v-else>
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
 
-        <!-- 1. Volume Distribution Card (Radar) Piet Piet Piet -->
-        <div class="bg-white rounded-[2.5rem] border border-slate-100 p-8 flex flex-col shadow-2xl shadow-slate-100/30 transition-all hover:border-slate-200 group">
-          <div class="flex justify-between items-start mb-8">
+        <!-- 1. Volume Distribution Card (Radar) -->
+        <div class="bg-white rounded-[2rem] md:rounded-[2.5rem] border border-slate-100 p-6 md:p-8 flex flex-col shadow-2xl shadow-slate-100/30 transition-all hover:border-slate-200 group">
+          <div class="flex justify-between items-start mb-6 md:mb-8">
             <div>
-              <p class="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-1">Impact Musculaire</p>
-              <h3 class="text-lg font-black text-slate-900 tracking-tight flex items-center gap-2">
-                <Target :size="18" class="text-indigo-600" stroke-width="2.5" />
-                Répartition du Volume
+              <p class="text-[9px] md:text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-1">Impact Musculaire</p>
+              <h3 class="text-base md:text-lg font-black text-slate-900 tracking-tight flex items-center gap-2">
+                <Target :size="16" md:size="18" class="text-indigo-600" stroke-width="2.5" />
+                Volume Load
               </h3>
             </div>
           </div>
 
-          <div v-if="hasRadarData" class="flex-1 flex items-center justify-center min-h-[300px]">
+          <div v-if="hasRadarData" class="flex-1 flex items-center justify-center min-h-[250px] md:min-h-[300px]">
             <div class="w-full h-full transform transition-transform group-hover:scale-[1.02]">
               <Radar :data="radarChartData" :options="radarOptions" />
             </div>
           </div>
-          <div v-else class="flex-1 flex flex-col items-center justify-center min-h-[300px] text-center px-6 bg-slate-50/50 rounded-[2rem] border border-dashed border-slate-200">
-            <div class="p-4 bg-white rounded-2xl shadow-sm mb-4">
-              <Dumbbell :size="32" class="text-slate-200" />
+          <div v-else class="flex-1 flex flex-col items-center justify-center min-h-[250px] md:min-h-[300px] text-center px-6 bg-slate-50/50 rounded-[1.5rem] md:rounded-[2rem] border border-dashed border-slate-200">
+            <div class="p-3 md:p-4 bg-white rounded-2xl shadow-sm mb-4">
+              <Dumbbell :size="28" md:size="32" class="text-slate-200" />
             </div>
-            <p class="text-slate-400 font-bold text-sm leading-relaxed">Entraînez-vous pour voir votre symétrie ici.</p>
+            <p class="text-slate-400 font-bold text-xs md:text-sm leading-relaxed">Entraînez-vous pour voir votre symétrie ici.</p>
           </div>
         </div>
 
-        <!-- 2. Nutrition Analytics Card (Bar) Piet Piet Piet -->
-        <div class="bg-white rounded-[2.5rem] border border-slate-100 p-8 flex flex-col shadow-2xl shadow-slate-100/30 transition-all hover:border-slate-200 group">
-          <div class="flex justify-between items-start mb-8">
+        <!-- 2. Nutrition Analytics Card (Bar) -->
+        <div class="bg-white rounded-[2rem] md:rounded-[2.5rem] border border-slate-100 p-6 md:p-8 flex flex-col shadow-2xl shadow-slate-100/30 transition-all hover:border-slate-200 group">
+          <div class="flex justify-between items-start mb-6 md:mb-8">
             <div>
-              <p class="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-1">Carburant Hebdomadaire</p>
-              <h3 class="text-lg font-black text-slate-900 tracking-tight flex items-center gap-2">
-                <BarChart3 :size="18" class="text-emerald-500" stroke-width="2.5" />
-                Macros sur 7 Jours
+              <p class="text-[9px] md:text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-1">Carburant Hebdomadaire</p>
+              <h3 class="text-base md:text-lg font-black text-slate-900 tracking-tight flex items-center gap-2">
+                <BarChart3 :size="16" md:size="18" class="text-emerald-500" stroke-width="2.5" />
+                Macros (7 Jours)
               </h3>
             </div>
           </div>
 
-          <div v-if="hasNutritionData" class="flex-1 min-h-[300px]">
+          <div v-if="hasNutritionData" class="flex-1 min-h-[250px] md:min-h-[300px]">
             <Bar :data="barChartData" :options="barOptions" />
           </div>
-          <div v-else class="flex-1 flex flex-col items-center justify-center min-h-[300px] text-center px-6 bg-slate-50/50 rounded-[2rem] border border-dashed border-slate-200">
-            <div class="p-4 bg-white rounded-2xl shadow-sm mb-4">
-              <Utensils :size="32" class="text-slate-200" />
+          <div v-else class="flex-1 flex flex-col items-center justify-center min-h-[250px] md:min-h-[300px] text-center px-6 bg-slate-50/50 rounded-[1.5rem] md:rounded-[2rem] border border-dashed border-slate-200">
+            <div class="p-3 md:p-4 bg-white rounded-2xl shadow-sm mb-4">
+              <Utensils :size="28" md:size="32" class="text-slate-200" />
             </div>
-            <p class="text-slate-400 font-bold text-sm leading-relaxed">Vos apports nutritionnels s'afficheront ici.</p>
+            <p class="text-slate-400 font-bold text-xs md:text-sm leading-relaxed">Vos apports nutritionnels s'afficheront ici.</p>
           </div>
         </div>
 
-        <!-- 3. Performance Correlation Card (Line) Piet Piet Piet -->
-        <div class="bg-white rounded-[2.5rem] border border-slate-100 p-8 lg:col-span-full xl:col-span-1 flex flex-col shadow-2xl shadow-slate-100/30 transition-all hover:border-slate-200 group">
-          <div class="flex justify-between items-start mb-8">
+        <!-- 3. Performance Correlation Card (Line) -->
+        <div class="bg-white rounded-[2rem] md:rounded-[2.5rem] border border-slate-100 p-6 md:p-8 lg:col-span-full xl:col-span-1 flex flex-col shadow-2xl shadow-slate-100/30 transition-all hover:border-slate-200 group">
+          <div class="flex justify-between items-start mb-6 md:mb-8">
             <div>
-              <p class="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-1">Physiologie & Output</p>
-              <h3 class="text-lg font-black text-slate-900 tracking-tight flex items-center gap-2">
-                <Activity :size="18" class="text-indigo-600" stroke-width="2.5" />
+              <p class="text-[9px] md:text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-1">Physiologie & Output</p>
+              <h3 class="text-base md:text-lg font-black text-slate-900 tracking-tight flex items-center gap-2">
+                <Activity :size="16" md:size="18" class="text-indigo-600" stroke-width="2.5" />
                 Sommeil vs Force
               </h3>
             </div>
             <div class="p-2 bg-indigo-50 rounded-xl">
-              <TrendingUp :size="16" class="text-indigo-600" />
+              <TrendingUp :size="14" md:size="16" class="text-indigo-600" />
             </div>
           </div>
 
-          <div v-if="hasCorrelationData" class="flex-1 min-h-[300px]">
+          <div v-if="hasCorrelationData" class="flex-1 min-h-[250px] md:min-h-[300px]">
             <Line :data="lineChartData" :options="lineOptions" />
           </div>
-          <div v-else class="flex-1 flex flex-col items-center justify-center min-h-[300px] text-center px-6 bg-slate-50/50 rounded-[2rem] border border-dashed border-slate-200">
-            <div class="p-4 bg-white rounded-2xl shadow-sm mb-4">
-              <TrendingUp :size="32" class="text-slate-200" />
+          <div v-else class="flex-1 flex flex-col items-center justify-center min-h-[250px] md:min-h-[300px] text-center px-6 bg-slate-50/50 rounded-[1.5rem] md:rounded-[2rem] border border-dashed border-slate-200">
+            <div class="p-3 md:p-4 bg-white rounded-2xl shadow-sm mb-4">
+              <TrendingUp :size="28" md:size="32" class="text-slate-200" />
             </div>
-            <p class="text-slate-400 font-bold text-sm leading-relaxed">Reliez vos données de sommeil et de musculation.</p>
+            <p class="text-slate-400 font-bold text-xs md:text-sm leading-relaxed">Reliez vos données de sommeil et de musculation.</p>
           </div>
         </div>
 

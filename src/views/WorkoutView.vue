@@ -1,31 +1,31 @@
 <template>
   <div class="animate-fade-in max-w-5xl mx-auto pb-24 px-4 sm:px-6">
     <!-- Header with Dynamic Tab Switch -->
-    <header class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-10 pt-4">
-      <div>
-        <h2 class="text-3xl font-black text-slate-900 tracking-tight flex items-center gap-3">
-          <div class="p-2.5 bg-indigo-600 rounded-2xl text-white shadow-lg shadow-indigo-100/50">
-            <Dumbbell :size="24" stroke-width="2.5" />
-          </div>
-          Musculation
-        </h2>
-        <p class="text-slate-400 font-bold text-xs uppercase tracking-[0.2em] mt-2 ml-1">Performance & Progression</p>
+    <header class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8 md:mb-10 pt-4 md:pt-4">
+      <div class="flex items-center gap-3">
+        <div class="p-2 md:p-2.5 bg-indigo-600 rounded-xl md:rounded-2xl text-white shadow-lg shadow-indigo-100/50">
+          <Dumbbell :size="20" md:size="24" stroke-width="2.5" />
+        </div>
+        <div>
+          <h2 class="text-2xl md:text-3xl font-black text-slate-900 tracking-tight">Musculation</h2>
+          <p class="hidden sm:block text-slate-400 font-bold text-xs uppercase tracking-[0.2em] mt-1 ml-0.5">Performance & Progression</p>
+        </div>
       </div>
       
       <div class="bg-white p-1 rounded-2xl border border-slate-100 flex shadow-sm w-full sm:w-auto">
         <button 
           @click="activeTab = 'workout'" 
           :class="activeTab === 'workout' ? 'bg-slate-900 text-white shadow-lg shadow-slate-200' : 'text-slate-400 hover:text-slate-600'"
-          class="flex-1 sm:flex-none flex items-center justify-center gap-2 px-6 py-2.5 rounded-[0.9rem] text-sm font-black transition-all"
+          class="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 md:px-6 py-2 md:py-2.5 rounded-[0.9rem] text-xs md:text-sm font-black transition-all"
         >
-          <Target :size="16" /> Séance
+          <Target :size="14" md:size="16" /> Séance
         </button>
         <button 
           @click="activeTab = 'exercises'" 
           :class="activeTab === 'exercises' ? 'bg-slate-900 text-white shadow-lg shadow-slate-200' : 'text-slate-400 hover:text-slate-600'"
-          class="flex-1 sm:flex-none flex items-center justify-center gap-2 px-6 py-2.5 rounded-[0.9rem] text-sm font-black transition-all"
+          class="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 md:px-6 py-2 md:py-2.5 rounded-[0.9rem] text-xs md:text-sm font-black transition-all"
         >
-          <Layout :size="16" /> Bibliothèque
+          <LayoutIcon :size="14" md:size="16" /> Bibliothèque
         </button>
       </div>
     </header>
@@ -301,65 +301,65 @@
           </div>
 
           <!-- Workout Blocks (Exercises) -->
-          <div v-for="(block, bIndex) in workoutBlocks" :key="bIndex" class="bg-white rounded-[2.5rem] border border-slate-100 shadow-xl shadow-slate-100/30 overflow-hidden transition-all hover:border-slate-200">
+          <div v-for="(block, bIndex) in workoutBlocks" :key="bIndex" class="bg-white rounded-[2rem] md:rounded-[2.5rem] border border-slate-100 shadow-xl shadow-slate-100/30 overflow-hidden transition-all hover:border-slate-200 mb-6">
             <!-- Block Header -->
-            <div class="p-6 bg-slate-50/50 border-b border-slate-100 flex justify-between items-center gap-4">
+            <div class="p-5 md:p-6 bg-slate-50/50 border-b border-slate-100 flex justify-between items-center gap-3">
               <div class="relative flex-1">
                 <select 
                   v-model="block.exercise_id" 
-                  class="w-full bg-transparent font-black text-slate-900 text-2xl outline-none appearance-none cursor-pointer tracking-tight"
+                  class="w-full bg-transparent font-black text-slate-900 text-lg md:text-2xl outline-none appearance-none cursor-pointer tracking-tight"
                 >
                   <option value="" disabled>Choisir un exercice...</option>
                   <option v-for="ex in exercises" :key="ex.id" :value="ex.id">{{ ex.name }}</option>
                 </select>
                 <div class="absolute right-0 top-1/2 -translate-y-1/2 pointer-events-none text-slate-300">
-                  <ChevronRight :size="20" class="rotate-90" />
+                  <ChevronRight :size="16" md:size="20" class="rotate-90" />
                 </div>
               </div>
-              <button @click="removeBlock(bIndex)" class="w-12 h-12 flex items-center justify-center bg-white border border-slate-100 text-slate-300 hover:text-rose-500 rounded-2xl shadow-sm transition-colors">
-                <Trash2 :size="20" />
+              <button @click="removeBlock(bIndex)" class="w-10 h-10 md:w-12 md:h-12 flex items-center justify-center bg-white border border-slate-100 text-slate-300 hover:text-rose-500 rounded-xl md:rounded-2xl shadow-sm transition-colors">
+                <Trash2 :size="18" md:size="20" />
               </button>
             </div>
             
-            <div class="p-6 md:p-8" v-if="block.exercise_id">
-              <!-- Sets Headers -->
+            <div class="p-5 md:p-8" v-if="block.exercise_id">
+              <!-- Sets Headers (Desktop) -->
               <div class="hidden md:grid grid-cols-[3.5rem_1fr_1fr_1fr_3rem] gap-4 mb-4 px-2">
                 <div class="text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Set</div>
                 <div class="text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Poids (kg)</div>
-                <div class="text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Repétitions</div>
-                <div class="text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Intensité (RPE)</div>
+                <div class="text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Reps</div>
+                <div class="text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">RPE</div>
                 <div></div>
               </div>
               
               <!-- Sets Data -->
-              <transition-group name="list" tag="div" class="space-y-4">
-                <div v-for="(set, sIndex) in block.sets" :key="sIndex" class="grid grid-cols-[3.5rem_1fr_1fr_1fr_3rem] md:grid-cols-[3.5rem_1fr_1fr_1fr_3rem] gap-3 md:gap-4 items-center">
-                  <div class="h-14 flex items-center justify-center font-black text-slate-400 bg-slate-50 rounded-2xl text-sm border border-slate-100">
+              <transition-group name="list" tag="div" class="space-y-3 md:space-y-4">
+                <div v-for="(set, sIndex) in block.sets" :key="sIndex" class="grid grid-cols-[2.5rem_1fr_1fr_1fr_2.5rem] md:grid-cols-[3.5rem_1fr_1fr_1fr_3rem] gap-2 md:gap-4 items-center">
+                  <div class="h-12 md:h-14 flex items-center justify-center font-black text-slate-400 bg-slate-50 rounded-xl md:rounded-2xl text-xs md:text-sm border border-slate-100">
                     {{ sIndex + 1 }}
                   </div>
                   <input 
                     v-model.number="set.weight" 
                     @blur="saveSet(set, block.exercise_id)" 
                     type="number" 
-                    class="w-full text-center h-14 text-xl font-black text-slate-900 bg-white border border-slate-100 rounded-2xl focus:ring-2 focus:ring-indigo-500 outline-none transition-shadow shadow-sm placeholder:text-slate-200" 
-                    placeholder="0" 
+                    class="w-full text-center h-12 md:h-14 text-lg md:text-xl font-black text-slate-900 bg-white border border-slate-100 rounded-xl md:rounded-2xl focus:ring-2 focus:ring-indigo-500 outline-none transition-shadow shadow-sm placeholder:text-slate-200" 
+                    placeholder="W" 
                   />
                   <input 
                     v-model.number="set.reps" 
                     @blur="saveSet(set, block.exercise_id)" 
                     type="number" 
-                    class="w-full text-center h-14 text-xl font-black text-slate-900 bg-white border border-slate-100 rounded-2xl focus:ring-2 focus:ring-indigo-500 outline-none transition-shadow shadow-sm placeholder:text-slate-200" 
-                    placeholder="0" 
+                    class="w-full text-center h-12 md:h-14 text-lg md:text-xl font-black text-slate-900 bg-white border border-slate-100 rounded-xl md:rounded-2xl focus:ring-2 focus:ring-indigo-500 outline-none transition-shadow shadow-sm placeholder:text-slate-200" 
+                    placeholder="R" 
                   />
                   <input 
                     v-model.number="set.rpe" 
                     @blur="saveSet(set, block.exercise_id)" 
                     type="number" 
-                    class="w-full text-center h-14 text-xl font-black text-slate-500 bg-slate-50/50 border border-slate-100 rounded-2xl focus:ring-2 focus:ring-indigo-500 outline-none transition-shadow placeholder:text-slate-200" 
-                    placeholder="0" 
+                    class="w-full text-center h-12 md:h-14 text-lg md:text-xl font-black text-slate-500 bg-slate-50/50 border border-slate-100 rounded-xl md:rounded-2xl focus:ring-2 focus:ring-indigo-500 outline-none transition-shadow placeholder:text-slate-200" 
+                    placeholder="E" 
                   />
-                  <button @click="removeSet(block, sIndex)" class="h-14 w-full flex items-center justify-center text-slate-200 hover:text-rose-400 transition-colors">
-                    <X :size="18" />
+                  <button @click="removeSet(block, sIndex)" class="h-12 md:h-14 w-full flex items-center justify-center text-slate-200 hover:text-rose-400 transition-colors">
+                    <X :size="16" md:size="18" />
                   </button>
                 </div>
               </transition-group>
@@ -367,9 +367,9 @@
               <!-- Add Set Button -->
               <button 
                 @click="addSet(block)" 
-                class="mt-8 w-full py-5 bg-indigo-50 border border-indigo-100 text-indigo-600 hover:bg-white rounded-3xl font-black text-sm uppercase tracking-widest transition-all shadow-sm flex items-center justify-center gap-2"
+                class="mt-6 md:mt-8 w-full py-4 md:py-5 bg-indigo-50 border border-indigo-100 text-indigo-600 hover:bg-white rounded-2xl md:rounded-3xl font-black text-xs uppercase tracking-widest transition-all shadow-sm flex items-center justify-center gap-2"
               >
-                <Plus :size="16" /> Ajouter une série
+                <Plus :size="16" /> Série
               </button>
             </div>
           </div>
@@ -377,10 +377,10 @@
           <!-- Add Exercise Block -->
           <button 
             @click="addBlock" 
-            class="w-full bg-slate-900 hover:bg-black text-white py-8 rounded-[2.5rem] font-black text-xl transition-all active:scale-[0.98] flex items-center justify-center gap-4 shadow-2xl shadow-indigo-200/50 mt-12 mb-20"
+            class="w-full bg-slate-900 hover:bg-black text-white py-6 md:py-8 rounded-[2rem] font-black text-lg md:text-xl transition-all active:scale-[0.98] flex items-center justify-center gap-3 md:gap-4 shadow-2xl shadow-indigo-200/50 mt-8 mb-20"
           >
-            <Plus :size="28" />
-            Nouvel Exercice
+            <Plus :size="24" md:size="28" />
+            Exercice
           </button>
         </div>
       </template>
@@ -412,7 +412,7 @@ import {
   History,
   Target,
   Flame,
-  Layout
+  Layout as LayoutIcon
 } from 'lucide-vue-next'
 
 const { user } = useAuth()

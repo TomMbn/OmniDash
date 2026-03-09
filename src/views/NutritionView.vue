@@ -1,103 +1,87 @@
 <template>
   <div class="animate-fade-in max-w-2xl mx-auto pb-24 px-4 sm:px-6">
     <!-- Header Section -->
-    <header class="flex flex-col gap-6 mb-10 pt-4">
+    <header class="flex flex-col gap-6 mb-8 md:mb-10 pt-4 md:pt-4">
       <div class="flex justify-between items-center">
         <div>
-          <h2 class="text-3xl font-extrabold text-slate-900 tracking-tight">Nutrition</h2>
-          <p class="text-slate-500 text-sm font-medium">Suivi de vos performances</p>
+          <h2 class="text-2xl md:text-3xl font-black text-slate-900 tracking-tight">Nutrition</h2>
+          <p class="text-slate-400 text-xs font-bold uppercase tracking-widest mt-1">Carburant & Énergie</p>
         </div>
-        <div class="flex items-center gap-2">
-          <button @click="showLibrary = true" class="p-2.5 text-slate-400 hover:text-slate-900 hover:bg-slate-100 rounded-2xl transition-all border border-transparent hover:border-slate-200" title="Meal Prep">
-            <Archive :size="22" />
+        <div class="flex items-center gap-1.5 md:gap-2">
+          <button @click="showLibrary = true" class="p-2 md:p-2.5 text-slate-400 hover:text-slate-900 hover:bg-white rounded-xl md:rounded-2xl transition-all border border-transparent hover:border-slate-100 shadow-sm" title="Meal Prep">
+            <Archive :size="20" md:size="22" />
           </button>
-          <button @click="showHabits = true" class="p-2.5 text-slate-400 hover:text-slate-900 hover:bg-slate-100 rounded-2xl transition-all border border-transparent hover:border-slate-200" title="Habitudes">
-            <Repeat :size="22" />
+          <button @click="showHabits = true" class="p-2 md:p-2.5 text-slate-400 hover:text-slate-900 hover:bg-white rounded-xl md:rounded-2xl transition-all border border-transparent hover:border-slate-100 shadow-sm" title="Habitudes">
+            <Repeat :size="20" md:size="22" />
           </button>
-          <button @click="showSettings = true" class="p-2.5 text-slate-400 hover:text-slate-900 hover:bg-slate-100 rounded-2xl transition-all border border-transparent hover:border-slate-200" title="Paramètres">
-            <Settings :size="22" />
+          <button @click="showSettings = true" class="p-2 md:p-2.5 text-slate-400 hover:text-slate-900 hover:bg-white rounded-xl md:rounded-2xl transition-all border border-transparent hover:border-slate-100 shadow-sm" title="Paramètres">
+            <Settings :size="20" md:size="22" />
           </button>
         </div>
       </div>
 
       <!-- Date Navigator -->
-      <div class="flex items-center justify-between bg-slate-50/50 rounded-2xl border border-slate-100 p-1.5">
-        <button @click="changeDate(-1)" class="p-2.5 text-slate-400 hover:text-slate-900 hover:bg-white hover:shadow-sm rounded-xl transition-all">
+      <div class="flex items-center justify-between bg-white rounded-2xl border border-slate-100 p-1.5 shadow-sm">
+        <button @click="changeDate(-1)" class="p-2.5 text-slate-400 hover:text-slate-900 hover:bg-slate-50 rounded-xl transition-all active:scale-90">
           <ChevronLeft :size="20" />
         </button>
-        <div class="flex items-center gap-2 font-bold text-slate-800">
-          <Calendar :size="16" class="text-slate-400" />
-          <span class="text-sm tracking-wide">{{ formattedCurrentDate }}</span>
+        <div class="flex items-center gap-2 font-black text-slate-800 text-xs uppercase tracking-widest">
+          <Calendar :size="14" class="text-indigo-500" stroke-width="3" />
+          <span>{{ formattedCurrentDate }}</span>
         </div>
-        <button @click="changeDate(1)" class="p-2.5 text-slate-400 hover:text-slate-900 hover:bg-white hover:shadow-sm rounded-xl transition-all">
+        <button @click="changeDate(1)" class="p-2.5 text-slate-400 hover:text-slate-900 hover:bg-slate-50 rounded-xl transition-all active:scale-90">
           <ChevronRight :size="20" />
         </button>
       </div>
     </header>
 
     <!-- Loading State -->
-    <div v-if="loading" class="flex justify-center py-20">
+    <div v-if="loading" class="flex flex-col items-center justify-center py-20">
       <div class="relative w-12 h-12">
         <div class="absolute inset-0 border-4 border-slate-100 rounded-full"></div>
         <div class="absolute inset-0 border-4 border-indigo-600 rounded-full border-t-transparent animate-spin"></div>
       </div>
+      <p class="text-slate-400 font-black text-[10px] uppercase tracking-widest mt-6">Calcul en cours...</p>
     </div>
 
     <template v-else>
       <!-- Summary Dashboard -->
-      <section class="bg-white rounded-[2rem] border border-slate-100 p-8 mb-10 overflow-hidden relative">
-        <div class="flex justify-between items-end mb-8">
+      <section class="bg-white rounded-[2rem] border border-slate-100 p-6 md:p-8 mb-8 md:mb-10 overflow-hidden relative shadow-2xl shadow-slate-100/30 transition-all hover:border-slate-200 group">
+        <div class="flex justify-between items-start mb-8">
           <div>
-            <span class="text-xs font-bold text-slate-400 uppercase tracking-widest block mb-1">Total Calories</span>
+            <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-2">Total Calories</span>
             <div class="flex items-baseline gap-2">
-              <span class="text-4xl font-black text-slate-900">{{ dailyTotals.calories }}</span>
-              <span class="text-slate-400 font-bold">/ {{ calculatedGoals.calories }} kcal</span>
+              <span class="text-4xl md:text-5xl font-black text-slate-900 tracking-tighter">{{ dailyTotals.calories }}</span>
+              <span class="text-slate-300 font-bold text-sm md:text-base">/ {{ calculatedGoals.calories }} kcal</span>
             </div>
           </div>
-          <div class="p-3 bg-rose-50 rounded-2xl text-rose-500">
-            <Flame :size="28" />
+          <div class="p-3 bg-rose-50 text-rose-500 rounded-2xl group-hover:scale-110 transition-transform">
+            <Flame :size="24" md:size="28" stroke-width="2.5" />
           </div>
         </div>
 
-        <div class="space-y-6">
-          <!-- Protéines -->
-          <div>
-            <div class="flex justify-between text-xs font-bold mb-2.5 tracking-tight">
-              <span class="text-slate-400 uppercase flex items-center gap-1.5"><Beef :size="14" class="text-blue-500" /> Protéines</span>
-              <span class="text-slate-900">{{ dailyTotals.protein.toFixed(0) }}g<span class="text-slate-300 font-medium ml-1">of {{ calculatedGoals.protein }}g</span></span>
+        <div class="space-y-5">
+          <!-- Macros Progress Bars -->
+          <div v-for="macro in [
+            { label: 'Protéines', current: dailyTotals.protein, goal: calculatedGoals.protein, color: 'blue', icon: Beef },
+            { label: 'Glucides', current: dailyTotals.carbs, goal: calculatedGoals.carbs, color: 'amber', icon: Wheat },
+            { label: 'Lipides', current: dailyTotals.fats, goal: calculatedGoals.fats, color: 'emerald', icon: Droplet }
+          ]" :key="macro.label">
+            <div class="flex justify-between text-[10px] font-black mb-2 uppercase tracking-widest">
+              <span class="text-slate-400 flex items-center gap-2">
+                <component :is="macro.icon" :size="12" :class="`text-${macro.color}-500`" stroke-width="3" />
+                {{ macro.label }}
+              </span>
+              <span class="text-slate-900">
+                {{ Math.round(macro.current) }}g 
+                <span class="text-slate-300 ml-0.5">/ {{ macro.goal }}g</span>
+              </span>
             </div>
-            <div class="h-2 w-full bg-slate-50 rounded-full overflow-hidden border border-slate-100/50">
+            <div class="h-2 w-full bg-slate-50 rounded-full overflow-hidden border border-slate-100 shadow-inner">
               <div 
-                class="h-full bg-blue-500 rounded-full transition-all duration-700 ease-out shadow-[0_0_8px_rgba(59,130,246,0.3)]"
-                :style="{ width: Math.min(100, (dailyTotals.protein / calculatedGoals.protein) * 100) + '%' }"
-              ></div>
-            </div>
-          </div>
-          
-          <!-- Glucides -->
-          <div>
-            <div class="flex justify-between text-xs font-bold mb-2.5 tracking-tight">
-              <span class="text-slate-400 uppercase flex items-center gap-1.5"><Wheat :size="14" class="text-amber-500" /> Glucides</span>
-              <span class="text-slate-900">{{ dailyTotals.carbs.toFixed(0) }}g<span class="text-slate-300 font-medium ml-1">of {{ calculatedGoals.carbs }}g</span></span>
-            </div>
-            <div class="h-2 w-full bg-slate-50 rounded-full overflow-hidden border border-slate-100/50">
-              <div 
-                class="h-full bg-amber-500 rounded-full transition-all duration-700 ease-out shadow-[0_0_8px_rgba(245,158,11,0.3)]"
-                :style="{ width: Math.min(100, (dailyTotals.carbs / calculatedGoals.carbs) * 100) + '%' }"
-              ></div>
-            </div>
-          </div>
-          
-          <!-- Lipides -->
-          <div>
-            <div class="flex justify-between text-xs font-bold mb-2.5 tracking-tight">
-              <span class="text-slate-400 uppercase flex items-center gap-1.5"><Droplet :size="14" class="text-emerald-500" /> Lipides</span>
-              <span class="text-slate-900">{{ dailyTotals.fats.toFixed(0) }}g<span class="text-slate-300 font-medium ml-1">of {{ calculatedGoals.fats }}g</span></span>
-            </div>
-            <div class="h-2 w-full bg-slate-50 rounded-full overflow-hidden border border-slate-100/50">
-              <div 
-                class="h-full bg-emerald-500 rounded-full transition-all duration-700 ease-out shadow-[0_0_8px_rgba(16,185,129,0.3)]"
-                :style="{ width: Math.min(100, (dailyTotals.fats / calculatedGoals.fats) * 100) + '%' }"
+                class="h-full rounded-full transition-all duration-1000 ease-out shadow-sm"
+                :class="`bg-${macro.color}-500 shadow-${macro.color}-500/20`"
+                :style="{ width: Math.min(100, (macro.current / macro.goal) * 100) + '%' }"
               ></div>
             </div>
           </div>
@@ -105,23 +89,23 @@
       </section>
 
       <!-- AI Assistant Input -->
-      <div class="bg-slate-900 rounded-[2rem] p-8 mb-12 relative overflow-hidden group">
+      <div class="bg-slate-900 rounded-[2rem] p-6 md:p-8 mb-10 md:mb-12 relative overflow-hidden group shadow-2xl shadow-indigo-100/50">
         <div class="absolute top-0 right-0 p-8 text-slate-800 opacity-20 group-hover:opacity-30 transition-opacity pointer-events-none">
-          <Sparkles :size="80" />
+          <Sparkles :size="80" stroke-width="1.5" />
         </div>
         
-        <h3 class="text-xl font-bold text-white mb-2 flex items-center gap-2 relative z-10">
+        <h3 class="text-lg md:text-xl font-black text-white mb-2 flex items-center gap-2 relative z-10">
           Enregistrement Magique
         </h3>
-        <p class="text-slate-400 text-sm mb-6 relative z-10">Décrivez votre repas, l'IA s'occupe des chiffres.</p>
+        <p class="text-slate-400 text-[11px] md:text-sm font-bold mb-6 relative z-10 uppercase tracking-widest">Décrivez votre repas, l'IA s'occupe des chiffres.</p>
         
         <div v-if="!analyzedMeal" class="space-y-4 relative z-10">
           <div class="relative">
             <textarea 
               v-model="mealText" 
               rows="3" 
-              class="w-full px-5 py-4 bg-slate-800/50 border border-slate-700 text-white rounded-2xl focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 outline-none resize-none transition-all placeholder:text-slate-600" 
-              placeholder="Ex: Un bol de riz avec du poulet grillé et avocat..." 
+              class="w-full px-5 py-4 bg-slate-800/40 border border-slate-700 text-white rounded-2xl focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 outline-none resize-none transition-all placeholder:text-slate-600 font-bold text-sm md:text-base" 
+              placeholder="Ex: Un bol de riz avec du poulet grillé..." 
               :disabled="analyzing"
             ></textarea>
           </div>
@@ -129,11 +113,11 @@
           <button 
             @click="analyzeWithAI" 
             :disabled="analyzing || !mealText.trim()" 
-            class="w-full bg-white hover:bg-slate-100 text-slate-900 font-black py-4 rounded-2xl transition-all active:scale-[0.98] flex justify-center items-center gap-2 disabled:opacity-50"
+            class="w-full bg-white hover:bg-slate-100 text-slate-900 font-black py-4 md:py-5 rounded-2xl transition-all active:scale-[0.98] flex justify-center items-center gap-2 disabled:opacity-50 shadow-xl"
           >
-            <Sparkles v-if="!analyzing" :size="18" />
-            <div v-else class="w-5 h-5 border-2 border-slate-900 border-t-transparent rounded-full animate-spin"></div>
-            {{ analyzing ? 'Analyse en cours...' : 'Analyser le repas' }}
+            <Sparkles v-if="!analyzing" :size="18" stroke-width="2.5" />
+            <div v-else class="w-5 h-5 border-3 border-slate-900/10 border-t-slate-900 rounded-full animate-spin"></div>
+            {{ analyzing ? 'Analyse...' : 'Analyser le repas' }}
           </button>
         </div>
 
@@ -177,68 +161,68 @@
       <!-- Meals List -->
       <section>
         <div class="flex items-center justify-between mb-6">
-          <h3 class="text-xl font-extrabold text-slate-900 tracking-tight">Journal nutritionnel</h3>
+          <h3 class="text-xl font-black text-slate-900 tracking-tight">Journal nutritionnel</h3>
         </div>
         
-        <div v-if="todaysMeals.length === 0" class="flex flex-col items-center justify-center py-16 px-8 bg-slate-50/50 rounded-[2rem] border border-dashed border-slate-200">
+        <div v-if="todaysMeals.length === 0" class="flex flex-col items-center justify-center py-16 px-8 bg-slate-50/50 rounded-[2.5rem] border border-dashed border-slate-200 shadow-inner">
           <div class="w-16 h-16 bg-white rounded-2xl flex items-center justify-center text-slate-300 border border-slate-100 mb-4 shadow-sm">
-            <Utensils :size="32" />
+            <Utensils :size="32" stroke-width="1.5" />
           </div>
-          <p class="text-slate-400 font-bold text-center">Aucun repas pour ce jour</p>
-          <p class="text-slate-400 text-xs text-center mt-1">Utilisez l'enregistreur magique ci-dessus.</p>
+          <p class="text-slate-400 font-black text-[10px] uppercase tracking-[0.2em] text-center">Aucun repas pour ce jour</p>
+          <p class="text-slate-300 text-[10px] font-bold text-center mt-2">Utilisez l'enregistreur magique ci-dessus.</p>
         </div>
         
-        <div class="space-y-3">
+        <div class="space-y-4">
           <div 
             v-for="meal in todaysMeals" 
             :key="meal.id"
-            class="group bg-white p-5 rounded-2xl border border-slate-100 hover:border-slate-300 transition-all flex flex-col gap-4 relative overflow-hidden"
+            class="group bg-white p-5 md:p-6 rounded-2xl md:rounded-3xl border border-slate-100 hover:border-slate-300 transition-all flex flex-col gap-5 relative overflow-hidden shadow-sm hover:shadow-xl hover:shadow-slate-200/40"
             :class="{ 'opacity-50 grayscale-[0.5]': meal.is_skipped }"
           >
             <div class="flex justify-between items-start">
               <div class="flex flex-col">
-                <h4 class="font-black text-slate-800 text-base group-hover:text-slate-900 transition-colors" :class="{ 'line-through': meal.is_skipped }">
+                <h4 class="font-black text-slate-800 text-base md:text-lg group-hover:text-slate-900 transition-colors" :class="{ 'line-through': meal.is_skipped }">
                   {{ meal.meal_name }}
                 </h4>
-                <p class="text-[10px] uppercase font-bold tracking-widest text-slate-400 mt-1">
+                <p class="text-[10px] uppercase font-black tracking-widest text-indigo-500/60 mt-1">
                   {{ meal.calories }} kcal
                 </p>
               </div>
-              <div class="flex gap-1 opacity-20 group-hover:opacity-100 transition-opacity">
+              <div class="flex gap-0.5 md:gap-1 opacity-40 group-hover:opacity-100 transition-opacity">
                 <button @click="toggleSkipMeal(meal)" class="p-1.5 transition-colors" :class="meal.is_skipped ? 'text-indigo-600' : 'text-slate-400 hover:text-indigo-600'" :title="meal.is_skipped ? 'Manger' : 'Passer'">
-                  <CheckCircle2 v-if="meal.is_skipped" :size="16" />
-                  <Circle v-else :size="16" />
+                  <CheckCircle2 v-if="meal.is_skipped" :size="16" md:size="18" />
+                  <Circle v-else :size="16" md:size="18" />
                 </button>
                 <button @click="saveToLibrary(meal)" class="p-1.5 text-slate-400 hover:text-emerald-600 transition-colors" title="Library">
-                  <Save :size="16" />
+                  <Save :size="16" md:size="18" />
                 </button>
                 <button @click="openEditModal(meal)" class="p-1.5 text-slate-400 hover:text-indigo-600 transition-colors" title="Edit">
-                  <Pencil :size="16" />
+                  <Pencil :size="16" md:size="18" />
                 </button>
                 <button @click="deleteMeal(meal.id)" class="p-1.5 text-slate-400 hover:text-rose-600 transition-colors" title="Delete">
-                  <Trash2 :size="16" />
+                  <Trash2 :size="16" md:size="18" />
                 </button>
               </div>
             </div>
             
-            <div class="grid grid-cols-3 gap-2">
-              <div class="flex flex-col gap-1">
-                <div class="h-1 w-full bg-slate-50 rounded-full border border-slate-100/50">
-                  <div class="h-full bg-blue-500 rounded-full" :style="{ width: Math.min(100, (meal.protein / (meal.calories/10) * 100)) + '%' }"></div>
+            <div class="grid grid-cols-3 gap-3">
+              <div class="flex flex-col gap-2">
+                <div class="h-1.5 w-full bg-slate-50 rounded-full border border-slate-100 shadow-inner overflow-hidden">
+                  <div class="h-full bg-blue-500 rounded-full" :style="{ width: Math.min(100, (meal.protein / (meal.calories/10 || 1) * 100)) + '%' }"></div>
                 </div>
-                <span class="text-[10px] font-black text-slate-400 uppercase">{{ meal.protein }}g P</span>
+                <span class="text-[9px] font-black text-slate-400 uppercase tracking-tighter">{{ meal.protein }}g Prot</span>
               </div>
-              <div class="flex flex-col gap-1">
-                <div class="h-1 w-full bg-slate-50 rounded-full border border-slate-100/50">
-                  <div class="h-full bg-amber-500 rounded-full" :style="{ width: Math.min(100, (meal.carbs / (meal.calories/10) * 100)) + '%' }"></div>
+              <div class="flex flex-col gap-2">
+                <div class="h-1.5 w-full bg-slate-50 rounded-full border border-slate-100 shadow-inner overflow-hidden">
+                  <div class="h-full bg-amber-500 rounded-full" :style="{ width: Math.min(100, (meal.carbs / (meal.calories/10 || 1) * 100)) + '%' }"></div>
                 </div>
-                <span class="text-[10px] font-black text-slate-400 uppercase">{{ meal.carbs }}g G</span>
+                <span class="text-[9px] font-black text-slate-400 uppercase tracking-tighter">{{ meal.carbs }}g Gluc</span>
               </div>
-              <div class="flex flex-col gap-1">
-                <div class="h-1 w-full bg-slate-50 rounded-full border border-slate-100/50">
-                  <div class="h-full bg-emerald-500 rounded-full" :style="{ width: Math.min(100, (meal.fats / (meal.calories/20) * 100)) + '%' }"></div>
+              <div class="flex flex-col gap-2">
+                <div class="h-1.5 w-full bg-slate-50 rounded-full border border-slate-100 shadow-inner overflow-hidden">
+                  <div class="h-full bg-emerald-500 rounded-full" :style="{ width: Math.min(100, (meal.fats / (meal.calories/20 || 1) * 100)) + '%' }"></div>
                 </div>
-                <span class="text-[10px] font-black text-slate-400 uppercase">{{ meal.fats }}g L</span>
+                <span class="text-[9px] font-black text-slate-400 uppercase tracking-tighter">{{ meal.fats }}g Lipi</span>
               </div>
             </div>
             
