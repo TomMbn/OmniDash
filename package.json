@@ -10,7 +10,10 @@
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.39.8",
+    "chart.js": "^4.5.1",
+    "lucide-vue-next": "^0.577.0",
     "vue": "^3.4.21",
+    "vue-chartjs": "^5.3.3",
     "vue-router": "^4.3.0"
   },
   "devDependencies": {

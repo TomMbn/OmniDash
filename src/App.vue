@@ -1,27 +1,46 @@
 <template>
-  <div class="min-h-screen bg-gray-50 flex flex-col md:flex-row pb-16 md:pb-0 h-screen overflow-hidden">
+  <div class="min-h-screen bg-slate-50 flex flex-col md:flex-row pb-16 md:pb-0 h-screen overflow-hidden text-slate-900">
     <!-- Sidebar for Desktop -->
-    <aside v-if="user" class="hidden md:flex flex-col w-64 bg-white border-r border-gray-100 flex-shrink-0">
-      <div class="h-16 flex items-center justify-between px-6 border-b border-gray-100">
-        <h1 class="text-xl font-bold text-indigo-600">OmniDash</h1>
+    <aside v-if="user" class="hidden md:flex flex-col w-64 bg-white border-r border-slate-100 flex-shrink-0 relative">
+      <div class="h-20 flex items-center px-8">
+        <h1 class="text-xl font-black tracking-tight text-slate-900 flex items-center gap-2">
+          <div class="w-8 h-8 bg-indigo-600 rounded-xl flex items-center justify-center text-white">
+            <Activity :size="20" stroke-width="3" />
+          </div>
+          OmniDash
+        </h1>
       </div>
-      <nav class="flex-1 px-4 py-6 space-y-1 overflow-y-auto">
-        <router-link to="/" class="nav-item">
-          <span class="text-lg mr-3">📊</span> Dashboard
+
+      <nav class="flex-1 px-4 py-4 space-y-1.5 overflow-y-auto">
+        <router-link to="/" class="nav-item group">
+          <div class="active-bar"></div>
+          <LayoutDashboard :size="20" class="icon" />
+          <span class="font-bold">Dashboard</span>
         </router-link>
-        <router-link to="/musculation" class="nav-item">
-          <span class="text-lg mr-3">💪</span> Musculation
+        
+        <router-link to="/musculation" class="nav-item group">
+          <div class="active-bar"></div>
+          <Dumbbell :size="20" class="icon" />
+          <span class="font-bold">Musculation</span>
         </router-link>
-        <router-link to="/nutrition" class="nav-item">
-          <span class="text-lg mr-3">🥗</span> Nutrition
+        
+        <router-link to="/nutrition" class="nav-item group">
+          <div class="active-bar"></div>
+          <Utensils :size="20" class="icon" />
+          <span class="font-bold">Nutrition</span>
         </router-link>
-        <router-link to="/sommeil" class="nav-item">
-          <span class="text-lg mr-3">😴</span> Sommeil
+        
+        <router-link to="/sommeil" class="nav-item group">
+          <div class="active-bar"></div>
+          <Moon :size="20" class="icon" />
+          <span class="font-bold">Sommeil</span>
         </router-link>
       </nav>
-      <div class="p-4 border-t border-gray-100">
-        <button @click="handleLogout" class="w-full flex items-center justify-center px-4 py-2.5 text-sm font-medium text-red-600 bg-red-50 hover:bg-red-100 rounded-lg transition-colors">
-          <span class="mr-2">🚪</span> Se déconnecter
+
+      <div class="p-6 border-t border-slate-50">
+        <button @click="handleLogout" class="w-full flex items-center justify-center gap-3 px-4 py-3 text-sm font-black text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-2xl transition-all group">
+          <LogOut :size="18" class="group-hover:translate-x-0.5 transition-transform" /> 
+          Se déconnecter
         </button>
       </div>
     </aside>
@@ -29,39 +48,38 @@
     <!-- Main Content -->
     <main class="flex-1 flex flex-col min-w-0" :class="{ 'h-screen': !user }">
       <!-- Mobile Header -->
-      <header v-if="user" class="h-16 flex items-center justify-between md:hidden bg-white border-b border-gray-100 px-4 flex-shrink-0">
-        <h1 class="text-xl font-bold text-indigo-600">OmniDash</h1>
-        <button @click="handleLogout" class="text-sm font-medium text-red-600 p-2">
-          Déconnexion
+      <header v-if="user" class="h-16 flex items-center justify-between md:hidden bg-white border-b border-slate-100 px-6 flex-shrink-0">
+        <h1 class="text-lg font-black tracking-tight flex items-center gap-2">
+          <Activity :size="18" class="text-indigo-600" />
+          OmniDash
+        </h1>
+        <button @click="handleLogout" class="text-slate-400 hover:text-rose-600 p-2 transition-colors">
+          <LogOut :size="20" />
         </button>
       </header>
-      <!-- Web Wrapper for no auth pages (like Login) -->
-      <div v-else-if="!user" class="absolute top-4 left-4 md:hidden z-10 w-full text-center">
-        <!-- Logo on mobile login screen could be here if needed -->
-      </div>
-      
-      <div class="flex-1 p-4 md:p-8 overflow-y-auto">
+
+      <div class="flex-1 p-4 md:p-10 overflow-y-auto bg-slate-50/50">
         <router-view></router-view>
       </div>
     </main>
 
     <!-- Bottom Navigation for Mobile -->
-    <nav v-if="user" class="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-100 flex justify-around items-center h-16 safe-area-pb z-50">
+    <nav v-if="user" class="md:hidden fixed bottom-0 left-0 right-0 bg-white/80 backdrop-blur-lg border-t border-slate-100 flex justify-around items-center h-16 safe-area-pb z-50 px-2">
       <router-link to="/" class="mobile-nav-item">
-        <span class="text-xl leading-none mb-1">📊</span>
-        <span class="text-[10px] font-medium leading-none">Dash</span>
+        <LayoutDashboard :size="22" />
+        <span class="text-[10px] font-bold mt-1">Dash</span>
       </router-link>
       <router-link to="/musculation" class="mobile-nav-item">
-        <span class="text-xl leading-none mb-1">💪</span>
-        <span class="text-[10px] font-medium leading-none">Muscu</span>
+        <Dumbbell :size="22" />
+        <span class="text-[10px] font-bold mt-1">Muscu</span>
       </router-link>
       <router-link to="/nutrition" class="mobile-nav-item">
-        <span class="text-xl leading-none mb-1">🥗</span>
-        <span class="text-[10px] font-medium leading-none">Nutri</span>
+        <Utensils :size="22" />
+        <span class="text-[10px] font-bold mt-1">Nutri</span>
       </router-link>
       <router-link to="/sommeil" class="mobile-nav-item">
-        <span class="text-xl leading-none mb-1">😴</span>
-        <span class="text-[10px] font-medium leading-none">Sommeil</span>
+        <Moon :size="22" />
+        <span class="text-[10px] font-bold mt-1">Sleep</span>
       </router-link>
     </nav>
   </div>
@@ -70,6 +88,14 @@
 <script setup>
 import { useRouter } from 'vue-router'
 import { useAuth } from '@/composables/useAuth'
+import { 
+  LayoutDashboard, 
+  Dumbbell, 
+  Utensils, 
+  Moon, 
+  LogOut,
+  Activity
+} from 'lucide-vue-next'
 
 const router = useRouter()
 const { user, logout } = useAuth()
@@ -86,16 +112,34 @@ const handleLogout = async () => {
 
 <style>
 .nav-item {
-  @apply flex items-center px-4 py-2.5 rounded-lg text-sm font-medium text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition-colors;
+  @apply relative flex items-center gap-3 px-5 py-3.5 rounded-2xl text-sm font-medium text-slate-400 hover:text-slate-900 transition-all duration-300;
 }
-.router-link-exact-active.nav-item {
-  @apply bg-indigo-50 text-indigo-600;
+
+.nav-item .icon {
+  @apply text-slate-300 group-hover:text-slate-900 transition-colors;
+}
+
+.nav-item .active-bar {
+  @apply absolute left-0 w-1 h-0 bg-indigo-600 rounded-full transition-all duration-300 opacity-0;
+}
+
+.router-link-active.nav-item {
+  @apply bg-indigo-50/50 text-indigo-600;
+}
+
+.router-link-active.nav-item .icon {
+  @apply text-indigo-600;
+}
+
+.router-link-active.nav-item .active-bar {
+  @apply h-6 opacity-100;
 }
 
 .mobile-nav-item {
-  @apply flex flex-col items-center justify-center flex-1 h-full text-gray-400 hover:text-indigo-600 transition-colors pt-1;
+  @apply flex flex-col items-center justify-center flex-1 h-full text-slate-300 hover:text-indigo-600 transition-all;
 }
-.router-link-exact-active.mobile-nav-item {
+
+.router-link-active.mobile-nav-item {
   @apply text-indigo-600;
 }
 </style>
