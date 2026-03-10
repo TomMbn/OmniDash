@@ -1,5 +1,9 @@
 <template>
-  <div class="animate-fade-in max-w-2xl mx-auto pb-24 px-4 sm:px-6">
+  <div 
+    class="animate-fade-in max-w-2xl mx-auto pb-24 px-4 sm:px-6 select-none"
+    @touchstart="handleTouchStart"
+    @touchend="handleTouchEnd"
+  >
     <!-- Header Section -->
     <header class="flex flex-col gap-6 mb-8 md:mb-10 pt-4 md:pt-4">
       <div class="flex justify-between items-center">
@@ -21,7 +25,7 @@
       </div>
 
       <!-- Date Navigator -->
-      <div class="flex items-center justify-between bg-white rounded-2xl border border-slate-100 p-1.5 shadow-sm">
+      <div class="flex items-center justify-between bg-white rounded-2xl border border-slate-100 p-1.5 shadow-sm select-none">
         <button @click="changeDate(-1)" class="p-2.5 text-slate-400 hover:text-slate-900 hover:bg-slate-50 rounded-xl transition-all active:scale-90">
           <ChevronLeft :size="20" />
         </button>
@@ -233,359 +237,369 @@
     </template>
 
     <!-- Meal Prep Library Modal -->
-    <div v-if="showLibrary" class="fixed inset-0 z-50 overflow-hidden flex items-center justify-center p-4 sm:p-6">
-      <div class="fixed inset-0 bg-slate-900/40 backdrop-blur-md transition-opacity" @click="showLibrary = false"></div>
+    <Teleport to="body">
+      <div v-if="showLibrary" class="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm h-[100dvh]">
+        <div class="fixed inset-0" @click="showLibrary = false"></div>
 
-      <div class="relative w-full max-w-xl bg-white rounded-[2.5rem] shadow-2xl overflow-hidden flex flex-col max-h-[90vh] animate-slide-up">
-        <div class="p-8 flex justify-between items-center border-b border-slate-50">
-          <div class="flex items-center gap-3">
-            <div class="p-2.5 bg-indigo-50 rounded-2xl text-indigo-600">
-              <Archive :size="24" />
+        <div class="relative w-full max-w-xl mx-4 bg-white rounded-[2.5rem] shadow-2xl overflow-hidden flex flex-col max-h-[90vh] animate-slide-up">
+          <div class="p-8 flex justify-between items-center border-b border-slate-50">
+            <div class="flex items-center gap-3">
+              <div class="p-2.5 bg-indigo-50 rounded-2xl text-indigo-600">
+                <Archive :size="24" />
+              </div>
+              <h3 class="text-2xl font-black text-slate-900 tracking-tight">Mon Meal Prep</h3>
             </div>
-            <h3 class="text-2xl font-black text-slate-900 tracking-tight">Mon Meal Prep</h3>
+            <button @click="showLibrary = false" class="p-2 text-slate-400 hover:text-slate-900 hover:bg-slate-100 rounded-full transition-all">
+              <X :size="24" />
+            </button>
           </div>
-          <button @click="showLibrary = false" class="p-2 text-slate-400 hover:text-slate-900 hover:bg-slate-100 rounded-full transition-all">
-            <X :size="24" />
-          </button>
-        </div>
 
-        <div class="flex-1 overflow-y-auto p-8 space-y-4">
-          <div v-if="loadingLibrary" class="flex justify-center py-12">
-            <div class="w-8 h-8 border-4 border-indigo-100 border-t-indigo-600 rounded-full animate-spin"></div>
+          <div class="flex-1 overflow-y-auto p-8 space-y-4">
+            <div v-if="loadingLibrary" class="flex justify-center py-12">
+              <div class="w-8 h-8 border-4 border-indigo-100 border-t-indigo-600 rounded-full animate-spin"></div>
+            </div>
+            
+            <div v-else-if="savedMeals.length === 0" class="text-center py-12 px-6">
+              <div class="w-16 h-16 bg-slate-50 rounded-2xl flex items-center justify-center text-slate-300 mx-auto mb-4">
+                <Utensils :size="32" />
+              </div>
+              <p class="text-slate-500 font-bold">Votre bibliothèque est vide</p>
+              <p class="text-slate-400 text-sm mt-2">Enregistrez vos créations depuis le journal principal pour les retrouver ici.</p>
+            </div>
+
+            <div v-else class="space-y-3">
+              <div v-for="meal in savedMeals" :key="meal.id" class="group bg-slate-50 rounded-2xl p-5 border border-slate-100 hover:border-slate-200 transition-all">
+                <div class="flex justify-between items-start mb-4">
+                  <div class="flex flex-col">
+                    <h4 class="font-black text-slate-900 text-lg leading-tight">{{ meal.meal_name }}</h4>
+                    <p class="text-[10px] uppercase font-black tracking-widest text-slate-400 mt-1">{{ meal.calories }} kcal</p>
+                  </div>
+                  <div class="flex items-center gap-2">
+                    <button @click="openPlanModal(meal)" class="text-xs bg-slate-900 text-white px-4 py-2 rounded-xl font-black hover:bg-indigo-600 transition-all active:scale-[0.95]">
+                      Planifier
+                    </button>
+                    <button @click="deleteSavedMeal(meal.id)" class="p-2 text-slate-300 hover:text-rose-500 transition-colors">
+                      <Trash2 :size="18" />
+                    </button>
+                  </div>
+                </div>
+                <div class="grid grid-cols-3 gap-3">
+                  <div class="bg-white/50 rounded-xl p-2 border border-white flex flex-col items-center">
+                    <span class="text-[9px] font-black text-slate-400 uppercase tracking-tighter">Protéines</span>
+                    <span class="text-xs font-bold text-slate-700">{{ meal.protein }}g</span>
+                  </div>
+                  <div class="bg-white/50 rounded-xl p-2 border border-white flex flex-col items-center">
+                    <span class="text-[9px] font-black text-slate-400 uppercase tracking-tighter">Glucides</span>
+                    <span class="text-xs font-bold text-slate-700">{{ meal.carbs }}g</span>
+                  </div>
+                  <div class="bg-white/50 rounded-xl p-2 border border-white flex flex-col items-center">
+                    <span class="text-[9px] font-black text-slate-400 uppercase tracking-tighter">Lipides</span>
+                    <span class="text-xs font-bold text-slate-700">{{ meal.fats }}g</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </Teleport>
+
+    <!-- Planning Modal -->
+    <Teleport to="body">
+      <div v-if="showPlanningModal && planningMealPayload" class="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm h-[100dvh]">
+        <div class="fixed inset-0" @click="showPlanningModal = false"></div>
+
+        <div class="relative w-full max-w-sm mx-4 bg-white rounded-[2.5rem] shadow-2xl p-8 animate-scale-up">
+          <div class="flex items-center gap-3 mb-6">
+            <div class="p-2 bg-indigo-50 rounded-xl text-indigo-600">
+              <Calendar :size="20" />
+            </div>
+            <h3 class="text-xl font-black text-slate-900 tracking-tight">Planification</h3>
           </div>
           
-          <div v-else-if="savedMeals.length === 0" class="text-center py-12 px-6">
-            <div class="w-16 h-16 bg-slate-50 rounded-2xl flex items-center justify-center text-slate-300 mx-auto mb-4">
-              <Utensils :size="32" />
-            </div>
-            <p class="text-slate-500 font-bold">Votre bibliothèque est vide</p>
-            <p class="text-slate-400 text-sm mt-2">Enregistrez vos créations depuis le journal principal pour les retrouver ici.</p>
+          <div class="bg-slate-50 p-4 rounded-2xl border border-slate-100 mb-6">
+            <p class="text-[10px] uppercase font-black text-slate-400 mb-1 tracking-widest">Plat Sélectionné</p>
+            <p class="text-slate-900 font-bold">{{ planningMealPayload.meal_name }}</p>
           </div>
 
-          <div v-else class="space-y-3">
-            <div v-for="meal in savedMeals" :key="meal.id" class="group bg-slate-50 rounded-2xl p-5 border border-slate-100 hover:border-slate-200 transition-all">
-              <div class="flex justify-between items-start mb-4">
-                <div class="flex flex-col">
-                  <h4 class="font-black text-slate-900 text-lg leading-tight">{{ meal.meal_name }}</h4>
-                  <p class="text-[10px] uppercase font-black tracking-widest text-slate-400 mt-1">{{ meal.calories }} kcal</p>
+          <div class="space-y-2 mb-8 max-h-[30vh] overflow-y-auto pr-1">
+            <label 
+              v-for="day in planningDaysOptions" 
+              :key="day.dateStr" 
+              class="flex items-center justify-between p-4 rounded-2xl cursor-pointer transition-all border group"
+              :class="planningDatesSelection.includes(day.dateStr) ? 'bg-indigo-600 border-indigo-600' : 'bg-white border-slate-100 hover:border-slate-200'"
+            >
+              <span class="text-sm font-bold capitalize" :class="planningDatesSelection.includes(day.dateStr) ? 'text-white' : 'text-slate-700'">
+                {{ day.label }}
+              </span>
+              <div class="relative flex items-center">
+                <input type="checkbox" :value="day.dateStr" v-model="planningDatesSelection" class="sr-only">
+                <div 
+                  class="w-6 h-6 rounded-full border-2 transition-all flex items-center justify-center"
+                  :class="planningDatesSelection.includes(day.dateStr) ? 'bg-white border-white text-indigo-600' : 'border-slate-200 group-hover:border-slate-300'"
+                >
+                  <CheckCircle2 v-if="planningDatesSelection.includes(day.dateStr)" :size="16" />
                 </div>
-                <div class="flex items-center gap-2">
-                  <button @click="openPlanModal(meal)" class="text-xs bg-slate-900 text-white px-4 py-2 rounded-xl font-black hover:bg-indigo-600 transition-all active:scale-[0.95]">
-                    Planifier
-                  </button>
-                  <button @click="deleteSavedMeal(meal.id)" class="p-2 text-slate-300 hover:text-rose-500 transition-colors">
+              </div>
+            </label>
+          </div>
+
+          <div class="grid grid-cols-2 gap-3">
+            <button @click="showPlanningModal = false" class="py-4 rounded-2xl font-black text-slate-400 hover:text-slate-900 hover:bg-slate-50 transition-all text-sm">
+              Annuler
+            </button>
+            <button @click="dispatchPlannedMeals" class="bg-slate-900 hover:bg-black text-white py-4 rounded-2xl font-black transition-all active:scale-[0.95] text-sm shadow-xl flex items-center justify-center gap-2">
+              Valider {{ planningDatesSelection.length > 0 ? `(${planningDatesSelection.length})` : '' }}
+            </button>
+          </div>
+        </div>
+      </div>
+    </Teleport>
+
+    <!-- Settings Modal -->
+    <Teleport to="body">
+      <div v-if="showSettings" class="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm h-[100dvh]">
+        <div class="fixed inset-0" @click="showSettings = false"></div>
+
+        <div class="relative w-full max-w-xl mx-4 bg-white rounded-[2.5rem] shadow-2xl flex flex-col max-h-[90vh] animate-slide-up">
+          <div class="p-8 flex justify-between items-center border-b border-slate-50">
+            <div class="flex items-center gap-3">
+              <div class="p-2.5 bg-indigo-50 rounded-2xl text-indigo-600">
+                <Settings :size="24" />
+              </div>
+              <h3 class="text-2xl font-black text-slate-900 tracking-tight">Configuration</h3>
+            </div>
+            <button @click="showSettings = false" class="p-2 text-slate-400 hover:text-slate-900 hover:bg-slate-100 rounded-full transition-all">
+              <X :size="24" />
+            </button>
+          </div>
+
+          <div class="flex-1 overflow-y-auto p-8 space-y-8">
+            <!-- Biometry -->
+            <div class="space-y-4">
+              <h4 class="text-xs font-black text-slate-400 uppercase tracking-[0.2em]">Données Biométriques</h4>
+              <div class="grid grid-cols-2 gap-4">
+                <div class="space-y-1.5">
+                  <label class="text-[11px] font-bold text-slate-500 uppercase ml-1">Genre</label>
+                  <select v-model="userProfile.gender" class="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all font-bold text-slate-800 appearance-none">
+                    <option value="male">Homme</option>
+                    <option value="female">Femme</option>
+                  </select>
+                </div>
+                <div class="space-y-1.5">
+                  <label class="text-[11px] font-bold text-slate-500 uppercase ml-1">Âge</label>
+                  <input type="number" v-model.number="userProfile.age" class="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all font-bold text-slate-800">
+                </div>
+                <div class="space-y-1.5">
+                  <label class="text-[11px] font-bold text-slate-500 uppercase ml-1">Poids (kg)</label>
+                  <input type="number" v-model.number="userProfile.weight" step="0.1" class="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all font-bold text-slate-800">
+                </div>
+                <div class="space-y-1.5">
+                  <label class="text-[11px] font-bold text-slate-500 uppercase ml-1">Taille (cm)</label>
+                  <input type="number" v-model.number="userProfile.height" class="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all font-bold text-slate-800">
+                </div>
+              </div>
+            </div>
+
+            <!-- Activity & Goal -->
+            <div class="space-y-4">
+              <h4 class="text-xs font-black text-slate-400 uppercase tracking-[0.2em]">Mode de Vie</h4>
+              <div class="space-y-5">
+                <div class="space-y-1.5">
+                  <label class="text-[11px] font-bold text-slate-500 uppercase ml-1">Niveau d'activité</label>
+                  <select v-model.number="userProfile.activity_level" class="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all font-bold text-slate-800 appearance-none">
+                    <option :value="1.2">Sédentaire (Pas d'exercice)</option>
+                    <option :value="1.375">Légèrement actif (1-3 j/sem)</option>
+                    <option :value="1.55">Modérément actif (3-5 j/sem)</option>
+                    <option :value="1.725">Très actif (6-7 j/sem)</option>
+                    <option :value="1.9">Extrêmement actif (Pro + Sport intensity)</option>
+                  </select>
+                </div>
+
+                <div class="space-y-1.5">
+                  <label class="text-[11px] font-bold text-slate-500 uppercase ml-1">Objectif Principal</label>
+                  <div class="grid grid-cols-3 gap-2">
+                    <button v-for="type in [{id:'loss', l:'Sèche'}, {id:'maintenance', l:'Maintien'}, {id:'muscle', l:'Masse'}]" 
+                      :key="type.id"
+                      @click="userProfile.goal_type = type.id" 
+                      :class="userProfile.goal_type === type.id ? 'bg-slate-900 text-white shadow-lg' : 'bg-slate-50 text-slate-500 hover:bg-slate-100 border border-slate-100'"
+                      class="px-4 py-4 rounded-2xl font-black transition-all text-xs uppercase"
+                    >
+                      {{ type.l }}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Target Preview -->
+            <div class="bg-slate-900 rounded-[2rem] p-8 text-white relative overflow-hidden">
+              <h4 class="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-6">Cibles Automatiques</h4>
+              <div class="grid grid-cols-4 gap-4 text-center">
+                <div>
+                  <div class="text-[9px] text-slate-500 font-black uppercase mb-1 tracking-tighter">Calories</div>
+                  <div class="font-black text-lg text-rose-400">{{ calculatedGoals.calories }}</div>
+                </div>
+                <div>
+                  <div class="text-[9px] text-slate-500 font-black uppercase mb-1 tracking-tighter">Prot. (g)</div>
+                  <div class="font-black text-lg text-blue-400">{{ calculatedGoals.protein }}</div>
+                </div>
+                <div>
+                  <div class="text-[9px] text-slate-500 font-black uppercase mb-1 tracking-tighter">Gluc. (g)</div>
+                  <div class="font-black text-lg text-amber-400">{{ calculatedGoals.carbs }}</div>
+                </div>
+                <div>
+                  <div class="text-[9px] text-slate-500 font-black uppercase mb-1 tracking-tighter">Lip. (g)</div>
+                  <div class="font-black text-lg text-emerald-400">{{ calculatedGoals.fats }}</div>
+                </div>
+              </div>
+              <div class="absolute -bottom-4 -right-4 text-white opacity-5">
+                <Activity :size="120" />
+              </div>
+            </div>
+          </div>
+
+          <div class="p-8 border-t border-slate-50 grid grid-cols-2 gap-4">
+            <button @click="showSettings = false" class="py-4 rounded-2xl font-black text-slate-400 hover:text-slate-900 transition-colors uppercase text-xs tracking-widest">
+              Annuler
+            </button>
+            <button @click="saveUserSettings" :disabled="savingSettings" class="bg-indigo-600 hover:bg-indigo-700 text-white py-4 rounded-2xl font-black transition-all flex justify-center items-center gap-2 shadow-xl active:scale-[0.95] uppercase text-xs tracking-widest disabled:opacity-50">
+              <div v-if="savingSettings" class="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+              Sauvegarder
+            </button>
+          </div>
+        </div>
+      </div>
+    </Teleport>
+
+    <!-- Habits Modal -->
+    <Teleport to="body">
+      <div v-if="showHabits" class="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm h-[100dvh]">
+        <div class="fixed inset-0" @click="showHabits = false"></div>
+
+        <div class="relative w-full max-w-xl mx-4 bg-white rounded-[2.5rem] shadow-2xl flex flex-col max-h-[90vh] animate-slide-up">
+          <div class="p-8 flex justify-between items-center border-b border-slate-50">
+            <div class="flex items-center gap-3">
+              <div class="p-2.5 bg-indigo-50 rounded-2xl text-indigo-600">
+                <Repeat :size="24" />
+              </div>
+              <h3 class="text-2xl font-black text-slate-900 tracking-tight">Mes Habitudes</h3>
+            </div>
+            <button @click="showHabits = false" class="p-2 text-slate-400 hover:text-slate-900 hover:bg-slate-100 rounded-full transition-all">
+              <X :size="24" />
+            </button>
+          </div>
+
+          <div class="flex-1 overflow-y-auto p-8">
+            <div v-if="loadingHabits" class="flex justify-center py-12">
+              <div class="w-8 h-8 border-4 border-indigo-100 border-t-indigo-600 rounded-full animate-spin"></div>
+            </div>
+            
+            <div v-else class="space-y-6">
+              <div v-if="recurringMeals.length === 0" class="text-center py-8">
+                <p class="text-slate-400 font-bold">Aucune habitude enregistrée</p>
+              </div>
+              <div class="space-y-3">
+                <div v-for="habit in recurringMeals" :key="habit.id" class="flex items-center justify-between bg-slate-50 p-5 rounded-2xl border border-slate-100 hover:border-slate-200 transition-all group">
+                  <div class="flex flex-col">
+                    <h4 class="font-black text-slate-800 text-base leading-tight">{{ habit.meal_name }}</h4>
+                    <div class="text-[10px] font-black text-slate-400 uppercase flex gap-3 mt-1 tracking-widest">
+                      <span>{{ habit.calories }} kcal</span>
+                      <span>P {{ habit.protein }}g</span>
+                      <span>G {{ habit.carbs }}g</span>
+                      <span>L {{ habit.fats }}g</span>
+                    </div>
+                  </div>
+                  <button @click="deleteHabit(habit.id)" class="p-2 text-slate-300 hover:text-rose-500 opacity-0 group-hover:opacity-100 transition-all">
                     <Trash2 :size="18" />
                   </button>
                 </div>
               </div>
-              <div class="grid grid-cols-3 gap-3">
-                <div class="bg-white/50 rounded-xl p-2 border border-white flex flex-col items-center">
-                  <span class="text-[9px] font-black text-slate-400 uppercase tracking-tighter">Protéines</span>
-                  <span class="text-xs font-bold text-slate-700">{{ meal.protein }}g</span>
-                </div>
-                <div class="bg-white/50 rounded-xl p-2 border border-white flex flex-col items-center">
-                  <span class="text-[9px] font-black text-slate-400 uppercase tracking-tighter">Glucides</span>
-                  <span class="text-xs font-bold text-slate-700">{{ meal.carbs }}g</span>
-                </div>
-                <div class="bg-white/50 rounded-xl p-2 border border-white flex flex-col items-center">
-                  <span class="text-[9px] font-black text-slate-400 uppercase tracking-tighter">Lipides</span>
-                  <span class="text-xs font-bold text-slate-700">{{ meal.fats }}g</span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
 
-    <!-- Planning Modal -->
-    <div v-if="showPlanningModal && planningMealPayload" class="fixed inset-0 z-[60] flex items-center justify-center p-4">
-      <div class="fixed inset-0 bg-slate-900/60 backdrop-blur-xl transition-opacity" @click="showPlanningModal = false"></div>
-
-      <div class="relative w-full max-w-sm bg-white rounded-[2.5rem] shadow-2xl p-8 animate-scale-up">
-        <div class="flex items-center gap-3 mb-6">
-          <div class="p-2 bg-indigo-50 rounded-xl text-indigo-600">
-            <Calendar :size="20" />
-          </div>
-          <h3 class="text-xl font-black text-slate-900 tracking-tight">Planification</h3>
-        </div>
-        
-        <div class="bg-slate-50 p-4 rounded-2xl border border-slate-100 mb-6">
-          <p class="text-[10px] uppercase font-black text-slate-400 mb-1 tracking-widest">Plat Sélectionné</p>
-          <p class="text-slate-900 font-bold">{{ planningMealPayload.meal_name }}</p>
-        </div>
-
-        <div class="space-y-2 mb-8 max-h-[30vh] overflow-y-auto pr-1">
-          <label 
-            v-for="day in planningDaysOptions" 
-            :key="day.dateStr" 
-            class="flex items-center justify-between p-4 rounded-2xl cursor-pointer transition-all border group"
-            :class="planningDatesSelection.includes(day.dateStr) ? 'bg-indigo-600 border-indigo-600' : 'bg-white border-slate-100 hover:border-slate-200'"
-          >
-            <span class="text-sm font-bold capitalize" :class="planningDatesSelection.includes(day.dateStr) ? 'text-white' : 'text-slate-700'">
-              {{ day.label }}
-            </span>
-            <div class="relative flex items-center">
-              <input type="checkbox" :value="day.dateStr" v-model="planningDatesSelection" class="sr-only">
-              <div 
-                class="w-6 h-6 rounded-full border-2 transition-all flex items-center justify-center"
-                :class="planningDatesSelection.includes(day.dateStr) ? 'bg-white border-white text-indigo-600' : 'border-slate-200 group-hover:border-slate-300'"
-              >
-                <CheckCircle2 v-if="planningDatesSelection.includes(day.dateStr)" :size="16" />
-              </div>
-            </div>
-          </label>
-        </div>
-
-        <div class="grid grid-cols-2 gap-3">
-          <button @click="showPlanningModal = false" class="py-4 rounded-2xl font-black text-slate-400 hover:text-slate-900 hover:bg-slate-50 transition-all text-sm">
-            Annuler
-          </button>
-          <button @click="dispatchPlannedMeals" class="bg-slate-900 hover:bg-black text-white py-4 rounded-2xl font-black transition-all active:scale-[0.95] text-sm shadow-xl flex items-center justify-center gap-2">
-            Valider {{ planningDatesSelection.length > 0 ? `(${planningDatesSelection.length})` : '' }}
-          </button>
-        </div>
-      </div>
-    </div>
-
-    <!-- Settings Modal -->
-    <div v-if="showSettings" class="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 overflow-hidden">
-      <div class="fixed inset-0 bg-slate-900/40 backdrop-blur-md transition-opacity" @click="showSettings = false"></div>
-
-      <div class="relative w-full max-w-xl bg-white rounded-[2.5rem] shadow-2xl flex flex-col max-h-[90vh] animate-slide-up">
-        <div class="p-8 flex justify-between items-center border-b border-slate-50">
-          <div class="flex items-center gap-3">
-            <div class="p-2.5 bg-indigo-50 rounded-2xl text-indigo-600">
-              <Settings :size="24" />
-            </div>
-            <h3 class="text-2xl font-black text-slate-900 tracking-tight">Configuration</h3>
-          </div>
-          <button @click="showSettings = false" class="p-2 text-slate-400 hover:text-slate-900 hover:bg-slate-100 rounded-full transition-all">
-            <X :size="24" />
-          </button>
-        </div>
-
-        <div class="flex-1 overflow-y-auto p-8 space-y-8">
-          <!-- Biometry -->
-          <div class="space-y-4">
-            <h4 class="text-xs font-black text-slate-400 uppercase tracking-[0.2em]">Données Biométriques</h4>
-            <div class="grid grid-cols-2 gap-4">
-              <div class="space-y-1.5">
-                <label class="text-[11px] font-bold text-slate-500 uppercase ml-1">Genre</label>
-                <select v-model="userProfile.gender" class="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all font-bold text-slate-800 appearance-none">
-                  <option value="male">Homme</option>
-                  <option value="female">Femme</option>
-                </select>
-              </div>
-              <div class="space-y-1.5">
-                <label class="text-[11px] font-bold text-slate-500 uppercase ml-1">Âge</label>
-                <input type="number" v-model.number="userProfile.age" class="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all font-bold text-slate-800">
-              </div>
-              <div class="space-y-1.5">
-                <label class="text-[11px] font-bold text-slate-500 uppercase ml-1">Poids (kg)</label>
-                <input type="number" v-model.number="userProfile.weight" step="0.1" class="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all font-bold text-slate-800">
-              </div>
-              <div class="space-y-1.5">
-                <label class="text-[11px] font-bold text-slate-500 uppercase ml-1">Taille (cm)</label>
-                <input type="number" v-model.number="userProfile.height" class="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all font-bold text-slate-800">
-              </div>
-            </div>
-          </div>
-
-          <!-- Activity & Goal -->
-          <div class="space-y-4">
-            <h4 class="text-xs font-black text-slate-400 uppercase tracking-[0.2em]">Mode de Vie</h4>
-            <div class="space-y-5">
-              <div class="space-y-1.5">
-                <label class="text-[11px] font-bold text-slate-500 uppercase ml-1">Niveau d'activité</label>
-                <select v-model.number="userProfile.activity_level" class="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all font-bold text-slate-800 appearance-none">
-                  <option :value="1.2">Sédentaire (Pas d'exercice)</option>
-                  <option :value="1.375">Légèrement actif (1-3 j/sem)</option>
-                  <option :value="1.55">Modérément actif (3-5 j/sem)</option>
-                  <option :value="1.725">Très actif (6-7 j/sem)</option>
-                  <option :value="1.9">Extrêmement actif (Pro + Sport intensity)</option>
-                </select>
-              </div>
-
-              <div class="space-y-1.5">
-                <label class="text-[11px] font-bold text-slate-500 uppercase ml-1">Objectif Principal</label>
-                <div class="grid grid-cols-3 gap-2">
-                  <button v-for="type in [{id:'loss', l:'Sèche'}, {id:'maintenance', l:'Maintien'}, {id:'muscle', l:'Masse'}]" 
-                    :key="type.id"
-                    @click="userProfile.goal_type = type.id" 
-                    :class="userProfile.goal_type === type.id ? 'bg-slate-900 text-white shadow-lg' : 'bg-slate-50 text-slate-500 hover:bg-slate-100 border border-slate-100'"
-                    class="px-4 py-4 rounded-2xl font-black transition-all text-xs uppercase"
-                  >
-                    {{ type.l }}
+              <!-- New Habit Form -->
+              <div class="pt-8 border-t border-slate-100">
+                <h4 class="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-6">Ajouter un Modèle</h4>
+                <div class="space-y-4">
+                  <input v-model="newHabit.meal_name" type="text" placeholder="Nom du repas (ex: Shaker Whey)" class="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all font-bold text-slate-800">
+                  <div class="grid grid-cols-4 gap-3">
+                    <div class="space-y-1.5">
+                      <label class="text-[9px] font-black text-slate-400 uppercase ml-1 tracking-tighter">Cal</label>
+                      <input v-model.number="newHabit.calories" type="number" class="w-full p-3 bg-slate-50 border border-slate-100 rounded-xl focus:border-indigo-500 outline-none font-bold text-center">
+                    </div>
+                    <div class="space-y-1.5">
+                      <label class="text-[9px] font-black text-slate-400 uppercase ml-1 tracking-tighter">Prot</label>
+                      <input v-model.number="newHabit.protein" type="number" class="w-full p-3 bg-slate-50 border border-slate-100 rounded-xl focus:border-indigo-500 outline-none font-bold text-center">
+                    </div>
+                    <div class="space-y-1.5">
+                      <label class="text-[9px] font-black text-slate-400 uppercase ml-1 tracking-tighter">Gluc</label>
+                      <input v-model.number="newHabit.carbs" type="number" class="w-full p-3 bg-slate-50 border border-slate-100 rounded-xl focus:border-indigo-500 outline-none font-bold text-center">
+                    </div>
+                    <div class="space-y-1.5">
+                      <label class="text-[9px] font-black text-slate-400 uppercase ml-1 tracking-tighter">Lip</label>
+                      <input v-model.number="newHabit.fats" type="number" class="w-full p-3 bg-slate-50 border border-slate-100 rounded-xl focus:border-indigo-500 outline-none font-bold text-center">
+                    </div>
+                  </div>
+                  <button @click="addHabit" :disabled="!newHabit.meal_name" class="w-full bg-slate-900 hover:bg-black text-white py-4 rounded-2xl font-black transition-all flex justify-center items-center gap-2 shadow-xl active:scale-[0.95] disabled:opacity-50 uppercase text-xs tracking-widest mt-2">
+                    <Plus :size="18" /> Ajouter
                   </button>
                 </div>
               </div>
             </div>
           </div>
-
-          <!-- Target Preview -->
-          <div class="bg-slate-900 rounded-[2rem] p-8 text-white relative overflow-hidden">
-            <h4 class="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-6">Cibles Automatiques</h4>
-            <div class="grid grid-cols-4 gap-4 text-center">
-              <div>
-                <div class="text-[9px] text-slate-500 font-black uppercase mb-1 tracking-tighter">Calories</div>
-                <div class="font-black text-lg text-rose-400">{{ calculatedGoals.calories }}</div>
-              </div>
-              <div>
-                <div class="text-[9px] text-slate-500 font-black uppercase mb-1 tracking-tighter">Prot. (g)</div>
-                <div class="font-black text-lg text-blue-400">{{ calculatedGoals.protein }}</div>
-              </div>
-              <div>
-                <div class="text-[9px] text-slate-500 font-black uppercase mb-1 tracking-tighter">Gluc. (g)</div>
-                <div class="font-black text-lg text-amber-400">{{ calculatedGoals.carbs }}</div>
-              </div>
-              <div>
-                <div class="text-[9px] text-slate-500 font-black uppercase mb-1 tracking-tighter">Lip. (g)</div>
-                <div class="font-black text-lg text-emerald-400">{{ calculatedGoals.fats }}</div>
-              </div>
-            </div>
-            <div class="absolute -bottom-4 -right-4 text-white opacity-5">
-              <Activity :size="120" />
-            </div>
-          </div>
-        </div>
-
-        <div class="p-8 border-t border-slate-50 grid grid-cols-2 gap-4">
-          <button @click="showSettings = false" class="py-4 rounded-2xl font-black text-slate-400 hover:text-slate-900 transition-colors uppercase text-xs tracking-widest">
-            Annuler
-          </button>
-          <button @click="saveUserSettings" :disabled="savingSettings" class="bg-indigo-600 hover:bg-indigo-700 text-white py-4 rounded-2xl font-black transition-all flex justify-center items-center gap-2 shadow-xl active:scale-[0.95] uppercase text-xs tracking-widest disabled:opacity-50">
-            <div v-if="savingSettings" class="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-            Sauvegarder
-          </button>
         </div>
       </div>
-    </div>
-
-    <!-- Habits Modal -->
-    <div v-if="showHabits" class="fixed inset-0 z-50 flex items-center justify-center p-4 overflow-hidden">
-      <div class="fixed inset-0 bg-slate-900/40 backdrop-blur-md transition-opacity" @click="showHabits = false"></div>
-
-      <div class="relative w-full max-w-xl bg-white rounded-[2.5rem] shadow-2xl flex flex-col max-h-[90vh] animate-slide-up">
-        <div class="p-8 flex justify-between items-center border-b border-slate-50">
-          <div class="flex items-center gap-3">
-            <div class="p-2.5 bg-indigo-50 rounded-2xl text-indigo-600">
-              <Repeat :size="24" />
-            </div>
-            <h3 class="text-2xl font-black text-slate-900 tracking-tight">Mes Habitudes</h3>
-          </div>
-          <button @click="showHabits = false" class="p-2 text-slate-400 hover:text-slate-900 hover:bg-slate-100 rounded-full transition-all">
-            <X :size="24" />
-          </button>
-        </div>
-
-        <div class="flex-1 overflow-y-auto p-8">
-          <div v-if="loadingHabits" class="flex justify-center py-12">
-            <div class="w-8 h-8 border-4 border-indigo-100 border-t-indigo-600 rounded-full animate-spin"></div>
-          </div>
-          
-          <div v-else class="space-y-6">
-            <div v-if="recurringMeals.length === 0" class="text-center py-8">
-              <p class="text-slate-400 font-bold">Aucune habitude enregistrée</p>
-            </div>
-            <div class="space-y-3">
-              <div v-for="habit in recurringMeals" :key="habit.id" class="flex items-center justify-between bg-slate-50 p-5 rounded-2xl border border-slate-100 hover:border-slate-200 transition-all group">
-                <div class="flex flex-col">
-                  <h4 class="font-black text-slate-800 text-base leading-tight">{{ habit.meal_name }}</h4>
-                  <div class="text-[10px] font-black text-slate-400 uppercase flex gap-3 mt-1 tracking-widest">
-                    <span>{{ habit.calories }} kcal</span>
-                    <span>P {{ habit.protein }}g</span>
-                    <span>G {{ habit.carbs }}g</span>
-                    <span>L {{ habit.fats }}g</span>
-                  </div>
-                </div>
-                <button @click="deleteHabit(habit.id)" class="p-2 text-slate-300 hover:text-rose-500 opacity-0 group-hover:opacity-100 transition-all">
-                  <Trash2 :size="18" />
-                </button>
-              </div>
-            </div>
-
-            <!-- New Habit Form -->
-            <div class="pt-8 border-t border-slate-100">
-              <h4 class="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-6">Ajouter un Modèle</h4>
-              <div class="space-y-4">
-                <input v-model="newHabit.meal_name" type="text" placeholder="Nom du repas (ex: Shaker Whey)" class="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all font-bold text-slate-800">
-                <div class="grid grid-cols-4 gap-3">
-                  <div class="space-y-1.5">
-                    <label class="text-[9px] font-black text-slate-400 uppercase ml-1 tracking-tighter">Cal</label>
-                    <input v-model.number="newHabit.calories" type="number" class="w-full p-3 bg-slate-50 border border-slate-100 rounded-xl focus:border-indigo-500 outline-none font-bold text-center">
-                  </div>
-                  <div class="space-y-1.5">
-                    <label class="text-[9px] font-black text-slate-400 uppercase ml-1 tracking-tighter">Prot</label>
-                    <input v-model.number="newHabit.protein" type="number" class="w-full p-3 bg-slate-50 border border-slate-100 rounded-xl focus:border-indigo-500 outline-none font-bold text-center">
-                  </div>
-                  <div class="space-y-1.5">
-                    <label class="text-[9px] font-black text-slate-400 uppercase ml-1 tracking-tighter">Gluc</label>
-                    <input v-model.number="newHabit.carbs" type="number" class="w-full p-3 bg-slate-50 border border-slate-100 rounded-xl focus:border-indigo-500 outline-none font-bold text-center">
-                  </div>
-                  <div class="space-y-1.5">
-                    <label class="text-[9px] font-black text-slate-400 uppercase ml-1 tracking-tighter">Lip</label>
-                    <input v-model.number="newHabit.fats" type="number" class="w-full p-3 bg-slate-50 border border-slate-100 rounded-xl focus:border-indigo-500 outline-none font-bold text-center">
-                  </div>
-                </div>
-                <button @click="addHabit" :disabled="!newHabit.meal_name" class="w-full bg-slate-900 hover:bg-black text-white py-4 rounded-2xl font-black transition-all flex justify-center items-center gap-2 shadow-xl active:scale-[0.95] disabled:opacity-50 uppercase text-xs tracking-widest mt-2">
-                  <Plus :size="18" /> Ajouter
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
+    </Teleport>
 
     <!-- Edit Meal Modal -->
-    <div v-if="showEditModal && editingMeal" class="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div class="fixed inset-0 bg-slate-900/40 backdrop-blur-md transition-opacity" @click="showEditModal = false"></div>
+    <Teleport to="body">
+      <div v-if="showEditModal && editingMeal" class="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm h-[100dvh]">
+        <div class="fixed inset-0" @click="showEditModal = false"></div>
 
-      <div class="relative w-full max-w-md bg-white rounded-[2.5rem] shadow-2xl p-8 animate-scale-up">
-        <div class="flex items-center gap-3 mb-8">
-          <div class="p-2.5 bg-indigo-50 rounded-2xl text-indigo-600">
-            <Pencil :size="22" />
+        <div class="relative w-full max-w-md mx-4 bg-white rounded-[2.5rem] shadow-2xl p-8 animate-scale-up">
+          <div class="flex items-center gap-3 mb-8">
+            <div class="p-2.5 bg-indigo-50 rounded-2xl text-indigo-600">
+              <Pencil :size="22" />
+            </div>
+            <h3 class="text-2xl font-black text-slate-900 tracking-tight">Modifier</h3>
           </div>
-          <h3 class="text-2xl font-black text-slate-900 tracking-tight">Modifier</h3>
-        </div>
 
-        <div class="space-y-6">
-          <div class="space-y-1.5">
-            <label class="text-[11px] font-bold text-slate-500 uppercase ml-1">Désignation</label>
-            <input v-model="editingMeal.meal_name" type="text" class="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all font-bold text-slate-800">
+          <div class="space-y-6">
+            <div class="space-y-1.5">
+              <label class="text-[11px] font-bold text-slate-500 uppercase ml-1">Désignation</label>
+              <input v-model="editingMeal.meal_name" type="text" class="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all font-bold text-slate-800">
+            </div>
+            
+            <div class="grid grid-cols-2 gap-4">
+              <div class="space-y-1.5">
+                <label class="text-[11px] font-bold text-slate-500 uppercase ml-1">Calories</label>
+                <input v-model.number="editingMeal.calories" type="number" class="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:border-indigo-500 outline-none font-bold">
+              </div>
+              <div class="space-y-1.5">
+                <label class="text-[11px] font-bold text-slate-500 uppercase ml-1">Protéines (g)</label>
+                <input v-model.number="editingMeal.protein" type="number" class="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:border-indigo-500 outline-none font-bold">
+              </div>
+              <div class="space-y-1.5">
+                <label class="text-[11px] font-bold text-slate-500 uppercase ml-1">Glucides (g)</label>
+                <input v-model.number="editingMeal.carbs" type="number" class="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:border-indigo-500 outline-none font-bold">
+              </div>
+              <div class="space-y-1.5">
+                <label class="text-[11px] font-bold text-slate-500 uppercase ml-1">Lipides (g)</label>
+                <input v-model.number="editingMeal.fats" type="number" class="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:border-indigo-500 outline-none font-bold">
+              </div>
+            </div>
           </div>
-          
-          <div class="grid grid-cols-2 gap-4">
-            <div class="space-y-1.5">
-              <label class="text-[11px] font-bold text-slate-500 uppercase ml-1">Calories</label>
-              <input v-model.number="editingMeal.calories" type="number" class="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:border-indigo-500 outline-none font-bold">
-            </div>
-            <div class="space-y-1.5">
-              <label class="text-[11px] font-bold text-slate-500 uppercase ml-1">Protéines (g)</label>
-              <input v-model.number="editingMeal.protein" type="number" class="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:border-indigo-500 outline-none font-bold">
-            </div>
-            <div class="space-y-1.5">
-              <label class="text-[11px] font-bold text-slate-500 uppercase ml-1">Glucides (g)</label>
-              <input v-model.number="editingMeal.carbs" type="number" class="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:border-indigo-500 outline-none font-bold">
-            </div>
-            <div class="space-y-1.5">
-              <label class="text-[11px] font-bold text-slate-500 uppercase ml-1">Lipides (g)</label>
-              <input v-model.number="editingMeal.fats" type="number" class="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:border-indigo-500 outline-none font-bold">
-            </div>
-          </div>
-        </div>
 
-        <div class="mt-10 flex gap-3">
-          <button @click="showEditModal = false" class="flex-1 py-4 rounded-2xl font-black text-slate-400 hover:text-slate-900 transition-colors uppercase text-xs tracking-widest">
-            Annuler
-          </button>
-          <button @click="updateMeal" class="flex-1 bg-slate-900 hover:bg-black text-white py-4 rounded-2xl font-black transition-all shadow-xl active:scale-[0.95] uppercase text-xs tracking-widest">
-            Mettre à jour
-          </button>
+          <div class="mt-10 flex gap-3">
+            <button @click="showEditModal = false" class="flex-1 py-4 rounded-2xl font-black text-slate-400 hover:text-slate-900 transition-colors uppercase text-xs tracking-widest">
+              Annuler
+            </button>
+            <button @click="updateMeal" class="flex-1 bg-slate-900 hover:bg-black text-white py-4 rounded-2xl font-black transition-all shadow-xl active:scale-[0.95] uppercase text-xs tracking-widest">
+              Mettre à jour
+            </button>
+          </div>
         </div>
       </div>
-    </div>
+    </Teleport>
   </div>
 </template>
 
@@ -618,6 +632,21 @@ import {
 } from 'lucide-vue-next'
 
 const { user } = useAuth()
+
+// Swipe Navigation
+const touchStart = ref(0)
+const handleTouchStart = (e) => {
+  touchStart.value = e.touches[0].clientX
+}
+const handleTouchEnd = (e) => {
+  const touchEnd = e.changedTouches[0].clientX
+  const delta = touchEnd - touchStart.value
+  if (Math.abs(delta) > 50) {
+    if (delta > 0) changeDate(-1) // Right swipe -> Previous day
+    else changeDate(1) // Left swipe -> Next day
+  }
+}
+
 
 // State
 const loading = ref(true)
@@ -1094,5 +1123,22 @@ const buildNextDays = () => {
 }
 
 const planningDaysOptions = buildNextDays()
+
+// Body scroll lock logic
+const isAnyModalOpen = computed(() => 
+  showSettings.value || 
+  showHabits.value || 
+  showLibrary.value || 
+  showPlanningModal.value || 
+  showEditModal.value
+)
+
+watch(isAnyModalOpen, (isOpen) => {
+  if (isOpen) {
+    document.body.style.overflow = 'hidden'
+  } else {
+    document.body.style.overflow = ''
+  }
+})
 
 </script>

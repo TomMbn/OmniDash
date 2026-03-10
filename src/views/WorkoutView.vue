@@ -1,5 +1,5 @@
 <template>
-  <div class="animate-fade-in max-w-5xl mx-auto pb-24 px-4 sm:px-6">
+  <div class="animate-fade-in max-w-5xl mx-auto pb-24 px-4 sm:px-6 select-none">
     <!-- Header with Dynamic Tab Switch -->
     <header class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8 md:mb-10 pt-4 md:pt-4">
       <div class="flex items-center gap-3">
@@ -182,18 +182,18 @@
                 <div 
                   v-for="(ex, i) in selectedPlan.template.exercises" 
                   :key="i"
-                  class="flex items-center justify-between p-5 rounded-3xl transition-all"
+                  class="flex items-start justify-between p-5 rounded-3xl transition-all"
                   :class="editingTemplate ? 'bg-indigo-50/50 border border-indigo-100' : 'bg-slate-50 border border-transparent'"
                 >
                   <div class="flex items-center gap-4 min-w-0">
                     <span class="text-xs font-black text-slate-300 w-4 text-center">{{ i + 1 }}</span>
                     <div class="min-w-0">
-                      <p class="text-sm font-black text-slate-800 truncate">{{ ex.name }}</p>
+                      <p class="text-sm font-black text-slate-800 whitespace-normal break-words leading-tight">{{ ex.name }}</p>
                       <p v-if="ex.focus && !editingTemplate" class="text-[9px] font-bold text-slate-400 uppercase tracking-tighter">{{ ex.focus }}</p>
                     </div>
                   </div>
                   
-                  <div class="flex items-center gap-1.5 flex-shrink-0">
+                  <div class="flex items-center gap-1.5 flex-shrink-0 pt-1">
                     <template v-if="editingTemplate">
                       <input 
                         type="number" 
@@ -414,6 +414,14 @@ import {
   Flame,
   Layout as LayoutIcon
 } from 'lucide-vue-next'
+import { watch } from 'vue'
+
+// Body scroll lock logic (consistent with NutritionView if any modals are added later)
+const showModals = ref(false) // Placeholder if needed
+watch(showModals, (isOpen) => {
+  if (isOpen) document.body.style.overflow = 'hidden'
+  else document.body.style.overflow = ''
+})
 
 const { user } = useAuth()
 const { 

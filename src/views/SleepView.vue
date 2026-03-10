@@ -1,5 +1,5 @@
 <template>
-  <div class="animate-fade-in max-w-5xl mx-auto pb-24 px-4 sm:px-6 lg:px-8">
+  <div class="animate-fade-in max-w-5xl mx-auto pb-24 px-4 sm:px-6 lg:px-8 select-none">
     <!-- Header -->
     <header class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6 mb-8 md:mb-12 pt-4 md:pt-6">
       <div class="flex items-center gap-3">

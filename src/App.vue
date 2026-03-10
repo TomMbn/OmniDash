@@ -11,7 +11,7 @@
         </h1>
       </div>
 
-      <nav class="flex-1 px-4 py-4 space-y-1.5 overflow-y-auto font-sans text-[13px]">
+      <nav class="flex-1 px-4 py-4 space-y-1.5 overflow-y-auto font-sans text-[13px] select-none">
         <router-link to="/" class="nav-item group">
           <div class="active-bar"></div>
           <LayoutDashboard :size="20" class="icon" />
@@ -48,7 +48,7 @@
     <!-- Main Content -->
     <main class="flex-1 flex flex-col min-w-0 overflow-hidden">
       <!-- Mobile Header -->
-      <header v-if="user" class="h-16 flex items-center justify-between md:hidden bg-white/80 backdrop-blur-md border-b border-slate-100 px-6 flex-shrink-0 z-40">
+      <header v-if="user" class="h-16 flex items-center justify-between md:hidden bg-white/80 backdrop-blur-md border-b border-slate-100 px-6 flex-shrink-0 z-40 select-none">
         <h1 class="text-lg font-black tracking-tight flex items-center gap-2">
           <div class="w-7 h-7 bg-indigo-600 rounded-lg flex items-center justify-center text-white">
             <Activity :size="16" stroke-width="3" />
@@ -69,7 +69,7 @@
     </main>
 
     <!-- Bottom Navigation for Mobile (Bottom Tab Bar) -->
-    <nav v-if="user" class="md:hidden fixed bottom-0 left-0 right-0 bg-white/90 backdrop-blur-xl border-t border-slate-100 flex justify-around items-center h-16 safe-area-pb z-50 px-2 shadow-[0_-8px_30px_rgb(0,0,0,0.04)]">
+    <nav v-if="user" class="md:hidden fixed bottom-0 left-0 right-0 bg-white/90 backdrop-blur-xl border-t border-slate-100 flex justify-around items-center h-16 safe-area-pb z-50 px-2 shadow-[0_-8px_30px_rgb(0,0,0,0.04)] select-none">
       <router-link v-for="link in [
         { to: '/', label: 'Dash', icon: LayoutDashboard },
         { to: '/musculation', label: 'Muscu', icon: Dumbbell },
