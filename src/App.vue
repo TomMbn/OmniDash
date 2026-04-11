@@ -35,6 +35,12 @@
           <Moon :size="20" class="icon" />
           <span class="font-bold uppercase tracking-wider">Sommeil</span>
         </router-link>
+        
+        <router-link to="/travel" class="nav-item group">
+          <div class="active-bar"></div>
+          <Plane :size="20" class="icon" />
+          <span class="font-bold uppercase tracking-wider">Travel</span>
+        </router-link>
       </nav>
 
       <div class="p-6 border-t border-slate-50">
@@ -74,7 +80,8 @@
         { to: '/', label: 'Dash', icon: LayoutDashboard },
         { to: '/musculation', label: 'Muscu', icon: Dumbbell },
         { to: '/nutrition', label: 'Nutri', icon: Utensils },
-        { to: '/sommeil', label: 'Sleep', icon: Moon }
+        { to: '/sommeil', label: 'Sleep', icon: Moon },
+        { to: '/travel', label: 'Travel', icon: Plane }
       ]" :key="link.to" :to="link.to" class="mobile-nav-item">
         <div class="flex flex-col items-center gap-0.5">
           <component :is="link.icon" :size="22" stroke-width="2.5" />
@@ -94,7 +101,8 @@ import {
   Utensils, 
   Moon, 
   LogOut,
-  Activity
+  Activity,
+  Plane
 } from 'lucide-vue-next'
 
 const router = useRouter()

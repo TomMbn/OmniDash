@@ -92,6 +92,12 @@
         </div>
       </section>
 
+      <!-- Hydration Widget -->
+      <HydrationWidget 
+        v-model:weight="userProfile.weight" 
+        class="mb-8 md:mb-10" 
+      />
+
       <!-- AI Assistant Input -->
       <div class="bg-slate-900 rounded-[2rem] p-6 md:p-8 mb-10 md:mb-12 relative overflow-hidden group shadow-2xl shadow-indigo-100/50">
         <div class="absolute top-0 right-0 p-8 text-slate-800 opacity-20 group-hover:opacity-30 transition-opacity pointer-events-none">
@@ -629,7 +635,8 @@ import {
   CheckCircle2,
   AlertCircle,
   Circle
-} from 'lucide-vue-next'
+ } from 'lucide-vue-next'
+import HydrationWidget from '@/components/HydrationWidget.vue'
 
 const { user } = useAuth()
 

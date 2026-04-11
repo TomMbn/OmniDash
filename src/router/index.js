@@ -31,6 +31,12 @@ const routes = [
         name: 'Sommeil',
         component: () => import('@/views/SleepView.vue'),
         meta: { requiresAuth: true }
+    },
+    {
+        path: '/travel',
+        name: 'TravelPlanner',
+        component: () => import('@/views/TravelPlanner.vue'),
+        meta: { requiresAuth: true }
     }
 ]
 
