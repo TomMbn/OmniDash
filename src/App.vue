@@ -69,7 +69,7 @@
       </header>
 
       <!-- Content Area with optimized scrolling and bottom space for Tab Bar -->
-      <div class="flex-1 overflow-y-auto bg-slate-50/50 pb-24 md:pb-10">
+      <div class="flex-1 overflow-y-auto bg-slate-50/50 pb-32 md:pb-10">
         <div class="p-4 sm:p-6 md:p-10 max-w-7xl mx-auto">
           <router-view></router-view>
         </div>
@@ -77,25 +77,12 @@
     </main>
 
     <!-- Bottom Navigation for Mobile (Bottom Tab Bar) -->
-    <nav v-if="user" class="md:hidden fixed bottom-0 left-0 right-0 bg-white/90 backdrop-blur-xl border-t border-slate-100 flex justify-around items-center h-16 safe-area-pb z-50 px-2 shadow-[0_-8px_30px_rgb(0,0,0,0.04)] select-none">
-      <router-link v-for="link in [
-        { to: '/', label: 'Dash', icon: LayoutDashboard },
-        { to: '/musculation', label: 'Muscu', icon: Dumbbell },
-        { to: '/nutrition', label: 'Nutri', icon: Utensils },
-        { to: '/sommeil', label: 'Sleep', icon: Moon },
-        { to: '/travel', label: 'Travel', icon: Plane },
-        { to: '/dressing', label: 'Dressing', icon: Shirt }
-      ]" :key="link.to" :to="link.to" class="mobile-nav-item">
-        <div class="flex flex-col items-center gap-0.5">
-          <component :is="link.icon" :size="22" stroke-width="2.5" />
-          <span class="text-[10px] font-black uppercase tracking-widest">{{ link.label }}</span>
-        </div>
-      </router-link>
-    </nav>
+    <MobileNav v-if="user" />
   </div>
 </template>
 
 <script setup>
+import MobileNav from '@/components/MobileNav.vue'
 import { useRouter } from 'vue-router'
 import { useAuth } from '@/composables/useAuth'
 import { 
@@ -144,13 +131,5 @@ const handleLogout = async () => {
 
 .router-link-active.nav-item .active-bar {
   @apply h-6 opacity-100;
-}
-
-.mobile-nav-item {
-  @apply flex flex-col items-center justify-center flex-1 h-full text-slate-300 hover:text-indigo-600 transition-all;
-}
-
-.router-link-active.mobile-nav-item {
-  @apply text-indigo-600;
 }
 </style>
