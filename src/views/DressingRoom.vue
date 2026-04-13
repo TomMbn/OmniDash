@@ -177,8 +177,8 @@
         </div>
       </section>
 
-      <!-- Wardrobe List -->
-      <section v-if="wardrobe.length > 0" class="space-y-6">
+      <!-- Wardrobe List Categorized -->
+      <section v-if="wardrobe.length > 0" class="space-y-12">
         <div class="flex items-center justify-between px-1">
           <h3 class="text-xl font-black text-slate-900 tracking-tight">Mon Placard ({{ wardrobe.length }})</h3>
           <button 
@@ -189,31 +189,39 @@
             <span class="text-[10px] font-black uppercase tracking-widest">{{ copyStatus === 'copied' ? 'Copié !' : 'Copier pour l\'IA' }}</span>
           </button>
         </div>
-        <div class="grid grid-cols-1 gap-4">
-          <div 
-            v-for="item in wardrobe" 
-            :key="item.id"
-            class="bg-white p-5 rounded-[2rem] border border-slate-100 flex items-center justify-between group hover:border-indigo-100 transition-all shadow-sm"
-          >
-            <div class="flex items-center gap-4">
-              <div class="p-4 bg-slate-50 text-slate-400 rounded-2xl group-hover:bg-indigo-50 group-hover:text-indigo-500 transition-colors shadow-sm">
-                <Shirt v-if="['haut', 'veste'].includes(item.category?.toLowerCase())" :size="24" />
-                <Footprints v-else-if="item.category?.toLowerCase() === 'chaussures'" :size="24" />
-                <Watch v-else-if="item.category?.toLowerCase() === 'accessoire'" :size="24" />
-                <Library v-else :size="24" />
-              </div>
-              <div>
-                <h4 class="font-black text-slate-800 group-hover:text-slate-900 transition-colors">{{ item.name }}</h4>
-                <div class="flex flex-wrap gap-2 items-center mt-2">
-                  <span class="text-[9px] font-black uppercase text-slate-400 tracking-widest bg-slate-50 px-2.5 py-1 rounded-lg border border-slate-100">{{ item.category }}</span>
-                  <span class="text-[9px] font-black uppercase text-indigo-500 tracking-widest bg-indigo-50/50 px-2.5 py-1 rounded-lg border border-indigo-100">{{ item.color }}</span>
-                  <span v-if="item.brand" class="text-[9px] font-black uppercase text-emerald-600 tracking-widest bg-emerald-50/50 px-2.5 py-1 rounded-lg border border-emerald-100">{{ item.brand }}</span>
+
+        <div v-for="group in groupedWardrobe" :key="group.id" class="space-y-4">
+          <div class="flex items-center gap-3 px-1 ml-1">
+            <div :class="['p-1.5 rounded-lg', group.bg, group.color]">
+              <component :is="group.icon" :size="14" stroke-width="3" />
+            </div>
+            <h4 class="text-xs font-black text-slate-400 capitalize tracking-[0.2em]">{{ group.label }} ({{ group.items.length }})</h4>
+            <div class="h-[1px] flex-1 bg-slate-100"></div>
+          </div>
+
+          <div class="grid grid-cols-1 gap-4">
+            <div 
+              v-for="item in group.items" 
+              :key="item.id"
+              class="bg-white p-5 rounded-[2rem] border border-slate-100 flex items-center justify-between group hover:border-indigo-100 transition-all shadow-sm"
+            >
+              <div class="flex items-center gap-4">
+                <div :class="['p-4 rounded-full transition-colors shadow-sm', group.bg, group.color]">
+                  <component :is="group.icon" :size="24" />
+                </div>
+                <div>
+                  <h4 class="font-black text-slate-800 group-hover:text-slate-900 transition-colors">{{ item.name }}</h4>
+                  <div class="flex flex-wrap gap-2 items-center mt-2">
+                    <span class="text-[9px] font-black uppercase text-indigo-500 tracking-widest bg-indigo-50/50 px-2.5 py-1 rounded-lg border border-indigo-100">{{ item.color }}</span>
+                    <span v-if="item.brand" class="text-[9px] font-black uppercase text-emerald-600 tracking-widest bg-emerald-50/50 px-2.5 py-1 rounded-lg border border-emerald-100">{{ item.brand }}</span>
+                    <span v-if="item.style" class="text-[9px] font-black uppercase text-slate-400 tracking-widest bg-slate-50 px-2.5 py-1 rounded-lg border border-slate-100">{{ item.style }}</span>
+                  </div>
                 </div>
               </div>
+              <a v-if="item.link" :href="item.link" target="_blank" class="p-3 text-slate-300 hover:text-indigo-500 hover:bg-slate-50 rounded-2xl transition-all">
+                <ExternalLink :size="18" />
+              </a>
             </div>
-            <a v-if="item.link" :href="item.link" target="_blank" class="p-3 text-slate-300 hover:text-indigo-500 hover:bg-slate-50 rounded-2xl transition-all">
-              <ExternalLink :size="18" />
-            </a>
           </div>
         </div>
       </section>
@@ -234,6 +242,8 @@ import { ref, reactive, onMounted, computed } from 'vue'
 import { supabase } from '@/supabase'
 import { useAuth } from '@/composables/useAuth'
 import { marked } from 'marked'
+import { createLucideIcon } from 'lucide-vue-next'
+import { trousers, wardrobe as wardrobeNode } from '@lucide/lab'
 import { 
   Shirt, 
   Sparkles, 
@@ -249,8 +259,12 @@ import {
   Footprints,
   Watch,
   ClipboardCopy,
-  Check
+  Check,
+  Columns2
 } from 'lucide-vue-next'
+
+const TrousersIcon = createLucideIcon('Trousers', trousers)
+const WardrobeIcon = createLucideIcon('Wardrobe', wardrobeNode)
 
 const { user } = useAuth()
 
@@ -258,7 +272,7 @@ const { user } = useAuth()
 const activeTab = ref('generator')
 const tabs = [
   { id: 'generator', label: 'Générateur', icon: Sparkles },
-  { id: 'wardrobe', label: 'Placard', icon: Library }
+  { id: 'wardrobe', label: 'Placard', icon: WardrobeIcon }
 ]
 
 // ── GENERATOR LOGIC ──
@@ -333,6 +347,32 @@ const wardrobe = ref([])
 const magicForm = reactive({
   rawInput: '',
   link: ''
+})
+
+// -- GROUPED WARDROBE LOGIC --
+const groupedWardrobe = computed(() => {
+  const categories = [
+    { id: 'haut', label: 'Hauts', icon: Shirt, color: 'text-indigo-500', bg: 'bg-indigo-50' },
+    { id: 'veste', label: 'Vestes', icon: Shirt, color: 'text-blue-500', bg: 'bg-blue-50' },
+    { id: 'bas', label: 'Bas', icon: TrousersIcon, color: 'text-emerald-500', bg: 'bg-emerald-50' },
+    { id: 'chaussures', label: 'Chaussures', icon: Footprints, color: 'text-orange-500', bg: 'bg-orange-50' },
+    { id: 'accessoire', label: 'Accessoires', icon: Watch, color: 'text-rose-500', bg: 'bg-rose-50' }
+  ]
+
+  // Add items that don't match any category to "Autres"
+  const knownCategories = categories.map(c => c.id)
+  const others = wardrobe.value.filter(item => !knownCategories.includes(item.category?.toLowerCase()))
+  
+  const result = categories.map(cat => ({
+    ...cat,
+    items: wardrobe.value.filter(item => item.category?.toLowerCase() === cat.id)
+  })).filter(group => group.items.length > 0)
+
+  if (others.length > 0) {
+    result.push({ id: 'autres', label: 'Autres', icon: WardrobeIcon, color: 'text-slate-500', bg: 'bg-slate-50', items: others })
+  }
+
+  return result
 })
 
 // -- COPY FOR IA LOGIC --

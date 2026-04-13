@@ -92,8 +92,14 @@ import {
   Moon, 
   LogOut,
   Plane,
-  Shirt
+  Shirt,
+  Sparkles,
+  Library,
+  createLucideIcon
 } from 'lucide-vue-next'
+import { wardrobe } from '@lucide/lab'
+
+const WardrobeIcon = createLucideIcon('Wardrobe', wardrobe)
 
 const router = useRouter()
 const { user, logout } = useAuth()
