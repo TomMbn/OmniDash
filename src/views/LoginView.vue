@@ -2,6 +2,9 @@
   <div class="h-full flex items-center justify-center -mt-8 md:mt-0 px-4">
     <div class="bg-white p-8 rounded-2xl shadow-sm border border-gray-100 max-w-sm w-full">
       <div class="text-center mb-8">
+        <div class="flex justify-center mb-4">
+          <img src="/pwa-192x192.png" alt="Logo" class="w-16 h-16 rounded-2xl shadow-lg border-4 border-white object-contain" />
+        </div>
         <h1 class="text-3xl font-bold text-indigo-600 mb-2">OmniDash</h1>
         <p class="text-sm text-gray-500">{{ isLogin ? 'Bon retour parmi nous 👋' : 'Créez votre compte 🚀' }}</p>
       </div>

@@ -7,9 +7,14 @@
     <!-- Header Section -->
     <header class="flex flex-col gap-6 mb-8 md:mb-10 pt-4 md:pt-4">
       <div class="flex justify-between items-center">
-        <div>
-          <h2 class="text-2xl md:text-3xl font-black text-slate-900 tracking-tight">Nutrition</h2>
-          <p class="text-slate-400 text-xs font-bold uppercase tracking-widest mt-1">Carburant & Énergie</p>
+        <div class="flex items-center gap-3">
+          <div class="p-2 md:p-2.5 bg-indigo-600 rounded-xl md:rounded-2xl text-white shadow-lg shadow-indigo-100/50">
+            <Utensils :size="20" md:size="24" stroke-width="2.5" />
+          </div>
+          <div>
+            <h2 class="text-2xl md:text-3xl font-black text-slate-900 tracking-tight">Nutrition</h2>
+            <p class="text-slate-400 text-xs font-bold uppercase tracking-widest mt-1">Carburant & Énergie</p>
+          </div>
         </div>
         <div class="flex items-center gap-1.5 md:gap-2">
           <button @click="showLibrary = true" class="p-2 md:p-2.5 text-slate-400 hover:text-slate-900 hover:bg-white rounded-xl md:rounded-2xl transition-all border border-transparent hover:border-slate-100 shadow-sm" title="Meal Prep">

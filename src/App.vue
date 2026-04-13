@@ -4,9 +4,7 @@
     <aside v-if="user" class="hidden md:flex flex-col w-64 bg-white border-r border-slate-100 flex-shrink-0 relative">
       <div class="h-20 flex items-center px-8">
         <h1 class="text-xl font-black tracking-tight text-slate-900 flex items-center gap-2">
-          <div class="w-8 h-8 bg-indigo-600 rounded-xl flex items-center justify-center text-white">
-            <Activity :size="20" stroke-width="3" />
-          </div>
+          <img src="/pwa-192x192.png" alt="Logo" class="w-8 h-8 rounded-xl object-contain shadow-sm" />
           OmniDash
         </h1>
       </div>
@@ -41,6 +39,12 @@
           <Plane :size="20" class="icon" />
           <span class="font-bold uppercase tracking-wider">Travel</span>
         </router-link>
+
+        <router-link to="/dressing" class="nav-item group">
+          <div class="active-bar"></div>
+          <Shirt :size="20" class="icon" />
+          <span class="font-bold uppercase tracking-wider">Dressing</span>
+        </router-link>
       </nav>
 
       <div class="p-6 border-t border-slate-50">
@@ -56,9 +60,7 @@
       <!-- Mobile Header -->
       <header v-if="user" class="h-16 flex items-center justify-between md:hidden bg-white/80 backdrop-blur-md border-b border-slate-100 px-6 flex-shrink-0 z-40 select-none">
         <h1 class="text-lg font-black tracking-tight flex items-center gap-2">
-          <div class="w-7 h-7 bg-indigo-600 rounded-lg flex items-center justify-center text-white">
-            <Activity :size="16" stroke-width="3" />
-          </div>
+          <img src="/pwa-192x192.png" alt="Logo" class="w-7 h-7 rounded-lg object-contain" />
           <span class="bg-gradient-to-r from-slate-900 to-indigo-600 bg-clip-text text-transparent">OmniDash</span>
         </h1>
         <button @click="handleLogout" class="text-slate-400 hover:text-rose-600 p-2 transition-colors">
@@ -81,7 +83,8 @@
         { to: '/musculation', label: 'Muscu', icon: Dumbbell },
         { to: '/nutrition', label: 'Nutri', icon: Utensils },
         { to: '/sommeil', label: 'Sleep', icon: Moon },
-        { to: '/travel', label: 'Travel', icon: Plane }
+        { to: '/travel', label: 'Travel', icon: Plane },
+        { to: '/dressing', label: 'Dressing', icon: Shirt }
       ]" :key="link.to" :to="link.to" class="mobile-nav-item">
         <div class="flex flex-col items-center gap-0.5">
           <component :is="link.icon" :size="22" stroke-width="2.5" />
@@ -101,8 +104,8 @@ import {
   Utensils, 
   Moon, 
   LogOut,
-  Activity,
-  Plane
+  Plane,
+  Shirt
 } from 'lucide-vue-next'
 
 const router = useRouter()
