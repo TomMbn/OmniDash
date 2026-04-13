@@ -39,6 +39,7 @@ serve(async (req) => {
       - name (Donne-lui un nom propre et formaté, ex: "Pull en laine rouge")
       - category (Choisis strictement parmi : haut, bas, chaussures, veste, accessoire)
       - color (La couleur déduite)
+      - quantity (Le nombre de vêtements, extrais-le si mentionné, ex: "3 tee-shirts" -> 3. Sinon mets 1)
       - style (Choisis parmi : casual, sport, habillé, chill)
       - season (Choisis parmi : été, hivers, mi-saison, toutes)
       - brand (Si mentionnée dans le texte, sinon null)

@@ -60,19 +60,38 @@ serve(async (req) => {
       `.trim()
     } else if (action === 'analyze_gaps') {
       systemPrompt = `
-        Tu es un personal shopper expert en optimisation de garde-robe.
-        Analyse l'ensemble du placard fourni (wardrobeData).
+        Tu es un personal shopper expert en optimisation de garde-robe de luxe.
         
-        STRUCTURE DE LA RÉPONSE :
-           - Fais un bilan d'expert complet et détaillé.
-           - Liste les 3 achats prioritaires de manière très structurée avec des justifications approfondies.
-           - Utilise un ton de styliste personnel de luxe (élégant, précis).
+        CONTEXTE DU CLIENT :
+        - Taille : 1m90 (attention cruciale aux longueurs de manches, de buste et de jambes).
+        - Poids : 80kg.
+        - Silhouette : En V (épaules larges, buste développé, taille plus fine).
+        - Objectif : Analyse structurelle du placard (wardrobeData) et recommandations de 5 à 7 pièces pour maximiser l'élégance et la polyvalence.
+
+        STRUCTURE DE LA RÉPONSE (Markdown) :
+        
+        1. "### 📊 Bilan Morpho-Stylistique"
+           - Analyse de la cohérence de la garde-robe actuelle par rapport à la silhouette en V et à la stature de 1m90.
+           - Identification des manques structurels (couleurs, textures, basiques).
+
+        2. "### 🛍️ Recommandations d'Achats (5-7 pièces)"
+           - Pour chaque pièce, fournis une fiche technique exhaustive :
+             - **Pièce No X : [Nom précis de l'item]**
+             - **Le Choix Idéal** : Coupe (ex: Tapered, Slim-straight), Matière (ex: Laine mérinos, Lin), Couleur (ex: Bleu marine profond).
+             - **Alternatives (Fallbacks)** : [Coupe alternative], [Matière alternative], [Teinte alternative]. 
+             - **Conseil Morpho** : Pourquoi cet item équilibre parfaitement une silhouette en V de 1m90.
+             - **Mixage** : Avec quels 2-3 items du placard actuel l'associer.
+
+        RÈGLES D'OR :
+        - Sois TRÈS technique et précis (pas de généralités).
+        - Ne donne PAS de justifications verbeuses (le "pourquoi" général). Concentre-toi sur la spécification.
+        - Ton : Expert, autoritaire, luxueux.
       `.trim()
       
       userPrompt = `
-        Voici mon placard actuel (wardrobeData) : ${JSON.stringify(wardrobeData)}
+        Placard actuel : ${JSON.stringify(wardrobeData)}
         
-        Analyse mes manques et conseille-moi mes 3 prochains achats prioritaires pour rendre mon placard plus polyvalent.
+        Analyse mes manques et dresse mon bilan morpho-stylistique ainsi que mes 5 à 7 fiches techniques de recommandations.
       `.trim()
     } else {
       throw new Error('Action non supportée')

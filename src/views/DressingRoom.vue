@@ -212,15 +212,32 @@
                 <div>
                   <h4 class="font-black text-slate-800 group-hover:text-slate-900 transition-colors">{{ item.name }}</h4>
                   <div class="flex flex-wrap gap-2 items-center mt-2">
+                    <span v-if="item.quantity > 1" class="text-[9px] font-black uppercase text-white tracking-widest bg-slate-900 px-2.5 py-1 rounded-lg border border-slate-900">x{{ item.quantity }}</span>
                     <span class="text-[9px] font-black uppercase text-indigo-500 tracking-widest bg-indigo-50/50 px-2.5 py-1 rounded-lg border border-indigo-100">{{ item.color }}</span>
                     <span v-if="item.brand" class="text-[9px] font-black uppercase text-emerald-600 tracking-widest bg-emerald-50/50 px-2.5 py-1 rounded-lg border border-emerald-100">{{ item.brand }}</span>
                     <span v-if="item.style" class="text-[9px] font-black uppercase text-slate-400 tracking-widest bg-slate-50 px-2.5 py-1 rounded-lg border border-slate-100">{{ item.style }}</span>
                   </div>
                 </div>
               </div>
-              <a v-if="item.link" :href="item.link" target="_blank" class="p-3 text-slate-300 hover:text-indigo-500 hover:bg-slate-50 rounded-2xl transition-all">
-                <ExternalLink :size="18" />
-              </a>
+              <div class="flex items-center gap-1">
+                <button 
+                  @click="updateQuantity(item, -1)"
+                  class="p-2 text-slate-300 hover:text-rose-500 hover:bg-rose-50 rounded-xl transition-all"
+                  title="Diminuer"
+                >
+                  <Minus :size="16" />
+                </button>
+                <button 
+                  @click="updateQuantity(item, 1)"
+                  class="p-2 text-slate-300 hover:text-emerald-500 hover:bg-emerald-50 rounded-xl transition-all"
+                  title="Augmenter"
+                >
+                  <Plus :size="16" />
+                </button>
+                <a v-if="item.link" :href="item.link" target="_blank" class="p-2 text-slate-300 hover:text-indigo-500 hover:bg-slate-50 rounded-xl transition-all">
+                  <ExternalLink :size="16" />
+                </a>
+              </div>
             </div>
           </div>
         </div>
@@ -260,7 +277,10 @@ import {
   Watch,
   ClipboardCopy,
   Check,
-  Columns2
+  Columns2,
+  Plus,
+  Minus,
+  Trash2
 } from 'lucide-vue-next'
 
 const TrousersIcon = createLucideIcon('Trousers', trousers)
@@ -416,6 +436,41 @@ const fetchWardrobe = async () => {
     console.error('Fetch wardrobe error:', err)
   } finally {
     loading.value = false
+  }
+}
+
+const updateQuantity = async (item, delta) => {
+  const newQuantity = (item.quantity || 1) + delta
+  if (newQuantity < 1) {
+    if (confirm(`Voulez-vous supprimer "${item.name}" du placard ?`)) {
+      await deleteItem(item.id)
+    }
+    return
+  }
+
+  try {
+    const { error } = await supabase
+      .from('wardrobe')
+      .update({ quantity: newQuantity })
+      .eq('id', item.id)
+    
+    if (error) throw error
+    item.quantity = newQuantity
+  } catch (err) {
+    console.error('Update quantity error:', err)
+  }
+}
+
+const deleteItem = async (id) => {
+  try {
+    const { error } = await supabase
+      .from('wardrobe')
+      .delete()
+      .eq('id', id)
+    if (error) throw error
+    await fetchWardrobe()
+  } catch (err) {
+    console.error('Delete item error:', err)
   }
 }
 
