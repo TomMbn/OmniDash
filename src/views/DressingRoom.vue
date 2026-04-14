@@ -178,7 +178,7 @@
       </section>
 
       <!-- Wardrobe List Categorized -->
-      <section v-if="wardrobe.length > 0" class="space-y-12">
+      <section v-if="wardrobe && wardrobe.length > 0" class="space-y-12">
         <div class="flex items-center justify-between px-1">
           <h3 class="text-xl font-black text-slate-900 tracking-tight">Mon Placard ({{ wardrobe.length }})</h3>
           <button 
@@ -195,48 +195,57 @@
             <div :class="['p-1.5 rounded-lg', group.bg, group.color]">
               <component :is="group.icon" :size="14" stroke-width="3" />
             </div>
-            <h4 class="text-xs font-black text-slate-400 capitalize tracking-[0.2em]">{{ group.label }} ({{ group.items.length }})</h4>
+            <h4 class="text-xs font-black text-slate-400 capitalize tracking-[0.2em]">{{ group.label }} ({{ group.itemsCount }})</h4>
             <div class="h-[1px] flex-1 bg-slate-100"></div>
           </div>
 
-          <div class="grid grid-cols-1 gap-4">
-            <div 
-              v-for="item in group.items" 
-              :key="item.id"
-              class="bg-white p-5 rounded-[2rem] border border-slate-100 flex items-center justify-between group hover:border-indigo-100 transition-all shadow-sm"
-            >
-              <div class="flex items-center gap-4">
-                <div :class="['p-4 rounded-full transition-colors shadow-sm', group.bg, group.color]">
-                  <component :is="group.icon" :size="24" />
-                </div>
-                <div>
-                  <h4 class="font-black text-slate-800 group-hover:text-slate-900 transition-colors">{{ item.name }}</h4>
-                  <div class="flex flex-wrap gap-2 items-center mt-2">
-                    <span v-if="item.quantity > 1" class="text-[9px] font-black uppercase text-white tracking-widest bg-slate-900 px-2.5 py-1 rounded-lg border border-slate-900">x{{ item.quantity }}</span>
-                    <span class="text-[9px] font-black uppercase text-indigo-500 tracking-widest bg-indigo-50/50 px-2.5 py-1 rounded-lg border border-indigo-100">{{ item.color }}</span>
-                    <span v-if="item.brand" class="text-[9px] font-black uppercase text-emerald-600 tracking-widest bg-emerald-50/50 px-2.5 py-1 rounded-lg border border-emerald-100">{{ item.brand }}</span>
-                    <span v-if="item.style" class="text-[9px] font-black uppercase text-slate-400 tracking-widest bg-slate-50 px-2.5 py-1 rounded-lg border border-slate-100">{{ item.style }}</span>
+          <div class="grid grid-cols-1 gap-6">
+            <div v-for="sub in group.subSections" :key="sub.label" class="space-y-3">
+              <div v-if="group.subSections.length > 1" class="flex items-center gap-2 px-1">
+                <span class="text-[9px] font-black uppercase text-slate-300 tracking-[0.15em]">{{ sub.label }}</span>
+                <div class="h-[1px] flex-1 bg-slate-50"></div>
+              </div>
+              
+              <div class="grid grid-cols-1 gap-3">
+                <div 
+                  v-for="item in sub.items" 
+                  :key="item.id"
+                  class="bg-white p-5 rounded-[2rem] border border-slate-100 flex items-center justify-between group hover:border-indigo-100 transition-all shadow-sm"
+                >
+                  <div class="flex items-center gap-4">
+                    <div :class="['p-4 rounded-full transition-colors shadow-sm', group.bg, group.color]">
+                      <component :is="group.icon" :size="24" />
+                    </div>
+                    <div>
+                      <h4 class="font-black text-slate-800 group-hover:text-slate-900 transition-colors">{{ item.name }}</h4>
+                      <div class="flex flex-wrap gap-2 items-center mt-2">
+                        <span v-if="item.quantity > 1" class="text-[9px] font-black uppercase text-white tracking-widest bg-slate-900 px-2.5 py-1 rounded-lg border border-slate-900">x{{ item.quantity }}</span>
+                        <span class="text-[9px] font-black uppercase text-indigo-500 tracking-widest bg-indigo-50/50 px-2.5 py-1 rounded-lg border border-indigo-100">{{ item.color }}</span>
+                        <span v-if="item.brand" class="text-[9px] font-black uppercase text-emerald-600 tracking-widest bg-emerald-50/50 px-2.5 py-1 rounded-lg border border-emerald-100">{{ item.brand }}</span>
+                        <span v-if="item.style" class="text-[9px] font-black uppercase text-slate-400 tracking-widest bg-slate-50 px-2.5 py-1 rounded-lg border border-slate-100">{{ item.style }}</span>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="flex items-center gap-1">
+                    <button 
+                      @click="updateQuantity(item, -1)"
+                      class="p-2 text-slate-300 hover:text-rose-500 hover:bg-rose-50 rounded-xl transition-all"
+                      title="Diminuer"
+                    >
+                      <Minus :size="16" />
+                    </button>
+                    <button 
+                      @click="updateQuantity(item, 1)"
+                      class="p-2 text-slate-300 hover:text-emerald-500 hover:bg-emerald-50 rounded-xl transition-all"
+                      title="Augmenter"
+                    >
+                      <Plus :size="16" />
+                    </button>
+                    <a v-if="item.link" :href="item.link" target="_blank" class="p-2 text-slate-300 hover:text-indigo-500 hover:bg-slate-50 rounded-xl transition-all">
+                      <ExternalLink :size="16" />
+                    </a>
                   </div>
                 </div>
-              </div>
-              <div class="flex items-center gap-1">
-                <button 
-                  @click="updateQuantity(item, -1)"
-                  class="p-2 text-slate-300 hover:text-rose-500 hover:bg-rose-50 rounded-xl transition-all"
-                  title="Diminuer"
-                >
-                  <Minus :size="16" />
-                </button>
-                <button 
-                  @click="updateQuantity(item, 1)"
-                  class="p-2 text-slate-300 hover:text-emerald-500 hover:bg-emerald-50 rounded-xl transition-all"
-                  title="Augmenter"
-                >
-                  <Plus :size="16" />
-                </button>
-                <a v-if="item.link" :href="item.link" target="_blank" class="p-2 text-slate-300 hover:text-indigo-500 hover:bg-slate-50 rounded-xl transition-all">
-                  <ExternalLink :size="16" />
-                </a>
               </div>
             </div>
           </div>
@@ -370,7 +379,26 @@ const magicForm = reactive({
 })
 
 // -- GROUPED WARDROBE LOGIC --
+const deduceSubCategory = (name) => {
+  if (!name) return 'Autres'
+  const n = name.toLowerCase()
+  if (n.includes('t-shirt') || n.includes('tee-shirt')) return 'T-shirts'
+  if (n.includes('pull') || n.includes('sweat')) return 'Pulls & Sweats'
+  if (n.includes('chemise')) return 'Chemises'
+  if (n.includes('jean')) return 'Jeans'
+  if (n.includes('pantalon') || n.includes('chino')) return 'Pantalons'
+  if (n.includes('short')) return 'Shorts'
+  if (n.includes('basket') || n.includes('sneaker')) return 'Sneakers'
+  if (n.includes('chaussure')) return 'Chaussures'
+  if (n.includes('veste') || n.includes('blouson')) return 'Vestes'
+  if (n.includes('manteau')) return 'Manteaux'
+  return 'Autres'
+}
+
 const groupedWardrobe = computed(() => {
+  if (!Array.isArray(wardrobe.value)) return []
+  const currentWardrobe = wardrobe.value
+  
   const categories = [
     { id: 'haut', label: 'Hauts', icon: Shirt, color: 'text-indigo-500', bg: 'bg-indigo-50' },
     { id: 'veste', label: 'Vestes', icon: Shirt, color: 'text-blue-500', bg: 'bg-blue-50' },
@@ -379,20 +407,52 @@ const groupedWardrobe = computed(() => {
     { id: 'accessoire', label: 'Accessoires', icon: Watch, color: 'text-rose-500', bg: 'bg-rose-50' }
   ]
 
-  // Add items that don't match any category to "Autres"
   const knownCategories = categories.map(c => c.id)
-  const others = wardrobe.value.filter(item => !knownCategories.includes(item.category?.toLowerCase()))
   
-  const result = categories.map(cat => ({
-    ...cat,
-    items: wardrobe.value.filter(item => item.category?.toLowerCase() === cat.id)
-  })).filter(group => group.items.length > 0)
+  try {
+    const result = categories.map(cat => {
+      const catItems = currentWardrobe.filter(item => item && item.category?.toLowerCase() === cat.id)
+      
+      // Group by sub_category
+      const subSectionsMap = catItems.reduce((acc, item) => {
+        let label = item.sub_category || deduceSubCategory(item.name)
+        // Normalize label
+        label = (typeof label === 'string' && label.length > 0) 
+          ? label.charAt(0).toUpperCase() + label.slice(1) 
+          : 'Autres'
+        
+        if (!acc[label]) acc[label] = []
+        acc[label].push(item)
+        return acc
+      }, {})
 
-  if (others.length > 0) {
-    result.push({ id: 'autres', label: 'Autres', icon: WardrobeIcon, color: 'text-slate-500', bg: 'bg-slate-50', items: others })
+      const subSections = Object.entries(subSectionsMap).map(([label, items]) => ({
+        label,
+        items
+      })).sort((a, b) => a.label.localeCompare(b.label))
+
+      return { ...cat, subSections, itemsCount: catItems.length }
+    }).filter(group => group.subSections.length > 0)
+
+    // Handling "Autres" category
+    const others = currentWardrobe.filter(item => item && !knownCategories.includes(item.category?.toLowerCase()))
+    if (others.length > 0) {
+      result.push({ 
+        id: 'autres', 
+        label: 'Autres', 
+        icon: WardrobeIcon, 
+        color: 'text-slate-500', 
+        bg: 'bg-slate-50', 
+        subSections: [{ label: 'Divers', items: others }],
+        itemsCount: others.length
+      })
+    }
+
+    return result
+  } catch (err) {
+    console.error('Grouped wardrobe calculation error:', err)
+    return []
   }
-
-  return result
 })
 
 // -- COPY FOR IA LOGIC --
@@ -431,7 +491,7 @@ const fetchWardrobe = async () => {
       .order('created_at', { ascending: false })
     
     if (error) throw error
-    wardrobe.value = data
+    wardrobe.value = data || []
   } catch (err) {
     console.error('Fetch wardrobe error:', err)
   } finally {

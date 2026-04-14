@@ -38,6 +38,7 @@ serve(async (req) => {
       Renvoie UNIQUEMENT un objet JSON valide avec ces clés exactes :
       - name (Donne-lui un nom propre et formaté, ex: "Pull en laine rouge")
       - category (Choisis strictement parmi : haut, bas, chaussures, veste, accessoire)
+      - sub_category (Déduis le type précis : T-shirt, Pull, Chemise, Jean, Chino, Sweat, Sneakers, Bottes, etc.)
       - color (La couleur déduite)
       - quantity (Le nombre de vêtements, extrais-le si mentionné, ex: "3 tee-shirts" -> 3. Sinon mets 1)
       - style (Choisis parmi : casual, sport, habillé, chill)
