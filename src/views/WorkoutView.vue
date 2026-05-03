@@ -117,21 +117,21 @@
               :class="day.dayIndex === selectedDayIndex ? 'bg-indigo-600 text-white shadow-xl shadow-indigo-100/40' : 'text-slate-400 hover:bg-slate-50'"
             >
               <span class="text-[10px] font-black uppercase tracking-widest">{{ day.label.slice(0, 3) }}</span>
-              <div class="p-1.5 rounded-full transition-colors" 
+              <div class="p-1.5 rounded-full transition-colors"
                 :class="[
-                  day.dayIndex === selectedDayIndex 
-                    ? 'bg-white/20' 
-                    : (day.session === 'REPOS' ? 'bg-slate-100' : (day.session === 'MATCH' ? 'bg-amber-100/60' : 'bg-indigo-100/60'))
+                  day.dayIndex === selectedDayIndex
+                    ? 'bg-white/20'
+                    : (day.session === 'REPOS' ? 'bg-slate-100' : (day.session === 'MATCH' ? 'bg-amber-100/60' : (day.session === 'CARDIO' ? 'bg-teal-100/60' : 'bg-indigo-100/60')))
                 ]"
               >
-                <component 
-                  :is="day.session === 'REPOS' ? Moon : (day.session === 'MATCH' ? Trophy : Dumbbell)" 
-                  :size="18" 
+                <component
+                  :is="day.session === 'REPOS' ? Moon : (day.session === 'MATCH' ? Trophy : (day.session === 'CARDIO' ? Heart : Dumbbell))"
+                  :size="18"
                   :stroke-width="day.dayIndex === selectedDayIndex ? 3 : 2.5"
                   :class="[
-                    day.dayIndex === selectedDayIndex 
-                      ? 'text-white' 
-                      : (day.session === 'REPOS' ? 'text-slate-500' : (day.session === 'MATCH' ? 'text-amber-600' : 'text-indigo-600'))
+                    day.dayIndex === selectedDayIndex
+                      ? 'text-white'
+                      : (day.session === 'REPOS' ? 'text-slate-500' : (day.session === 'MATCH' ? 'text-amber-600' : (day.session === 'CARDIO' ? 'text-teal-600' : 'text-indigo-600')))
                   ]"
                 />
               </div>
@@ -176,61 +176,151 @@
               </div>
             </div>
 
-            <!-- Exercises Quick List -->
-            <div v-if="selectedPlan.template.exercises.length > 0" class="px-8 pb-8">
-              <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-8">
-                <div 
-                  v-for="(ex, i) in selectedPlan.template.exercises" 
-                  :key="i"
-                  class="flex items-start justify-between p-5 rounded-3xl transition-all"
-                  :class="editingTemplate ? 'bg-indigo-50/50 border border-indigo-100' : 'bg-slate-50 border border-transparent'"
-                >
-                  <div class="flex items-center gap-4 min-w-0">
-                    <span class="text-xs font-black text-slate-300 w-4 text-center">{{ i + 1 }}</span>
-                    <div class="min-w-0">
-                      <p class="text-sm font-black text-slate-800 whitespace-normal break-words leading-tight">{{ ex.name }}</p>
-                      <p v-if="ex.focus && !editingTemplate" class="text-[9px] font-bold text-slate-400 uppercase tracking-tighter">{{ ex.focus }}</p>
-                    </div>
+            <!-- CARDIO SESSION -->
+            <div v-if="isCardioSession" class="px-8 pb-8">
+              <div class="space-y-3 mb-8">
+                <div v-for="option in selectedPlan.template.cardioOptions" :key="option.name"
+                  class="flex items-start gap-4 p-4 rounded-2xl bg-teal-50/60 border border-teal-100/50">
+                  <div class="p-2 bg-teal-100 rounded-xl text-teal-600 flex-shrink-0">
+                    <Heart :size="16" />
                   </div>
-                  
-                  <div class="flex items-center gap-1.5 flex-shrink-0 pt-1">
-                    <template v-if="editingTemplate">
-                      <input 
-                        type="number" 
-                        :value="ex.sets" 
-                        @change="updateTemplateField(selectedPlan.session, i, 'sets', $event.target.value)"
-                        class="w-8 py-1.5 text-xs font-black text-center bg-white border border-indigo-100 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none"
-                      />
-                      <span class="text-indigo-300 text-[10px] font-black">×</span>
-                      <input 
-                        type="text" 
-                        :value="ex.repsRange" 
-                        @change="updateTemplateField(selectedPlan.session, i, 'repsRange', $event.target.value)"
-                        class="w-12 py-1.5 text-xs font-black text-center bg-white border border-indigo-100 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none"
-                      />
-                      <input 
-                        type="number" 
-                        :value="ex.targetWeight" 
-                        @change="updateExerciseWeight(selectedPlan.session, i, Number($event.target.value))"
-                        class="w-14 py-1.5 text-xs font-black text-center bg-indigo-600 text-white rounded-xl outline-none"
-                        placeholder="kg"
-                      />
-                    </template>
-                    <template v-else>
-                      <span class="px-3 py-1.5 bg-slate-200/50 text-slate-700 text-[10px] font-black rounded-lg">{{ ex.sets }} × {{ ex.repsRange }}</span>
-                      <span class="px-3 py-1.5 bg-indigo-600 text-white text-[10px] font-black rounded-lg">
-                        {{ ex.targetWeight > 0 ? `${ex.targetWeight}kg` : 'PDC' }}
-                      </span>
-                    </template>
+                  <div>
+                    <p class="text-sm font-black text-slate-800">{{ option.name }}</p>
+                    <p class="text-xs font-bold text-teal-600 mt-0.5">{{ option.duration }}</p>
+                    <p class="text-[10px] text-slate-400 mt-0.5">{{ option.note }}</p>
                   </div>
                 </div>
               </div>
 
+              <!-- Active cardio logging form -->
+              <div v-if="isSelectedToday && currentWorkout && !cardioSaved" class="space-y-4">
+                <div class="grid grid-cols-2 gap-3">
+                  <div>
+                    <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Activité</label>
+                    <input v-model="cardioLog.activity" placeholder="Vélo, marche…"
+                      class="w-full px-4 py-3 bg-slate-50 border border-slate-100 rounded-2xl font-bold text-sm focus:ring-2 focus:ring-teal-500 outline-none" />
+                  </div>
+                  <div>
+                    <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Durée (min)</label>
+                    <input v-model.number="cardioLog.duration" type="number" placeholder="35"
+                      class="w-full px-4 py-3 bg-slate-50 border border-slate-100 rounded-2xl font-bold text-sm focus:ring-2 focus:ring-teal-500 outline-none" />
+                  </div>
+                  <div>
+                    <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">FC moy. (bpm)</label>
+                    <input v-model.number="cardioLog.avgHR" type="number" placeholder="130"
+                      class="w-full px-4 py-3 bg-slate-50 border border-slate-100 rounded-2xl font-bold text-sm focus:ring-2 focus:ring-teal-500 outline-none" />
+                  </div>
+                  <div>
+                    <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Zone</label>
+                    <select v-model="cardioLog.zone"
+                      class="w-full px-4 py-3 bg-slate-50 border border-slate-100 rounded-2xl font-bold text-sm focus:ring-2 focus:ring-teal-500 outline-none appearance-none">
+                      <option value="2">Zone 2 (LISS)</option>
+                      <option value="3">Zone 3</option>
+                      <option value="4">Zone 4</option>
+                    </select>
+                  </div>
+                </div>
+                <button @click="saveCardioLog"
+                  class="w-full bg-teal-600 hover:bg-teal-700 text-white py-5 rounded-[2rem] font-black text-lg transition-all active:scale-[0.98] flex items-center justify-center gap-3 shadow-xl">
+                  <CheckCircle2 :size="22" />
+                  Valider la séance cardio
+                </button>
+              </div>
+
+              <!-- Cardio done state -->
+              <div v-else-if="isSelectedToday && currentWorkout && cardioSaved" class="bg-teal-50 border border-teal-100 p-5 rounded-[2rem] flex items-center justify-center gap-3">
+                <CheckCircle2 :size="18" class="text-teal-600" />
+                <div class="text-center">
+                  <p class="text-sm font-black text-teal-700">Cardio enregistré ✓</p>
+                  <p v-if="cardioLog.duration" class="text-xs text-teal-500 mt-0.5">{{ cardioLog.activity || 'Séance' }} · {{ cardioLog.duration }} min<span v-if="cardioLog.avgHR"> · {{ cardioLog.avgHR }} bpm moy.</span></p>
+                </div>
+              </div>
+
+              <!-- Start cardio button -->
+              <button v-if="isSelectedToday && !currentWorkout" @click="startCardio" :disabled="loading.workout"
+                class="w-full bg-teal-600 hover:bg-teal-700 text-white py-6 rounded-[2rem] font-black text-lg transition-all active:scale-[0.98] flex items-center justify-center gap-3 shadow-xl disabled:opacity-50">
+                <div v-if="loading.workout" class="w-5 h-5 border-4 border-white/20 border-t-white rounded-full animate-spin"></div>
+                <Play v-else :size="24" />
+                Démarrer le cardio
+              </button>
+            </div>
+
+            <!-- STRENGTH SESSION — Exercises Quick List -->
+            <div v-else-if="selectedPlan.template.exercises.length > 0" class="px-8 pb-8">
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-x-3 gap-y-2 mb-8">
+                <template v-for="item in enrichedExercises" :key="item.isSep ? 'sep-' + item.label : item.name + item.num">
+                  <!-- Section separator -->
+                  <div v-if="item.isSep" class="col-span-full pt-4 pb-1">
+                    <span class="text-[10px] font-black text-slate-400 uppercase tracking-[0.15em]">{{ item.label }}</span>
+                  </div>
+                  <!-- Exercise card -->
+                  <div v-else
+                    class="flex flex-col p-5 rounded-3xl transition-all gap-3"
+                    :class="editingTemplate ? 'bg-indigo-50/50 border border-indigo-100' : 'bg-slate-50 border border-transparent'"
+                  >
+                    <!-- Top row: number + name + badges -->
+                    <div class="flex items-start justify-between gap-2">
+                      <div class="flex items-start gap-3 min-w-0 flex-1">
+                        <span class="text-xs font-black text-slate-300 w-4 text-center mt-0.5 flex-shrink-0">{{ item.num }}</span>
+                        <div class="min-w-0">
+                          <p class="text-sm font-black text-slate-800 whitespace-normal break-words leading-tight">{{ item.name }}</p>
+                          <p v-if="item.note && !editingTemplate" class="text-[10px] font-medium text-slate-400 mt-1 leading-tight">{{ item.note }}</p>
+                        </div>
+                      </div>
+                      <div class="flex flex-col items-end gap-1 flex-shrink-0 pt-0.5 ml-1">
+                        <template v-if="editingTemplate">
+                          <div class="flex items-center gap-1">
+                            <input type="number" :value="item.sets"
+                              @change="updateTemplateField(selectedPlan.session, item.num - 1, 'sets', $event.target.value)"
+                              class="w-8 py-1.5 text-xs font-black text-center bg-white border border-indigo-100 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none" />
+                            <span class="text-indigo-300 text-[10px] font-black">×</span>
+                            <input type="text" :value="item.repsRange"
+                              @change="updateTemplateField(selectedPlan.session, item.num - 1, 'repsRange', $event.target.value)"
+                              class="w-12 py-1.5 text-xs font-black text-center bg-white border border-indigo-100 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none" />
+                            <input type="number" :value="item.targetWeight"
+                              @change="updateExerciseWeight(selectedPlan.session, item.num - 1, Number($event.target.value))"
+                              class="w-14 py-1.5 text-xs font-black text-center bg-indigo-600 text-white rounded-xl outline-none" placeholder="kg" />
+                          </div>
+                        </template>
+                        <template v-else>
+                          <span class="px-3 py-1.5 bg-slate-200/50 text-slate-700 text-[10px] font-black rounded-lg whitespace-nowrap">{{ item.sets }} × {{ item.repsRange }}</span>
+                          <span class="px-3 py-1.5 bg-indigo-600 text-white text-[10px] font-black rounded-lg">
+                            {{ item.targetWeight > 0 ? `${item.targetWeight}kg` : 'PDC' }}
+                          </span>
+                          <span v-if="item.restTime" class="text-[10px] text-slate-400 font-bold">{{ item.restTime }}</span>
+                        </template>
+                      </div>
+                    </div>
+
+                    <!-- Overload status row (viewing mode only) -->
+                    <div v-if="!editingTemplate && getExerciseDbId(item.name)"
+                      class="flex items-center justify-between gap-2 pt-2 border-t border-slate-200/60">
+                      <span class="text-[10px] text-slate-400 font-medium">
+                        {{ getOverloadStatus(getExerciseDbId(item.name), item.repsRange)?.lastPerf || '—' }}
+                      </span>
+                      <div v-if="getOverloadStatus(getExerciseDbId(item.name), item.repsRange)"
+                        class="flex items-center gap-1.5">
+                        <span class="w-1.5 h-1.5 rounded-full flex-shrink-0"
+                          :class="overloadStyles[getOverloadStatus(getExerciseDbId(item.name), item.repsRange).status]?.dot"></span>
+                        <span class="text-[10px] font-black"
+                          :class="overloadStyles[getOverloadStatus(getExerciseDbId(item.name), item.repsRange).status]?.text">
+                          {{ getOverloadStatus(getExerciseDbId(item.name), item.repsRange).label }}
+                        </span>
+                        <span v-if="getOverloadStatus(getExerciseDbId(item.name), item.repsRange).detail"
+                          class="text-[10px] text-slate-400">
+                          {{ getOverloadStatus(getExerciseDbId(item.name), item.repsRange).detail }}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </template>
+              </div>
+
               <!-- Action Start Button -->
-              <button 
+              <button
                 v-if="isSelectedToday && !currentWorkout"
-                @click="startFromTemplate" 
-                :disabled="loading.workout" 
+                @click="startFromTemplate"
+                :disabled="loading.workout"
                 class="w-full bg-slate-900 hover:bg-black text-white py-6 rounded-[2rem] font-black text-lg transition-all active:scale-[0.98] flex items-center justify-center gap-3 shadow-xl group/btn disabled:opacity-50"
               >
                 <div v-if="loading.workout" class="w-5 h-5 border-4 border-white/20 border-t-white rounded-full animate-spin"></div>
@@ -322,6 +412,53 @@
             </div>
             
             <div class="p-5 md:p-8" v-if="block.exercise_id">
+              <!-- Previous performance + overload indicator -->
+              <template v-if="getLastSession(block.exercise_id) || getTemplateExercise(block.exercise_id)">
+                <div class="mb-5 rounded-2xl overflow-hidden border"
+                  :class="getOverloadStatus(block.exercise_id, getTemplateExercise(block.exercise_id)?.repsRange)?.status === 'INCREASE'
+                    ? 'bg-emerald-50 border-emerald-200'
+                    : getOverloadStatus(block.exercise_id, getTemplateExercise(block.exercise_id)?.repsRange)?.status === 'PROGRESS'
+                      ? 'bg-amber-50 border-amber-200'
+                      : getOverloadStatus(block.exercise_id, getTemplateExercise(block.exercise_id)?.repsRange)?.status === 'CONSOLIDATE'
+                        ? 'bg-rose-50 border-rose-200'
+                        : 'bg-slate-50 border-slate-200'"
+                >
+                  <div class="px-4 py-3 flex items-center justify-between gap-3 flex-wrap">
+                    <!-- Last session detail -->
+                    <div>
+                      <p class="text-[10px] font-black uppercase tracking-widest mb-1"
+                        :class="getOverloadStatus(block.exercise_id, getTemplateExercise(block.exercise_id)?.repsRange)?.status === 'INCREASE' ? 'text-emerald-600'
+                          : getOverloadStatus(block.exercise_id, getTemplateExercise(block.exercise_id)?.repsRange)?.status === 'PROGRESS' ? 'text-amber-600'
+                          : getOverloadStatus(block.exercise_id, getTemplateExercise(block.exercise_id)?.repsRange)?.status === 'CONSOLIDATE' ? 'text-rose-600'
+                          : 'text-slate-400'">
+                        Séance précédente
+                      </p>
+                      <p v-if="getLastSession(block.exercise_id)" class="text-sm font-black text-slate-800">
+                        {{ getLastSession(block.exercise_id).sets.map(s => `${s.weight > 0 ? s.weight + 'kg' : 'PDC'} × ${s.reps}`).join(' · ') }}
+                      </p>
+                      <p v-else class="text-sm font-medium text-slate-400 italic">Première séance avec cet exercice</p>
+                    </div>
+                    <!-- Overload badge -->
+                    <div v-if="getOverloadStatus(block.exercise_id, getTemplateExercise(block.exercise_id)?.repsRange)"
+                      class="flex flex-col items-end gap-0.5">
+                      <div class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl"
+                        :class="overloadStyles[getOverloadStatus(block.exercise_id, getTemplateExercise(block.exercise_id)?.repsRange).status]?.bg">
+                        <span class="w-1.5 h-1.5 rounded-full flex-shrink-0"
+                          :class="overloadStyles[getOverloadStatus(block.exercise_id, getTemplateExercise(block.exercise_id)?.repsRange).status]?.dot"></span>
+                        <span class="text-xs font-black"
+                          :class="overloadStyles[getOverloadStatus(block.exercise_id, getTemplateExercise(block.exercise_id)?.repsRange).status]?.text">
+                          {{ getOverloadStatus(block.exercise_id, getTemplateExercise(block.exercise_id)?.repsRange).label }}
+                        </span>
+                      </div>
+                      <span v-if="getOverloadStatus(block.exercise_id, getTemplateExercise(block.exercise_id)?.repsRange).detail"
+                        class="text-[10px] text-slate-500 font-medium mt-0.5">
+                        {{ getOverloadStatus(block.exercise_id, getTemplateExercise(block.exercise_id)?.repsRange).detail }}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </template>
+
               <!-- Sets Headers (Desktop) -->
               <div class="hidden md:grid grid-cols-[3.5rem_1fr_1fr_1fr_3rem] gap-4 mb-4 px-2">
                 <div class="text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Set</div>
@@ -365,12 +502,19 @@
               </transition-group>
               
               <!-- Add Set Button -->
-              <button 
-                @click="addSet(block)" 
+              <button
+                @click="addSet(block)"
                 class="mt-6 md:mt-8 w-full py-4 md:py-5 bg-indigo-50 border border-indigo-100 text-indigo-600 hover:bg-white rounded-2xl md:rounded-3xl font-black text-xs uppercase tracking-widest transition-all shadow-sm flex items-center justify-center gap-2"
               >
                 <Plus :size="16" /> Série
               </button>
+
+              <!-- Live completion indicator -->
+              <div v-if="getLiveCompletion(block)"
+                class="mt-3 px-4 py-3 bg-emerald-50 border border-emerald-200 rounded-2xl flex items-center gap-2">
+                <CheckCircle2 :size="16" class="text-emerald-600 flex-shrink-0" />
+                <p class="text-xs font-black text-emerald-700">{{ getLiveCompletion(block).text }}</p>
+              </div>
             </div>
           </div>
 
@@ -389,33 +533,31 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { supabase } from '@/supabase'
 import { useAuth } from '@/composables/useAuth'
 import { useWorkoutStats } from '@/composables/useWorkoutStats'
 import { useWorkoutPrograms } from '@/composables/useWorkoutPrograms'
-import { 
-  Dumbbell, 
-  Plus, 
-  Trash2, 
-  Play, 
-  Calendar, 
-  Settings, 
-  Activity, 
-  ChevronLeft, 
-  ChevronRight, 
-  CheckCircle2, 
+import { useProgressiveOverload } from '@/composables/useProgressiveOverload'
+import {
+  Dumbbell,
+  Plus,
+  Trash2,
+  Play,
+  Activity,
+  ChevronRight,
+  CheckCircle2,
   X,
   Pencil,
   Save,
   Trophy,
-  History,
   Target,
   Flame,
+  Moon,
+  Heart,
+  Timer,
   Layout as LayoutIcon
 } from 'lucide-vue-next'
-import { watch } from 'vue'
-
 // Body scroll lock logic (consistent with NutritionView if any modals are added later)
 const showModals = ref(false) // Placeholder if needed
 watch(showModals, (isOpen) => {
@@ -438,6 +580,114 @@ const {
 } = useWorkoutPrograms()
 
 const editingTemplate = ref(false)
+
+// ── Progressive overload ──
+const { exerciseHistory, fetchHistoryForExercises, getLastSession, getOverloadStatus } = useProgressiveOverload()
+
+// fetchHistoryForPlan is called inside loadData (after exercises are loaded)
+// and when the user switches day in the week overview
+const fetchHistoryForPlan = async (plan) => {
+  if (!plan?.template?.exercises?.length || !exercises.value.length) return
+  const uid = user.value?.id
+  if (!uid) return
+  const ids = plan.template.exercises
+    .map(tplEx => exercises.value.find(e => e.name.toLowerCase() === tplEx.name.toLowerCase())?.id)
+    .filter(Boolean)
+  if (ids.length) await fetchHistoryForExercises(uid, ids)
+}
+
+// Helper: get DB id for a template exercise by name
+const getExerciseDbId = (name) =>
+  exercises.value.find(e => e.name.toLowerCase() === name.toLowerCase())?.id || null
+
+// Helper: get the template exercise definition for an active block
+const getTemplateExercise = (exerciseId) => {
+  if (!exerciseId || !selectedPlan.value?.template?.exercises) return null
+  const name = exercises.value.find(e => e.id === exerciseId)?.name
+  if (!name) return null
+  return selectedPlan.value.template.exercises.find(
+    ex => ex.name.toLowerCase() === name.toLowerCase()
+  ) || null
+}
+
+// Overload badge style map
+const overloadStyles = {
+  INCREASE:   { bg: 'bg-emerald-100', text: 'text-emerald-700', dot: 'bg-emerald-500' },
+  PROGRESS:   { bg: 'bg-amber-100',   text: 'text-amber-700',   dot: 'bg-amber-500'   },
+  CONSOLIDATE:{ bg: 'bg-rose-100',    text: 'text-rose-700',    dot: 'bg-rose-500'    },
+  START:      { bg: 'bg-slate-100',   text: 'text-slate-500',   dot: 'bg-slate-400'   },
+}
+
+// Live: did the user hit the max rep range on all completed sets?
+const getLiveCompletion = (block) => {
+  const tplEx = getTemplateExercise(block.exercise_id)
+  if (!tplEx) return null
+  const done = block.sets.filter(s => s.reps > 0)
+  if (!done.length) return null
+  const nums = tplEx.repsRange.replace(/[^0-9-]/g, '').split('-').map(Number).filter(Boolean)
+  const maxReps = nums[nums.length - 1]
+  if (!maxReps) return null
+  if (done.length >= tplEx.sets && done.every(s => s.reps >= maxReps)) {
+    return { ready: true, text: `${done.length}×${maxReps} ✓ — Augmente de 2.5kg la prochaine fois` }
+  }
+  return null
+}
+
+// ── Computed: exercises enriched with section separators ──
+const enrichedExercises = computed(() => {
+  const exercises = selectedPlan.value?.template?.exercises
+  if (!exercises?.length) return []
+  const result = []
+  let lastSection = null
+  let num = 0
+  exercises.forEach(ex => {
+    if (ex.section && ex.section !== lastSection) {
+      result.push({ isSep: true, label: ex.section })
+      lastSection = ex.section
+    }
+    num++
+    result.push({ ...ex, isSep: false, num })
+  })
+  return result
+})
+
+const isCardioSession = computed(() => !!selectedPlan.value?.template?.isCardio)
+
+// ── Cardio session logging ──
+const CARDIO_LOG_KEY = 'omnidash_cardio_log'
+
+const cardioLog = ref({ activity: '', duration: null, avgHR: null, zone: '2' })
+const cardioSaved = ref(false)
+
+const loadCardioLog = () => {
+  const todayStr = new Date().toISOString().split('T')[0]
+  try {
+    const raw = localStorage.getItem(CARDIO_LOG_KEY)
+    if (raw) {
+      const log = JSON.parse(raw)
+      if (log.date === todayStr) {
+        cardioLog.value = { activity: log.activity, duration: log.duration, avgHR: log.avgHR, zone: log.zone || '2' }
+        cardioSaved.value = true
+      }
+    }
+  } catch (e) {}
+}
+
+const startCardio = async () => {
+  loading.value.workout = true
+  const { data } = await supabase.from('workouts').insert({
+    date: new Date().toISOString(),
+    user_id: user.value.id
+  }).select()
+  if (data) currentWorkout.value = data[0]
+  loading.value.workout = false
+}
+
+const saveCardioLog = () => {
+  const todayStr = new Date().toISOString().split('T')[0]
+  localStorage.setItem(CARDIO_LOG_KEY, JSON.stringify({ ...cardioLog.value, date: todayStr }))
+  cardioSaved.value = true
+}
 
 const updateTemplateField = (sessionKey, exerciseIndex, field, value) => {
   if (templates.value[sessionKey]?.exercises[exerciseIndex]) {
@@ -489,6 +739,10 @@ onMounted(async () => {
   if (userId) {
     await loadData(userId)
   }
+
+  if (isCardioSession.value) {
+    loadCardioLog()
+  }
 })
 
 const loadData = async (userId) => {
@@ -526,9 +780,35 @@ const loadData = async (userId) => {
           if (!blocksMap.has(set.exercise_id)) {
              blocksMap.set(set.exercise_id, { exercise_id: set.exercise_id, sets: [] })
           }
-          blocksMap.get(set.exercise_id).sets.push(set)
+          blocksMap.get(set.exercise_id).sets.push({
+            id: set.id,
+            weight: set.weight,
+            reps: set.reps,
+            rpe: set.rpe
+          })
         })
         workoutBlocks.value = Array.from(blocksMap.values())
+      } else if (selectedPlan.value?.template?.exercises?.length) {
+        // No sets saved yet (e.g. immediate refresh after starting) — restore from template
+        workoutBlocks.value = selectedPlan.value.template.exercises
+          .map(tplEx => {
+            const dbEx = exercises.value.find(
+              e => e.name.trim().toLowerCase() === tplEx.name.trim().toLowerCase()
+            )
+            if (!dbEx) return null
+            const defaultReps = parseInt(tplEx.repsRange.split('-')[0]) || 10
+            const lastSession = getLastSession(dbEx.id)
+            const lastWeight = lastSession?.sets?.[0]?.weight ?? tplEx.targetWeight
+            return {
+              exercise_id: dbEx.id,
+              sets: Array.from({ length: tplEx.sets }, () => ({
+                weight: lastWeight,
+                reps: defaultReps,
+                rpe: null
+              }))
+            }
+          })
+          .filter(Boolean)
       }
     }
   } catch (err) {
@@ -536,31 +816,55 @@ const loadData = async (userId) => {
   } finally {
     loading.value.data = false
   }
+
+  // Fetch progressive overload history for today's plan
+  await fetchHistoryForPlan(selectedPlan.value)
 }
+
+// Refetch when user navigates to a different day
+watch(selectedDayIndex, () => fetchHistoryForPlan(selectedPlan.value))
 
 // ═══ Template-based Workout Start ═══
 const startFromTemplate = async () => {
   if (!selectedPlan.value || isRestDay.value || !isSelectedToday.value) return
-  
+
   loading.value.workout = true
   try {
-    // 1. Create workout in DB
     const { data, error } = await supabase.from('workouts').insert({
       date: new Date().toISOString(),
       user_id: user.value.id
     }).select()
 
     if (error) throw error
-    if (!data || data.length === 0) return
+    if (!data?.length) return
 
     currentWorkout.value = data[0]
 
-    // 2. Generate pre-filled blocks from template
-    const blocks = generateBlocks(selectedPlan.value.session, exercises.value)
-    workoutBlocks.value = blocks
+    // Pre-fill weight from last session if available, otherwise from template
+    const template = selectedPlan.value.template
+    workoutBlocks.value = template.exercises
+      .map(tplEx => {
+        const dbEx = exercises.value.find(
+          e => e.name.trim().toLowerCase() === tplEx.name.trim().toLowerCase()
+        )
+        if (!dbEx) return null
 
+        const lastSession = getLastSession(dbEx.id)
+        const lastWeight = lastSession?.sets?.[0]?.weight ?? tplEx.targetWeight
+        const defaultReps = parseInt(tplEx.repsRange.split('-')[0]) || 10
+
+        return {
+          exercise_id: dbEx.id,
+          sets: Array.from({ length: tplEx.sets }, () => ({
+            weight: lastWeight,
+            reps: defaultReps,
+            rpe: null
+          }))
+        }
+      })
+      .filter(Boolean)
   } catch (e) {
-    console.error("Error starting template workout:", e)
+    console.error('Error starting template workout:', e)
   } finally {
     loading.value.workout = false
   }
@@ -627,25 +931,25 @@ const addSet = (block) => {
 }
 
 const saveSet = async (set, exercise_id) => {
-  if (!exercise_id || !set.weight || !set.reps) return
-  
-  const payload = {
-    workout_id: currentWorkout.value.id,
-    exercise_id: exercise_id,
-    weight: set.weight,
-    reps: set.reps,
-    rpe: set.rpe || null,
-    user_id: user.value.id
-  }
-  
+  if (!exercise_id || set.weight == null || !set.reps) return
+
   try {
     if (set.id) {
-      await supabase.from('workout_sets').update(payload).eq('id', set.id)
+      await supabase.from('workout_sets').update({
+        weight: set.weight,
+        reps: set.reps,
+        rpe: set.rpe || null,
+      }).eq('id', set.id)
     } else {
-      const { data } = await supabase.from('workout_sets').insert(payload).select()
-      if (data && data.length > 0) {
-        set.id = data[0].id
-      }
+      const { data } = await supabase.from('workout_sets').insert({
+        workout_id: currentWorkout.value.id,
+        exercise_id,
+        weight: set.weight,
+        reps: set.reps,
+        rpe: set.rpe || null,
+        user_id: user.value.id
+      }).select()
+      if (data?.length > 0) set.id = data[0].id
     }
   } catch(e) {
     console.error("Save set error:", e)

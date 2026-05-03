@@ -29,13 +29,14 @@
 </template>
 
 <script setup>
-import { 
-  LayoutDashboard, 
-  Dumbbell, 
-  Utensils, 
-  Moon, 
+import {
+  LayoutDashboard,
+  Dumbbell,
+  Utensils,
+  Moon,
   Plane,
-  Shirt
+  Shirt,
+  ClipboardList
 } from 'lucide-vue-next'
 
 const navLinks = [
@@ -44,7 +45,8 @@ const navLinks = [
   { to: '/nutrition', label: 'Nutri', icon: Utensils },
   { to: '/sommeil', label: 'Sleep', icon: Moon },
   { to: '/travel', label: 'Travel', icon: Plane },
-  { to: '/dressing', label: 'Style', icon: Shirt }
+  { to: '/dressing', label: 'Style', icon: Shirt },
+  { to: '/plan', label: 'Plan', icon: ClipboardList }
 ]
 </script>
 

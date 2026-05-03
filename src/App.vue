@@ -45,6 +45,12 @@
           <Shirt :size="20" class="icon" />
           <span class="font-bold uppercase tracking-wider">Dressing</span>
         </router-link>
+
+        <router-link to="/plan" class="nav-item group">
+          <div class="active-bar"></div>
+          <ClipboardList :size="20" class="icon" />
+          <span class="font-bold uppercase tracking-wider">Plan</span>
+        </router-link>
       </nav>
 
       <div class="p-6 border-t border-slate-50">
@@ -85,21 +91,16 @@
 import MobileNav from '@/components/MobileNav.vue'
 import { useRouter } from 'vue-router'
 import { useAuth } from '@/composables/useAuth'
-import { 
-  LayoutDashboard, 
-  Dumbbell, 
-  Utensils, 
-  Moon, 
+import {
+  LayoutDashboard,
+  Dumbbell,
+  Utensils,
+  Moon,
   LogOut,
   Plane,
   Shirt,
-  Sparkles,
-  Library,
-  createLucideIcon
+  ClipboardList
 } from 'lucide-vue-next'
-import { wardrobe } from '@lucide/lab'
-
-const WardrobeIcon = createLucideIcon('Wardrobe', wardrobe)
 
 const router = useRouter()
 const { user, logout } = useAuth()
