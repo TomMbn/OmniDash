@@ -27,7 +27,13 @@
             <h3 class="text-lg md:text-xl font-black text-white tracking-tight">Withings Sleep Analyzer</h3>
           </div>
           <p class="text-slate-400 font-bold text-xs md:text-sm max-w-sm">Synchronisez vos cycles pour optimiser votre récupération.</p>
-          
+
+          <!-- Last sync timestamp -->
+          <div v-if="lastAutoSyncLabel && !errorMsg" class="mt-3 flex items-center gap-2 text-slate-500">
+            <div class="w-1.5 h-1.5 bg-slate-600 rounded-full"></div>
+            <span class="text-[10px] font-bold">Mis à jour {{ lastAutoSyncLabel }}</span>
+          </div>
+
           <div v-if="errorMsg" class="mt-4 bg-rose-500/10 text-rose-400 px-4 py-3 rounded-2xl text-[10px] md:text-xs font-black uppercase tracking-widest border border-rose-500/20 flex items-center gap-2">
             <div class="w-1.5 h-1.5 bg-rose-400 rounded-full animate-pulse"></div>
             {{ errorMsg }}
@@ -153,7 +159,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { supabase } from '@/supabase'
 import { useAuth } from '@/composables/useAuth'
 import { 
@@ -178,22 +184,28 @@ const loadingRecords = ref(true)
 const sleepRecords = ref([])
 const errorMsg = ref('')
 
+import { markSynced, getLastSyncLabel } from '@/composables/useWithingsAutoSync'
+
+const lastAutoSyncLabel = computed(() => getLastSyncLabel())
+
 onMounted(async () => {
   const { data: { session } } = await supabase.auth.getSession()
   const userId = session?.user?.id || user.value?.id
-  
-  if (userId) {
-    await fetchLatestRecord(userId)
-    
-    // Check if we are returning from Withings OAuth flow
-    const urlParams = new URLSearchParams(window.location.search);
-    const code = urlParams.get('code');
-    if (code) {
-      // Clean URL silently
-      window.history.replaceState({}, document.title, window.location.pathname);
-      await syncSleep(code);
-    }
+
+  if (!userId) return
+
+  await fetchLatestRecord(userId)
+
+  // Returning from Withings OAuth — exchange code
+  const urlParams = new URLSearchParams(window.location.search)
+  const code = urlParams.get('code')
+  if (code) {
+    window.history.replaceState({}, document.title, window.location.pathname)
+    await syncSleep(code)
+    markSynced()
+    return
   }
+
 })
 
 const fetchLatestRecord = async (userId) => {
@@ -230,6 +242,7 @@ const startWithingsOAuth = () => {
   
   window.location.href = url
 }
+
 
 const syncSleep = async (code = null) => {
   syncing.value = true

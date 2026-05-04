@@ -89,8 +89,10 @@
 
 <script setup>
 import MobileNav from '@/components/MobileNav.vue'
+import { onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuth } from '@/composables/useAuth'
+import { runAutoSync } from '@/composables/useWithingsAutoSync'
 import {
   LayoutDashboard,
   Dumbbell,
@@ -104,6 +106,21 @@ import {
 
 const router = useRouter()
 const { user, logout } = useAuth()
+
+// Trigger Withings auto-sync in background as soon as the user is authenticated
+onMounted(() => {
+  if (user.value?.id) {
+    runAutoSync(user.value.id)
+  } else {
+    // Wait for auth to resolve (first load)
+    const stop = watch(user, (u) => {
+      if (u?.id) {
+        runAutoSync(u.id)
+        stop()
+      }
+    })
+  }
+})
 
 const handleLogout = async () => {
   try {
