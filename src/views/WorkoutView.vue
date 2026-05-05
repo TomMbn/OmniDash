@@ -265,6 +265,9 @@
                         <div class="min-w-0">
                           <p class="text-sm font-black text-slate-800 whitespace-normal break-words leading-tight">{{ item.name }}</p>
                           <p v-if="item.note && !editingTemplate" class="text-[10px] font-medium text-slate-400 mt-1 leading-tight">{{ item.note }}</p>
+                          <p v-if="!editingTemplate && getSetup(getExerciseDbId(item.name))" class="flex items-center gap-1 text-[10px] font-bold text-indigo-500 mt-1">
+                            <SlidersHorizontal :size="10" />{{ getSetup(getExerciseDbId(item.name)) }}
+                          </p>
                         </div>
                       </div>
                       <div class="flex flex-col items-end gap-1 flex-shrink-0 pt-0.5 ml-1">
@@ -411,6 +414,35 @@
               </button>
             </div>
             
+            <!-- Setup row -->
+            <div v-if="block.exercise_id" class="px-5 md:px-6 py-2.5 border-b border-slate-100 flex items-center gap-2 min-h-[44px]">
+              <SlidersHorizontal :size="13" class="text-slate-300 flex-shrink-0" />
+              <template v-if="editingSetupId === block.exercise_id">
+                <input
+                  :value="getSetup(block.exercise_id)"
+                  @blur="e => { saveSetup(block.exercise_id, e.target.value); editingSetupId = null }"
+                  @keydown.enter="e => { saveSetup(block.exercise_id, e.target.value); editingSetupId = null }"
+                  @keydown.escape="editingSetupId = null"
+                  type="text"
+                  placeholder="Ex: Siège 5 · Guide pos. 2 · Prise large…"
+                  class="flex-1 text-xs font-bold text-slate-700 bg-transparent outline-none placeholder:text-slate-300"
+                  autofocus
+                />
+              </template>
+              <template v-else>
+                <button
+                  @click="editingSetupId = block.exercise_id"
+                  class="flex-1 text-left text-xs font-bold transition-colors"
+                  :class="getSetup(block.exercise_id) ? 'text-slate-600 hover:text-indigo-600' : 'text-slate-300 hover:text-slate-400'"
+                >
+                  {{ getSetup(block.exercise_id) || 'Ajouter un setup machine…' }}
+                </button>
+                <button v-if="getSetup(block.exercise_id)" @click="editingSetupId = block.exercise_id" class="text-slate-300 hover:text-indigo-500 transition-colors flex-shrink-0">
+                  <Pencil :size="12" />
+                </button>
+              </template>
+            </div>
+
             <div class="p-5 md:p-8" v-if="block.exercise_id">
               <!-- Previous performance + overload indicator -->
               <template v-if="getLastSession(block.exercise_id) || getTemplateExercise(block.exercise_id)">
@@ -539,6 +571,7 @@ import { useAuth } from '@/composables/useAuth'
 import { useWorkoutStats } from '@/composables/useWorkoutStats'
 import { useWorkoutPrograms } from '@/composables/useWorkoutPrograms'
 import { useProgressiveOverload } from '@/composables/useProgressiveOverload'
+import { useExerciseSetup } from '@/composables/useExerciseSetup'
 import {
   Dumbbell,
   Plus,
@@ -556,7 +589,8 @@ import {
   Moon,
   Heart,
   Timer,
-  Layout as LayoutIcon
+  Layout as LayoutIcon,
+  SlidersHorizontal
 } from 'lucide-vue-next'
 // Body scroll lock logic (consistent with NutritionView if any modals are added later)
 const showModals = ref(false) // Placeholder if needed
@@ -583,6 +617,10 @@ const editingTemplate = ref(false)
 
 // ── Progressive overload ──
 const { exerciseHistory, fetchHistoryForExercises, getLastSession, getOverloadStatus } = useProgressiveOverload()
+
+// ── Exercise setups ──
+const { getSetup, saveSetup } = useExerciseSetup()
+const editingSetupId = ref(null) // exercise_id currently being edited
 
 // fetchHistoryForPlan is called inside loadData (after exercises are loaded)
 // and when the user switches day in the week overview
