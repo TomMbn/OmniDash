@@ -6,4 +6,4 @@ dist-ssr
 .env
 .env.*
 !.env.example
-plan_complet_final_v4.html
+plan_complet*

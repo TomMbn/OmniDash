@@ -25,7 +25,7 @@ export const MATCH_WEEK = {
 }
 
 // ══════════════════════════════════════
-// TEMPLATES DE SÉANCES — Plan 8 semaines
+// TEMPLATES DE SÉANCES — Plan v5
 // ══════════════════════════════════════
 
 const DEFAULT_TEMPLATES = {
@@ -35,12 +35,11 @@ const DEFAULT_TEMPLATES = {
         description: 'Pecs, Épaules & Triceps',
         color: 'from-red-500 to-orange-500',
         exercises: [
-            { name: 'Élévations latérales poulie (unilatéral)', sets: 4, repsRange: '12-15', targetWeight: 9, restTime: '60 s', note: 'Excentrique 4 s · rest-pause sur la 4e série · progresser via reps avant de monter la charge', section: 'Épaules' },
-            { name: 'Chest press incliné (machine)', sets: 3, repsRange: '8-10', targetWeight: 45, restTime: '2–3 min', note: 'Double progression prioritaire — exercice clé épaisseur pecs', section: 'Pectoraux' },
-            { name: 'Chest fly (machine)', sets: 3, repsRange: '12-15', targetWeight: 45, restTime: '90 s', note: 'Étirement maximal en bas · contraction 1 s en haut', section: 'Pectoraux' },
+            { name: 'Chest press incliné machine', sets: 3, repsRange: '8-10', targetWeight: 45, restTime: '2–3 min', note: 'Focus haut du pec · double progression prioritaire', section: 'Pectoraux' },
+            { name: 'Chest fly machine', sets: 3, repsRange: '12-15', targetWeight: 45, restTime: '90 s', note: 'Focus étirement · contraction 1 s en haut', section: 'Pectoraux' },
             { name: 'Extension triceps poulie basse', sets: 3, repsRange: '12-15', targetWeight: 30, restTime: '90 s', section: 'Triceps' },
             { name: 'Extension triceps poulie haute', sets: 3, repsRange: '12-15', targetWeight: 18, restTime: '90 s', section: 'Triceps' },
-            { name: 'Face pulls câble', sets: 3, repsRange: '15-20', targetWeight: 0, restTime: '45 s', note: 'Correction protraction épaules · retirer si fatigue après Pull du mercredi', section: 'Triceps' },
+            { name: 'Élévations latérales haltères', sets: 4, repsRange: '15', targetWeight: 9, restTime: '60 s', note: 'Focus galbe · excentrique 4 s · rest-pause sur série 4', section: 'Épaules' },
         ]
     },
     PULL: {
@@ -49,66 +48,67 @@ const DEFAULT_TEMPLATES = {
         description: 'Dos & Biceps — V-taper prioritaire',
         color: 'from-blue-500 to-cyan-500',
         exercises: [
-            { name: 'Lat pulldown machine', sets: 4, repsRange: '8-10', targetWeight: 0, restTime: '2–3 min', note: 'Amplitude maximale · étire le grand dorsal en haut · progression vers tractions lestées', section: 'Grand dorsal' },
-            { name: 'Mid row machine', sets: 3, repsRange: '8-10', targetWeight: 55, restTime: '2 min', section: 'Épaisseur dos' },
-            { name: 'Seated cable row (V-grip)', sets: 3, repsRange: '10-12', targetWeight: 50, restTime: '90 s', section: 'Épaisseur dos' },
-            { name: 'Face pulls / oiseau poulie haute', sets: 3, repsRange: '15', targetWeight: 0, restTime: '45 s', note: 'Correction protraction · deltoïde postérieur', section: 'Épaules & Biceps' },
-            { name: 'Curl pupitre haltères', sets: 3, repsRange: '10-12', targetWeight: 16, restTime: '90 s', section: 'Épaules & Biceps' },
-            { name: 'Curl marteau haltères', sets: 3, repsRange: '12', targetWeight: 18, restTime: '60 s', section: 'Épaules & Biceps' },
+            { name: 'Lat pulldown', sets: 4, repsRange: '8-10', targetWeight: 0, restTime: '2–3 min', note: 'Focus galbe · amplitude maximale · étirer le grand dorsal en haut', section: 'Grand dorsal' },
+            { name: 'Mid row machine', sets: 3, repsRange: '8-10', targetWeight: 55, restTime: '2 min', note: 'Focus épaisseur', section: 'Épaisseur dos' },
+            { name: 'Tirage horizontal V-grip', sets: 3, repsRange: '10-12', targetWeight: 50, restTime: '90 s', note: 'Focus tirage horizontal', section: 'Épaisseur dos' },
+            { name: 'Face pulls / oiseau poulie', sets: 3, repsRange: '15', targetWeight: 0, restTime: '45 s', note: 'Focus arrière épaule · correction protraction', section: 'Épaules & Biceps' },
+            { name: 'Curl pupitre haltères', sets: 3, repsRange: '10-12', targetWeight: 16, restTime: '90 s', note: 'Focus étirement biceps', section: 'Épaules & Biceps' },
+            { name: 'Curl marteau haltères', sets: 3, repsRange: '12', targetWeight: 18, restTime: '60 s', note: 'Focus brachial', section: 'Épaules & Biceps' },
         ]
     },
     LEGS: {
         label: 'Legs',
         emoji: '🦵',
-        description: 'Focus Quadriceps · Ischios · Mollets',
+        description: 'Focus Quadriceps · Ischios · Épaules',
         color: 'from-green-500 to-emerald-500',
         exercises: [
-            { name: 'Pont fessier au sol', sets: 2, repsRange: '15', targetWeight: 0, restTime: '30 s', note: '2 s en haut · bas du dos plaqué au sol · activation avant presse', section: 'Activation' },
-            { name: 'Split squat statique haltères', sets: 4, repsRange: '8-10', targetWeight: 0, restTime: '2–3 min', note: 'Progression vers fentes bulgares dans 4–8 semaines · surveiller adducteurs', section: 'Quadriceps' },
-            { name: 'Presse à cuisses (pieds bas)', sets: 3, repsRange: '10-12', targetWeight: 70, restTime: '2 min', note: 'Reprise progressive · stopper à la moindre gêne adducteurs', section: 'Quadriceps' },
-            { name: 'Leg extension', sets: 3, repsRange: '15', targetWeight: 55, restTime: '60 s', note: 'Contraction 2 s', section: 'Quadriceps' },
-            { name: 'Leg curl allongé', sets: 3, repsRange: '12-15', targetWeight: 40, restTime: '90 s', section: 'Ischios & Mollets' },
+            { name: 'Presse pieds bas', sets: 3, repsRange: '10-12', targetWeight: 70, restTime: '2 min', note: 'Focus quads · surveiller adducteurs', section: 'Quadriceps' },
+            { name: 'Presse unilatérale', sets: 3, repsRange: '10-12', targetWeight: 0, restTime: '2 min', note: 'Par jambe · surveiller adducteurs', section: 'Quadriceps' },
+            { name: 'Leg extension', sets: 3, repsRange: '15', targetWeight: 55, restTime: '60 s', note: 'Contraction 2 s en haut', section: 'Quadriceps' },
+            { name: 'Leg curl allongé', sets: 4, repsRange: '12-15', targetWeight: 40, restTime: '90 s', note: 'Maintenance ischios', section: 'Ischios & Mollets' },
             { name: 'Mollets debout', sets: 4, repsRange: '15', targetWeight: 0, restTime: '60 s', note: 'Noter la charge à chaque séance', section: 'Ischios & Mollets' },
+            { name: 'Élévations latérales haltères', sets: 4, repsRange: '15', targetWeight: 9, restTime: '60 s', note: 'Focus galbe · excentrique 4 s · drop set sur dernière série', section: 'Épaules' },
+            { name: 'Face pulls / oiseau poulie', sets: 4, repsRange: '15', targetWeight: 0, restTime: '45 s', note: 'Focus arrière épaule · deltoïde postérieur', section: 'Épaules' },
         ]
     },
     UPPER: {
         label: 'Upper',
         emoji: '⬆️',
-        description: 'Grand Dorsal & V-Taper · Deltoïdes latéraux',
+        description: 'Largeur & V-Taper',
         color: 'from-purple-500 to-indigo-500',
         exercises: [
-            { name: 'Tractions assistées', sets: 4, repsRange: '6-10', targetWeight: 0, restTime: '2–3 min', note: 'Amplitude maximale · étire le grand dorsal · progression vers tractions libres puis lestées', section: 'Grand dorsal' },
-            { name: 'Pull-over poulie haute', sets: 3, repsRange: '12-15', targetWeight: 32, restTime: '90 s', note: 'Grand dentelé + grand dorsal · expansion thoracique', section: 'Grand dorsal' },
-            { name: 'Élévations latérales poulie (unilatéral)', sets: 5, repsRange: '12-15', targetWeight: 9, restTime: '60 s', note: '1,5 reps (séries 1–2) · excentrique 4 s (séries 3–4) · drop set (série 5)', section: 'Deltoïdes — 5 séries' },
-            { name: 'Face pulls câble', sets: 3, repsRange: '15-20', targetWeight: 0, restTime: '45 s', note: 'Deltoïde postérieur · correction protraction épaules', section: 'Prévention & Finition' },
-            { name: 'Curl incliné haltères', sets: 3, repsRange: '12', targetWeight: 14, restTime: '60 s', note: 'Superset avec extension triceps — enchaîner sans repos', section: 'Prévention & Finition' },
-            { name: 'Extension triceps poulie', sets: 3, repsRange: '12', targetWeight: 18, restTime: '60 s', note: 'Superset avec curl incliné', section: 'Prévention & Finition' },
+            { name: 'Chest press machine', sets: 3, repsRange: '8-10', targetWeight: 0, restTime: '2 min', section: 'Pectoraux & Dos' },
+            { name: 'Tirage vertical unilatéral poulie haute', sets: 3, repsRange: '10-12', targetWeight: 0, restTime: '90 s', note: 'Focus grand dorsal', section: 'Pectoraux & Dos' },
+            { name: 'Machine fly pec deck', sets: 3, repsRange: '12', targetWeight: 0, restTime: '90 s', section: 'Pectoraux & Dos' },
+            { name: 'Pull-over poulie haute', sets: 3, repsRange: '12-15', targetWeight: 32, restTime: '90 s', note: 'Focus largeur grand dorsal', section: 'Grand dorsal' },
+            { name: 'Élévations latérales poulie', sets: 4, repsRange: '15', targetWeight: 9, restTime: '60 s', note: '1,5 reps séries 1–2 · excentrique 4 s séries 3–4 · drop set série 5', section: 'Deltoïdes' },
+            { name: 'Superset curl + extension triceps', sets: 3, repsRange: '12', targetWeight: 0, restTime: '60 s', note: 'Enchaîner sans repos entre les deux exercices', section: 'Prévention & Finition' },
+            { name: 'Face pulls / oiseau poulie', sets: 3, repsRange: '15', targetWeight: 0, restTime: '45 s', note: 'Focus arrière épaule', section: 'Prévention & Finition' },
         ]
     },
     LOWER: {
         label: 'Lower',
         emoji: '⬇️',
-        description: 'Ischios, Fessiers & Core — Chaîne postérieure',
+        description: 'Ischios, Fessiers & Abdos — Chaîne postérieure',
         color: 'from-teal-500 to-green-500',
         exercises: [
-            { name: 'Presse à cuisses (pieds hauts)', sets: 3, repsRange: '10-12', targetWeight: 0, restTime: '2 min', note: 'Reprendre progressivement · surveiller adducteurs', section: 'Fessiers & Ischios' },
-            { name: 'Leg curl allongé', sets: 3, repsRange: '12-15', targetWeight: 0, restTime: '90 s', section: 'Fessiers & Ischios' },
-            { name: 'Hip thrust machine', sets: 3, repsRange: '12', targetWeight: 0, restTime: '90 s', note: 'Fessier antagoniste du psoas · clé pour corriger l\'antéversion', section: 'Fessiers & Ischios' },
-            { name: 'SDT roumain haltères', sets: 4, repsRange: '10-12', targetWeight: 0, restTime: '2–3 min', note: 'En 4e position · noter la charge systématiquement', section: 'SDT' },
-            { name: 'Relevés de jambes', sets: 3, repsRange: '15', targetWeight: 0, restTime: '45 s', section: 'Core' },
-            { name: 'Planche', sets: 3, repsRange: '30-45s', targetWeight: 0, restTime: '30 s', note: 'Rentrer le bassin sous soi — rétroversion active pendant toute la tenue', section: 'Core' },
+            { name: 'Leg curl allongé machine', sets: 3, repsRange: '12-15', targetWeight: 0, restTime: '90 s', section: 'Chaîne postérieure' },
+            { name: 'Hip thrust machine', sets: 3, repsRange: '12', targetWeight: 0, restTime: '90 s', note: 'Antagoniste du psoas · clé antéversion', section: 'Chaîne postérieure' },
+            { name: 'SDT roumain haltères', sets: 3, repsRange: '10-12', targetWeight: 0, restTime: '2–3 min', note: 'Focus ischios · noter la charge systématiquement', section: 'SDT' },
+            { name: 'Presse pieds bas', sets: 3, repsRange: '10-12', targetWeight: 0, restTime: '2 min', note: 'Surveiller adducteurs', section: 'Quadriceps' },
+            { name: 'Relevés de jambes suspendu', sets: 3, repsRange: '15', targetWeight: 0, restTime: '45 s', note: 'Poids de corps · bas du ventre · V-line', section: 'Abdos en salle' },
         ]
     },
     CARDIO: {
         label: 'Cardio',
         emoji: '🏃',
-        description: 'LISS Zone 2 · 120–140 bpm · 35–40 min',
+        description: 'Récupération active · Zone 1–2 · 110–130 bpm · 35–40 min',
         isCardio: true,
         color: 'from-teal-500 to-cyan-500',
         cardioOptions: [
-            { name: 'Vélo résistance modérée', duration: '35–40 min', note: '120–140 bpm · parler sans être essoufflé' },
-            { name: 'Marche rapide / nordic walking', duration: '40–50 min', note: '6–7 km/h' },
-            { name: 'Rowing ergomètre', duration: '30–35 min', note: 'Bras longs = avantage mécanique · Recommandé longiligne' },
+            { name: 'Vélo de salle', duration: '35–40 min', note: 'Résistance 2–3 · 90–100 rpm · récupération active jambes' },
+            { name: 'Elliptique', duration: '35–40 min', note: 'Résistance modérée · protection jambes · sollicitation quadriceps moindre' },
+            { name: 'Marche rapide extérieur', duration: '40 min', note: '6,5–7 km/h · terrain plat · idéal lendemain de Legs lourd' },
         ],
         exercises: []
     },
@@ -132,7 +132,7 @@ const DEFAULT_TEMPLATES = {
 // PERSISTENCE (localStorage)
 // ══════════════════════════════════════
 
-const STORAGE_KEY = 'omnidash_workout_templates_v2'
+const STORAGE_KEY = 'omnidash_workout_templates_v3'
 
 function loadTemplates() {
     try {

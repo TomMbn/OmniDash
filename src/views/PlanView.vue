@@ -41,12 +41,12 @@
           <div class="stat-val">3</div>
         </div>
         <div class="stat-card">
-          <div class="stat-label">Vacuum + posture</div>
+          <div class="stat-label">Vacuum + étirements</div>
           <div class="stat-val">7j/7</div>
         </div>
       </div>
 
-      <div class="tip">Priorités morphologiques intégrées : grand dorsal (tractions) + deltoïdes latéraux (5 séries/séance Upper) + pectoraux (double progression) + correction antéversion (dead bug, pont fessier, étirements psoas).</div>
+      <div class="tip">Cardio lundi & vendredi = récupération active jambes après Legs jeudi et Lower dimanche · FC cible 110–130 bpm · Ne jamais dépasser 140 bpm · Piloter par la FC, pas par la vitesse.</div>
     </div>
 
     <!-- MUSCULATION -->
@@ -77,7 +77,31 @@
         </template>
       </div>
 
-      <div class="tip">Double progression : atteins la limite haute de la plage en reps → monte de 2,5 kg → recommence à la limite basse. Décharge toutes les 6–8 semaines (−30% volume, mêmes charges).</div>
+      <div class="tip">Double progression : atteins la limite haute de la plage en reps → monte de 2,5 kg → recommence à la limite basse. Décharge toutes les 6–8 semaines.</div>
+
+      <!-- SEMAINE DE DÉCHARGE -->
+      <div style="margin-top:20px;">
+        <div style="font-size:13px;font-weight:600;color:#1e293b;margin-bottom:8px;">Semaine de décharge</div>
+        <div style="font-size:12px;color:#64748b;margin-bottom:12px;">Mêmes charges · mêmes reps · −1 série par exercice · arrêter 2–3 reps avant l'échec. Durée : 1 semaine toutes les 6–8 semaines.</div>
+
+        <div v-for="session in dechargeBlocs" :key="session.day" class="card" style="border-left:2px solid #e2e8f0;border-radius:0 12px 12px 0;">
+          <div class="day-header">
+            <span class="day-pill" :style="session.pillStyle">{{ session.day }}</span>
+            <span class="session-title">{{ session.title }}</span>
+            <span style="font-size:11px;color:#94a3b8;margin-left:auto;">{{ session.totalNormal }} → {{ session.totalDecharge }} séries</span>
+          </div>
+          <div class="col-header">
+            <span class="col-label left">Exercice</span>
+            <span class="col-label">Normal</span>
+            <span class="col-label">Décharge</span>
+          </div>
+          <div v-for="ex in session.exercises" :key="ex.name" class="ex-row">
+            <span class="ex-name">{{ ex.name }}</span>
+            <span class="ex-sets" style="color:#cbd5e1;text-decoration:line-through;">{{ ex.normal }}</span>
+            <span class="ex-sets" style="color:#4f46e5;font-weight:600;">{{ ex.decharge }}</span>
+          </div>
+        </div>
+      </div>
     </div>
 
     <!-- CARDIO -->
@@ -250,8 +274,8 @@ const weekDays = [
   {
     name: 'Jeudi',
     title: 'Legs',
-    sub: 'Quads · Ischios · Mollets',
-    badges: [{ text: 'Salle · ~55 min', style: 'background:#FAECE7;color:#712B13;' }]
+    sub: 'Quads · Ischios · Épaules',
+    badges: [{ text: 'Salle · ~60 min', style: 'background:#FAECE7;color:#712B13;' }]
   },
   {
     name: 'Vendredi',
@@ -283,15 +307,14 @@ const muscuSessions = [
     pillStyle: 'background:#E6F1FB;color:#0C447C;',
     title: 'Push — Pecs, Épaules & Triceps',
     items: [
-      { sep: 'Épaules en premier — à froid pour maximiser le stimulus' },
-      { name: 'Élévations latérales poulie unilatérale', note: 'Excentrique 4 s · rest-pause sur la 4e série · 9 kg → progression via reps et tempo avant de monter la charge', sets: '4 × 12-15', rest: '60 s' },
       { sep: 'Pectoraux' },
-      { name: 'Chest press incliné machine', note: 'Double progression prioritaire — exercice clé pour l\'épaisseur des pecs', sets: '3 × 8-10', rest: '2–3 min' },
-      { name: 'Chest fly machine', note: 'Étirement maximal en bas du mouvement · contraction 1 s en haut', sets: '3 × 12-15', rest: '90 s' },
-      { sep: 'Triceps & prévention épaules' },
+      { name: 'Chest press incliné machine', note: 'Focus haut du pec · double progression prioritaire', sets: '3 × 8-10', rest: '2–3 min' },
+      { name: 'Chest fly machine', note: 'Focus étirement · contraction 1 s en haut', sets: '3 × 12-15', rest: '90 s' },
+      { sep: 'Triceps' },
       { name: 'Extension triceps poulie basse', sets: '3 × 12-15', rest: '90 s' },
       { name: 'Extension triceps poulie haute', sets: '3 × 12-15', rest: '90 s' },
-      { name: 'Face pulls câble', note: 'Correction protraction épaules · retirer si fatigue après Pull du mercredi', sets: '3 × 15-20', rest: '45 s' }
+      { sep: 'Épaules en finition' },
+      { name: 'Élévations latérales haltères', note: 'Focus galbe · excentrique 4 s · rest-pause sur série 4', sets: '4 × 15', rest: '60 s' }
     ]
   },
   {
@@ -300,14 +323,14 @@ const muscuSessions = [
     title: 'Pull — Dos & Biceps',
     items: [
       { sep: 'Grand dorsal — largeur prioritaire' },
-      { name: 'Lat pulldown machine (ou traction assistée)', badge: 'Priorité V-taper', note: 'Amplitude maximale — étire le grand dorsal en haut · progression vers tractions lestées', sets: '4 × 8-10', rest: '2–3 min' },
+      { name: 'Lat pulldown', badge: 'Priorité V-taper', note: 'Focus galbe · amplitude maximale · étirer le grand dorsal en haut', sets: '4 × 8-10', rest: '2–3 min' },
       { sep: 'Épaisseur du dos' },
-      { name: 'Mid row machine', sets: '3 × 8-10', rest: '2 min' },
-      { name: 'Seated cable row V-grip', sets: '3 × 10-12', rest: '90 s' },
+      { name: 'Mid row machine', note: 'Focus épaisseur', sets: '3 × 8-10', rest: '2 min' },
+      { name: 'Tirage horizontal V-grip', note: 'Focus tirage horizontal', sets: '3 × 10-12', rest: '90 s' },
       { sep: 'Épaules postérieures & biceps' },
-      { name: 'Face pulls / oiseau poulie haute', note: 'Correction protraction · deltoïde postérieur', sets: '3 × 15', rest: '45 s' },
-      { name: 'Curl pupitre haltères', sets: '3 × 10-12', rest: '90 s' },
-      { name: 'Curl marteau haltères', sets: '3 × 12', rest: '60 s' }
+      { name: 'Face pulls / oiseau poulie', note: 'Focus arrière épaule · correction protraction', sets: '3 × 15', rest: '45 s' },
+      { name: 'Curl pupitre haltères', note: 'Focus étirement biceps', sets: '3 × 10-12', rest: '90 s' },
+      { name: 'Curl marteau haltères', note: 'Focus brachial', sets: '3 × 12', rest: '60 s' }
     ]
   },
   {
@@ -315,90 +338,83 @@ const muscuSessions = [
     pillStyle: 'background:#FAECE7;color:#712B13;',
     title: 'Legs — Focus Quadriceps',
     items: [
-      { sep: 'Échauffement postural — activer fessiers avant les charges' },
-      { name: 'Pont fessier (glute bridge) au sol', badge: 'Antéversion', note: '2 s en haut · bas du dos plaqué au sol · activation avant presse', sets: '2 × 15', rest: '30 s' },
       { sep: 'Quadriceps' },
-      { name: 'Split squat statique haltères', badge: 'Remplace bulgares', note: 'Progression vers fentes bulgares dans 4–8 semaines · surveiller adducteurs', sets: '4 × 8-10', rest: '2–3 min' },
-      { name: 'Presse pieds bas', note: 'Reprise progressive — stopper à la moindre gêne adducteurs', sets: '3 × 10-12', rest: '2 min' },
-      { name: 'Leg extension (contraction 2 s)', sets: '3 × 15', rest: '60 s' },
-      { sep: 'Ischios & mollets' },
-      { name: 'Leg curl allongé', sets: '3 × 12-15', rest: '90 s' },
-      { name: 'Mollets debout (noter la charge)', sets: '4 × 15', rest: '60 s' }
+      { name: 'Presse pieds bas', note: 'Focus quads · surveiller adducteurs', sets: '3 × 10-12', rest: '2 min' },
+      { name: 'Presse unilatérale', badge: 'Nouveau', note: 'Par jambe · surveiller adducteurs', sets: '3 × 10-12', rest: '2 min' },
+      { name: 'Leg extension', note: 'Contraction 2 s en haut', sets: '3 × 15', rest: '60 s' },
+      { sep: 'Ischios & Mollets' },
+      { name: 'Leg curl allongé', note: 'Maintenance ischios', sets: '4–5 × 12-15', rest: '90 s' },
+      { name: 'Mollets debout', note: 'Noter la charge à chaque séance', sets: '4 × 15', rest: '60 s' },
+      { sep: 'Épaules en finition — muscles frais relatifs' },
+      { name: 'Élévations latérales haltères', note: 'Focus galbe · excentrique 4 s · drop set sur dernière série', sets: '4 × 15', rest: '60 s' },
+      { name: 'Face pulls / oiseau poulie', note: 'Focus arrière épaule · deltoïde postérieur', sets: '4 × 15', rest: '45 s' }
     ]
   },
   {
     day: 'Samedi',
     pillStyle: 'background:#FBEAF0;color:#72243E;',
-    title: 'Upper — Grand Dorsal & V-Taper',
+    title: 'Upper — Largeur & V-Taper',
     items: [
-      { sep: 'Grand dorsal — exercice principal V-taper' },
-      { name: 'Tractions assistées (bande / machine)', badge: 'Priorité absolue', note: 'Amplitude maximale · étire le grand dorsal en haut · progression vers tractions libres puis lestées', sets: '4 × 6-10', rest: '2–3 min' },
-      { name: 'Pull-over poulie haute', note: 'Grand dentelé + grand dorsal · expansion thoracique', sets: '3 × 12-15', rest: '90 s' },
-      { sep: 'Deltoïdes latéraux — 5 séries · priorité morphologique' },
-      { name: 'Élévations latérales poulie unilatérale', note: '1,5 reps sur séries 1–2 · excentrique 4 s sur séries 3–4 · drop set sur série 5', sets: '5 × 12-15', rest: '60 s' },
+      { name: 'Chest press machine', sets: '3 × 8-10', rest: '2 min' },
+      { name: 'Tirage vertical unilatéral poulie haute', badge: 'Nouveau', note: 'Focus grand dorsal', sets: '3 × 10-12', rest: '90 s' },
+      { name: 'Machine fly pec deck', badge: 'Nouveau', sets: '3 × 12', rest: '90 s' },
+      { name: 'Pull-over poulie haute', note: 'Focus largeur grand dorsal', sets: '3 × 12-15', rest: '90 s' },
+      { sep: 'Deltoïdes — priorité morphologique' },
+      { name: 'Élévations latérales poulie', note: '1,5 reps séries 1–2 · excentrique 4 s séries 3–4 · drop set série 5', sets: '4 × 15', rest: '60 s' },
       { sep: 'Prévention & finition' },
-      { name: 'Face pulls câble', note: 'Deltoïde postérieur · correction protraction épaules', sets: '3 × 15-20', rest: '45 s' },
-      { name: 'Superset — curl incliné + extension triceps', note: 'Enchaîner sans repos entre les deux exercices', sets: '3 × 12', rest: '60 s' }
+      { name: 'Superset : curl + extension triceps', note: 'Enchaîner sans repos entre les deux exercices', sets: '3 × 12', rest: '60 s' },
+      { name: 'Face pulls / oiseau poulie', note: 'Focus arrière épaule', sets: '3 × 15', rest: '45 s' }
     ]
   },
   {
     day: 'Dimanche',
     pillStyle: 'background:#E1F5EE;color:#085041;',
-    title: 'Lower — Ischios, Fessiers & Core',
+    title: 'Lower — Ischios, Fessiers & Abdos',
     items: [
-      { sep: 'En premier — échauffement bas du dos + activation fessiers' },
-      { name: 'Presse pieds hauts (fessiers)', note: 'Reprendre progressivement · surveiller adducteurs', sets: '3 × 10-12', rest: '2 min' },
+      { sep: 'Chaîne postérieure' },
       { name: 'Leg curl allongé machine', sets: '3 × 12-15', rest: '90 s' },
-      { name: 'Hip thrust machine ou haltère', badge: 'Antéversion', note: 'Fessier antagoniste du psoas · clé pour corriger l\'antéversion', sets: '3 × 12', rest: '90 s' },
-      { sep: 'En 4e position — bas du dos échauffé' },
-      { name: 'SDT roumain haltères', note: 'Noter la charge systématiquement · exercice principal ischios', sets: '4 × 10-12', rest: '2–3 min' },
-      { sep: 'Core' },
-      { name: 'Relevés de jambes ou crunch câble', sets: '3 × 15', rest: '45 s' },
-      { name: 'Planche (rétroversion active du bassin)', note: 'Rentrer le bassin sous soi pendant toute la tenue', sets: '3 × 30-45 s', rest: '30 s' }
+      { name: 'Hip thrust machine', note: 'Antagoniste du psoas · clé antéversion', sets: '3 × 12', rest: '90 s' },
+      { name: 'SDT roumain haltères', note: 'Focus ischios · noter la charge systématiquement', sets: '3 × 10-12', rest: '2–3 min' },
+      { name: 'Presse pieds bas', note: 'Surveiller adducteurs', sets: '3 × 10-12', rest: '2 min' },
+      { sep: 'Abdos en salle' },
+      { name: 'Relevés de jambes suspendu', note: 'Poids de corps · bas du ventre · V-line', sets: '3 × 15', rest: '45 s' }
     ]
   }
 ]
 
 const abdosBlocs = [
   {
-    title: 'Bloc 1 — Posture & antéversion',
-    sub: 'À faire en premier',
-    pillStyle: 'background:#E6F1FB;color:#0C447C;',
-    colLabel: 'Séries × durée',
-    exercises: [
-      { name: 'Vacuum abdominal', badge: 'Quotidien à jeun', note: 'Expire tout l\'air · rentre le nombril vers la colonne · transverse profond', sets: '3 × 30-45 s', rest: '30 s' },
-      { name: 'Rétroversion active du bassin', note: 'Allongé sur le dos · aplatir le bas du dos contre le sol · contracter abdos + fessiers · tenir 5 s', sets: '3 × 15 reps', rest: '20 s' },
-      { name: 'Pont fessier (glute bridge)', note: 'Monter le bassin · contracter les fessiers · tenir 2 s en haut · bas du dos ne cambre pas', sets: '3 × 15 reps', rest: '30 s' },
-      { name: 'Dead bug', note: 'Allongé · bras vers plafond · hanches/genoux à 90° · descendre bras droit + jambe gauche en expirant · bas du dos plaqué au sol en permanence · alterner', sets: '3 × 8-10 / côté', rest: '30 s' }
-    ]
-  },
-  {
-    title: 'Bloc 2 — Core & V-line',
+    title: 'Routine A — Core & V-line',
+    sub: 'Lundi & vendredi · ~12 min',
     pillStyle: 'background:#E1F5EE;color:#085041;',
     exercises: [
+      { name: 'Vacuum abdominal', note: 'Expire tout l\'air · nombril vers la colonne · transverse profond', sets: '3 × 30-45 s', rest: '30 s' },
+      { name: 'Dead bug', note: 'Allongé · bras vers plafond · genoux à 90° · descendre bras droit + jambe gauche en expirant · bas du dos plaqué au sol en permanence', sets: '3 × 8-10/côté', rest: '30 s' },
       { name: 'Relevés de jambes tendues', note: 'Mains sous les fessiers · descente 3 s · jambes fléchies si trop difficile', sets: '3 × 12-15', rest: '45 s' },
-      { name: 'Crunch lent (2 s montée / 2 s descente)', sets: '3 × 15-20', rest: '30 s' },
-      { name: 'Planche avant (rétroversion active)', note: 'Rentrer le bassin sous soi · pas d\'antéversion pendant la tenue', sets: '3 × 30-45 s', rest: '30 s' }
+      { name: 'Planche latérale', note: 'Progression : ajouter dip latéral · flancs et obliques', sets: '3 × 25-35 s/côté', rest: '30 s' }
     ]
   },
   {
-    title: 'Bloc 3 — Obliques & flancs',
-    pillStyle: 'background:#FAECE7;color:#712B13;',
+    title: 'Routine B — Posture & antéversion',
+    sub: 'Mercredi · ~12 min',
+    pillStyle: 'background:#E6F1FB;color:#0C447C;',
     exercises: [
-      { name: 'Planche latérale', note: 'Progression : ajouter dip latéral quand trop facile', sets: '3 × 25-35 s / côté', rest: '30 s' },
-      { name: 'Rotations russes lentes (sans charge → avec lest)', sets: '3 × 20 reps', rest: '30 s' },
-      { name: 'Flexion latérale debout (livre ou haltère léger)', sets: '3 × 15 / côté', rest: '30 s' }
+      { name: 'Vacuum abdominal', note: 'Expire tout l\'air · nombril vers la colonne', sets: '3 × 30-45 s', rest: '30 s' },
+      { name: 'Rétroversion active du bassin', note: 'Allongé sur le dos · aplatir le bas du dos contre le sol · contracter abdos + fessiers · tenir 5 s', sets: '3 × 15 reps', rest: '20 s' },
+      { name: 'Pont fessier (glute bridge)', note: 'Monter le bassin · contracter fessiers · tenir 2 s en haut · bas du dos ne cambre pas', sets: '3 × 15 reps', rest: '30 s' },
+      { name: 'Dead bug', note: 'Bas du dos plaqué au sol en permanence · mouvement lent et contrôlé', sets: '3 × 8-10/côté', rest: '30 s' }
     ]
   },
   {
-    title: 'Étirements quotidiens — antéversion',
-    sub: 'Soir · 7j/7 · ~5 min',
+    title: 'Quotidien — 7j/7',
+    sub: 'Vacuum matin + Étirements soir · ~6 min',
     pillStyle: 'background:#F1EFE8;color:#444441;',
-    colLabel: 'Durée',
+    colLabel: 'Séries × durée',
     exercises: [
-      { name: 'Psoas en fente basse', note: 'Genou arrière au sol · bassin en rétroversion pendant l\'étirement · dos droit', sets: '45–60 s / côté', rest: '7j/7' },
-      { name: 'Droit fémoral (quadriceps)', note: 'Allongé sur le ventre ou debout · talon vers les fesses · contracter légèrement le fessier', sets: '45 s / côté', rest: '7j/7' },
-      { name: 'Lombaires — position enfant', note: 'Assis sur les talons · bras tendus devant · front au sol', sets: '60 s', rest: '7j/7' }
+      { name: 'Vacuum abdominal debout', badge: 'Matin à jeun', note: 'Pieds dans l\'axe des épaules · légèrement penché en avant · expiration maximale · nombril vers la colonne', sets: '3 × 30 s', rest: '20 s' },
+      { name: 'Étirement psoas en fente basse', badge: 'Soir', note: 'Genou arrière au sol · rétroversion du bassin pendant l\'étirement · dos droit', sets: '45–60 s/côté', rest: '—' },
+      { name: 'Étirement droit fémoral', badge: 'Soir', note: 'Allongé sur le ventre ou debout · talon vers fessier · contracter légèrement le fessier', sets: '45 s/côté', rest: '—' },
+      { name: 'Position enfant — lombaires', badge: 'Soir', note: 'Assis sur les talons · bras tendus devant · front au sol', sets: '60 s', rest: '—' }
     ]
   }
 ]
@@ -409,11 +425,11 @@ const phases = [
     pillStyle: 'background:#E6F1FB;color:#0C447C;',
     title: 'Mise en place',
     rows: [
-      { color: '#378ADD', text: 'Musculation : apprendre les nouveaux exercices (split squat, tractions assistées, dead bug, pont fessier) · charges légères · technique prioritaire' },
-      { color: '#E24B4A', text: 'Jambes : uniquement leg curl + leg extension + mollets · aucune presse · surveiller adducteurs' },
+      { color: '#378ADD', text: 'Musculation : apprendre les nouveaux exercices (lat pulldown, hip thrust, SDT roumain) · technique prioritaire · charges légères' },
+      { color: '#E24B4A', text: 'Jambes : surveiller attentivement les adducteurs sur la presse · stopper à la moindre gêne · noter les charges' },
       { color: '#EF9F27', text: 'Élévations latérales : rester à 9 kg · ajouter excentrique 4 s · compter les reps exactes à chaque série' },
-      { color: '#1D9E75', text: 'Cardio : 2 × LISS 30 min · identifier ta zone 2 · 120–130 bpm' },
-      { color: '#888780', text: 'Posture : vacuum à jeun dès jour 1 · étirements psoas chaque soir · dead bug 3x/semaine' }
+      { color: '#1D9E75', text: 'Cardio : 2 × récupération active · FC 110–130 bpm · résistance 2–3 · piloter par la FC' },
+      { color: '#888780', text: 'Posture : vacuum à jeun dès jour 1 · étirements psoas chaque soir · routine B mercredi' }
     ]
   },
   {
@@ -422,10 +438,10 @@ const phases = [
     title: 'Montée en charge',
     rows: [
       { color: '#378ADD', text: 'Musculation : charger progressivement · noter chaque série · double progression active' },
-      { color: '#E24B4A', text: 'Jambes : réintroduire la presse pieds hauts à −40% de charge · amplitude réduite · stop à la moindre gêne' },
-      { color: '#EF9F27', text: 'Élévations latérales : ajouter rest-pause sur la 4e série · viser +2 reps par série vs sem. 1–2' },
-      { color: '#1D9E75', text: 'Cardio : monter à 35–40 min par session LISS' },
-      { color: '#888780', text: 'Posture : vérifier que l\'antéversion commence à se réduire · planche avec rétroversion active' }
+      { color: '#E24B4A', text: 'Jambes : si aucune gêne adducteurs → retrouver les charges habituelles progressivement' },
+      { color: '#EF9F27', text: 'Élévations latérales : ajouter rest-pause sur la dernière série · viser +2 reps par série vs sem. 1–2' },
+      { color: '#1D9E75', text: 'Cardio : vérifier que les jambes récupèrent mieux grâce aux séances actives · ajuster résistance si FC trop basse' },
+      { color: '#888780', text: 'Posture : évaluer si l\'antéversion commence à se réduire · planche avec rétroversion active' }
     ]
   },
   {
@@ -433,23 +449,99 @@ const phases = [
     pillStyle: 'background:#FAEEDA;color:#633806;',
     title: 'Intensification',
     rows: [
-      { color: '#378ADD', text: 'Musculation : double progression sur tous les exercices · tractions assistées en progression (moins d\'assistance)' },
-      { color: '#E24B4A', text: 'Jambes : si aucune gêne → retrouver les charges normales · tester le split squat avec plus de charge' },
-      { color: '#EF9F27', text: 'Élévations latérales : tester les 1,5 reps sur 2 des 5 séries Upper · drop set systématique sur la dernière série' },
-      { color: '#1D9E75', text: 'Cardio : vérifier progression zone 2 · même FC à intensité plus élevée' },
-      { color: '#888780', text: 'Abdos : passer à 4 séries sur relevés de jambes · ajouter progression dead bug (amplitude plus grande)' }
+      { color: '#378ADD', text: 'Musculation : double progression sur tous les exercices · lat pulldown en progression (charge croissante vers tractions libres)' },
+      { color: '#EF9F27', text: 'Élévations latérales : tester les 1,5 reps sur 2 séries Upper · drop set systématique sur dernière série Jeudi' },
+      { color: '#1D9E75', text: 'Cardio : si FC stable sous 125 bpm en récupération → envisager introduction zone 3–4 vendredi' },
+      { color: '#888780', text: 'Abdos : progresser sur dead bug (amplitude plus grande) · ajouter lest sur rotations russes si pratiquées' }
     ]
   },
   {
     weeks: 'Semaines 7–8',
     pillStyle: 'background:#FAECE7;color:#712B13;',
-    title: 'Zone 3–4 + décharge muscu',
+    title: 'Zone 3–4 + Décharge muscu',
     rows: [
-      { color: '#378ADD', text: 'Musculation : décharge semaine 7 (−30% volume, mêmes charges) · reprise full semaine 8' },
-      { color: '#E24B4A', text: 'Jambes : si tout va bien → tenter les fentes bulgares avec charge très légère' },
+      { color: '#378ADD', text: 'Musculation : décharge semaine 7 — voir tableau Décharge dans l\'onglet Musculation · −1 série/exercice · mêmes charges · reprise full semaine 8' },
+      { color: '#1D9E75', text: 'Cardio : zone 3–4 le vendredi (FC 155–170 bpm · 25 min) · récupération active conservée le lundi' },
       { color: '#EF9F27', text: 'Élévations latérales : bilan · si 4×15 tenus proprement en excentrique → tester charge supérieure' },
-      { color: '#1D9E75', text: 'Cardio : introduire 1 × zone 3–4 (FC 155–170 bpm, 25 min) en remplacement du LISS vendredi' },
-      { color: '#888780', text: 'Bilan : peser à jeun · ajuster calories si hors 80–84 kg · évaluer l\'antéversion visuellement' }
+      { color: '#888780', text: 'Bilan : peser à jeun · ajuster calories si hors 80–84 kg · évaluer antéversion visuellement · définir objectifs bloc suivant' }
+    ]
+  }
+]
+
+const dechargeBlocs = [
+  {
+    day: 'Mardi',
+    pillStyle: 'background:#E6F1FB;color:#0C447C;',
+    title: 'Push',
+    totalNormal: '16',
+    totalDecharge: '11',
+    exercises: [
+      { name: 'Chest press incliné machine',  normal: '3 × 8-10',  decharge: '2 × 8-10' },
+      { name: 'Chest fly machine',            normal: '3 × 12-15', decharge: '2 × 12-15' },
+      { name: 'Extension triceps poulie basse', normal: '3 × 12-15', decharge: '2 × 12-15' },
+      { name: 'Extension triceps poulie haute', normal: '3 × 12-15', decharge: '2 × 12-15' },
+      { name: 'Élévations latérales haltères', normal: '4 × 15',   decharge: '3 × 15' },
+    ]
+  },
+  {
+    day: 'Mercredi',
+    pillStyle: 'background:#E6F1FB;color:#0C447C;',
+    title: 'Pull',
+    totalNormal: '19',
+    totalDecharge: '13',
+    exercises: [
+      { name: 'Lat pulldown',                normal: '4 × 8-10',  decharge: '3 × 8-10' },
+      { name: 'Mid row machine',             normal: '3 × 8-10',  decharge: '2 × 8-10' },
+      { name: 'Tirage horizontal V-grip',    normal: '3 × 10-12', decharge: '2 × 10-12' },
+      { name: 'Face pulls / oiseau poulie',  normal: '3 × 15',    decharge: '2 × 15' },
+      { name: 'Curl pupitre haltères',       normal: '3 × 10-12', decharge: '2 × 10-12' },
+      { name: 'Curl marteau haltères',       normal: '3 × 12',    decharge: '2 × 12' },
+    ]
+  },
+  {
+    day: 'Jeudi',
+    pillStyle: 'background:#FAECE7;color:#712B13;',
+    title: 'Legs',
+    totalNormal: '24',
+    totalDecharge: '17',
+    exercises: [
+      { name: 'Presse pieds bas',              normal: '3 × 10-12', decharge: '2 × 10-12' },
+      { name: 'Presse unilatérale',            normal: '3 × 10-12', decharge: '2 × 10-12' },
+      { name: 'Leg extension',                 normal: '3 × 15',    decharge: '2 × 15' },
+      { name: 'Leg curl allongé',              normal: '4–5 × 12-15', decharge: '3 × 12-15' },
+      { name: 'Mollets debout',                normal: '4 × 15',    decharge: '3 × 15' },
+      { name: 'Élévations latérales haltères', normal: '4 × 15',    decharge: '3 × 15' },
+      { name: 'Face pulls / oiseau poulie',    normal: '4 × 15',    decharge: '3 × 15' },
+    ]
+  },
+  {
+    day: 'Samedi',
+    pillStyle: 'background:#FBEAF0;color:#72243E;',
+    title: 'Upper',
+    totalNormal: '22',
+    totalDecharge: '15',
+    exercises: [
+      { name: 'Chest press machine',                     normal: '3 × 8-10',  decharge: '2 × 8-10' },
+      { name: 'Tirage vertical unilatéral poulie haute', normal: '3 × 10-12', decharge: '2 × 10-12' },
+      { name: 'Machine fly pec deck',                    normal: '3 × 12',    decharge: '2 × 12' },
+      { name: 'Pull-over poulie haute',                  normal: '3 × 12-15', decharge: '2 × 12-15' },
+      { name: 'Élévations latérales poulie',             normal: '4 × 15',    decharge: '3 × 15' },
+      { name: 'Superset curl + extension triceps',       normal: '3 × 12',    decharge: '2 × 12' },
+      { name: 'Face pulls / oiseau poulie',              normal: '3 × 15',    decharge: '2 × 15' },
+    ]
+  },
+  {
+    day: 'Dimanche',
+    pillStyle: 'background:#E1F5EE;color:#085041;',
+    title: 'Lower',
+    totalNormal: '15',
+    totalDecharge: '10',
+    exercises: [
+      { name: 'Leg curl allongé machine',   normal: '3 × 12-15', decharge: '2 × 12-15' },
+      { name: 'Hip thrust machine',         normal: '3 × 12',    decharge: '2 × 12' },
+      { name: 'SDT roumain haltères',       normal: '3 × 10-12', decharge: '2 × 10-12' },
+      { name: 'Presse pieds bas',           normal: '3 × 10-12', decharge: '2 × 10-12' },
+      { name: 'Relevés de jambes suspendu', normal: '3 × 15',    decharge: '2 × 15' },
     ]
   }
 ]
