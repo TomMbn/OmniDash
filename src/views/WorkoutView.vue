@@ -1,422 +1,348 @@
 <template>
-  <div class="animate-fade-in max-w-5xl mx-auto pb-24 px-4 sm:px-6 select-none">
-    <!-- Header with Dynamic Tab Switch -->
-    <header class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8 md:mb-10 pt-4 md:pt-4">
-      <div class="flex items-center gap-3">
-        <div class="p-2 md:p-2.5 bg-indigo-600 rounded-xl md:rounded-2xl text-white shadow-lg shadow-indigo-100/50">
-          <Dumbbell :size="20" md:size="24" stroke-width="2.5" />
+  <div class="workout-view">
+
+    <!-- ── Header ── -->
+    <header class="module-header">
+      <div class="module-header-title">
+        <div class="module-icon" style="--color: var(--module-muscu)">
+          <Dumbbell :size="18" stroke-width="1.75" />
         </div>
         <div>
-          <h2 class="text-2xl md:text-3xl font-black text-slate-900 tracking-tight">Musculation</h2>
-          <p class="hidden sm:block text-slate-400 font-bold text-xs uppercase tracking-[0.2em] mt-1 ml-0.5">Performance & Progression</p>
+          <h2 class="module-name">Musculation</h2>
+          <p class="module-sub">Performance & Progression</p>
         </div>
       </div>
-      
-      <div class="bg-white p-1 rounded-2xl border border-slate-100 flex shadow-sm w-full sm:w-auto">
-        <button 
-          @click="activeTab = 'workout'" 
-          :class="activeTab === 'workout' ? 'bg-slate-900 text-white shadow-lg shadow-slate-200' : 'text-slate-400 hover:text-slate-600'"
-          class="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 md:px-6 py-2 md:py-2.5 rounded-[0.9rem] text-xs md:text-sm font-black transition-all"
+
+      <div class="tab-switcher">
+        <button
+          @click="activeTab = 'workout'"
+          class="tab-btn"
+          :class="{ 'tab-btn--active': activeTab === 'workout' }"
         >
-          <Target :size="14" md:size="16" /> Séance
+          <Target :size="13" stroke-width="1.75" />
+          Séance
         </button>
-        <button 
-          @click="activeTab = 'exercises'" 
-          :class="activeTab === 'exercises' ? 'bg-slate-900 text-white shadow-lg shadow-slate-200' : 'text-slate-400 hover:text-slate-600'"
-          class="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 md:px-6 py-2 md:py-2.5 rounded-[0.9rem] text-xs md:text-sm font-black transition-all"
+        <button
+          @click="activeTab = 'exercises'"
+          class="tab-btn"
+          :class="{ 'tab-btn--active': activeTab === 'exercises' }"
         >
-          <LayoutIcon :size="14" md:size="16" /> Bibliothèque
+          <LayoutIcon :size="13" stroke-width="1.75" />
+          Bibliothèque
         </button>
       </div>
     </header>
 
-    <!-- ═══ BIBLIOTHÈQUE TAB ═══ -->
-    <div v-if="activeTab === 'exercises'" class="animate-fade-in group">
-      <div class="bg-white rounded-[2.5rem] border border-slate-100 p-8 shadow-2xl shadow-slate-100/50 mb-8">
-        <h3 class="text-2xl font-black text-slate-900 tracking-tight mb-8">Ajouter un exercice</h3>
-        
-        <!-- Quick Add Muscle Group -->
-        <div class="mb-10 p-6 bg-slate-50 rounded-3xl border border-slate-100">
-          <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 ml-1">Nouveau Groupe Musculaire</label>
-          <div class="flex gap-3">
-            <input 
-              v-model="newMuscleGroup" 
-              type="text" 
-              class="flex-1 px-5 py-4 bg-white border border-slate-200 rounded-2xl focus:ring-2 focus:ring-indigo-500 outline-none placeholder:text-slate-300 font-bold" 
-              placeholder="Ex: Pectoraux, Dos..." 
+    <!-- ═══ BIBLIOTHÈQUE ═══ -->
+    <div v-if="activeTab === 'exercises'" class="tab-content animate-fade-in">
+      <div class="form-card">
+        <h3 class="form-card-title">Ajouter un exercice</h3>
+
+        <!-- Muscle group -->
+        <div class="field-group">
+          <label class="field-label">Nouveau groupe musculaire</label>
+          <div class="field-row">
+            <input
+              v-model="newMuscleGroup"
+              type="text"
+              class="field-input"
+              placeholder="Ex: Pectoraux, Dos…"
             />
-            <button 
-              type="button" 
-              @click="handleAddMuscleGroup" 
-              class="bg-white border border-slate-200 text-slate-900 hover:text-indigo-600 hover:border-indigo-100 px-6 rounded-2xl transition-all active:scale-95 shadow-sm"
-            >
-              <Plus :size="24" />
+            <button type="button" @click="handleAddMuscleGroup" class="icon-btn" aria-label="Ajouter">
+              <Plus :size="20" stroke-width="1.75" />
             </button>
           </div>
         </div>
 
-        <form @submit.prevent="addExercise" class="space-y-6">
-          <div class="space-y-6">
-            <div>
-              <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 ml-1">Nom de l'exercice</label>
-              <input 
-                v-model="newExercise.name" 
-                required 
-                type="text" 
-                class="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-2 focus:ring-indigo-500 outline-none placeholder:text-slate-300 font-bold text-slate-900" 
-                placeholder="Ex: Développé couché" 
-              />
-            </div>
-            <div>
-              <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 ml-1">Groupe musculaire</label>
-              <div class="relative">
-                <select 
-                  v-model="newExercise.muscle_group_id" 
-                  required 
-                  class="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-2 focus:ring-indigo-500 outline-none appearance-none font-bold text-slate-900"
-                >
-                  <option value="" disabled>Sélectionnez un groupe</option>
-                  <option v-for="group in muscleGroups" :key="group.id" :value="group.id">{{ group.name }}</option>
-                </select>
-                <div class="absolute right-5 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
-                  <ChevronRight :size="18" class="rotate-90" />
-                </div>
-              </div>
+        <div class="form-divider" />
+
+        <form @submit.prevent="addExercise" class="field-stack">
+          <div class="field-group">
+            <label class="field-label">Nom de l'exercice</label>
+            <input
+              v-model="newExercise.name"
+              required
+              type="text"
+              class="field-input"
+              placeholder="Ex: Développé couché"
+            />
+          </div>
+
+          <div class="field-group">
+            <label class="field-label">Groupe musculaire</label>
+            <div class="select-wrap">
+              <select v-model="newExercise.muscle_group_id" required class="field-input field-select">
+                <option value="" disabled>Sélectionnez un groupe</option>
+                <option v-for="group in muscleGroups" :key="group.id" :value="group.id">{{ group.name }}</option>
+              </select>
+              <ChevronRight :size="15" stroke-width="1.75" class="select-chevron" />
             </div>
           </div>
-          
-          <button 
-            type="submit" 
-            :disabled="loading.exercises" 
-            class="w-full bg-slate-900 hover:bg-black text-white py-5 rounded-2xl font-black text-lg transition-all active:scale-[0.98] mt-6 flex justify-center items-center gap-3 shadow-xl"
-          >
-            <div v-if="loading.exercises" class="w-5 h-5 border-4 border-white/20 border-t-white rounded-full animate-spin"></div>
-            <Save v-else :size="22" />
-            {{ loading.exercises ? 'Enregistrement...' : "Ajouter l'exercice" }}
+
+          <button type="submit" :disabled="loading.exercises" class="btn-primary btn-primary--lg">
+            <span v-if="loading.exercises" class="btn-spinner" />
+            <Save v-else :size="16" stroke-width="1.75" />
+            {{ loading.exercises ? 'Enregistrement…' : "Ajouter l'exercice" }}
           </button>
         </form>
       </div>
     </div>
 
-    <!-- ═══ TRACKING TAB ═══ -->
-    <div v-if="activeTab === 'workout'">
-      <div v-if="loading.data" class="flex flex-col items-center justify-center py-24">
-        <div class="w-12 h-12 border-4 border-slate-100 border-t-indigo-600 rounded-full animate-spin"></div>
-        <p class="text-slate-400 font-bold text-xs uppercase tracking-widest mt-4">Chargement des données...</p>
+    <!-- ═══ SÉANCE ═══ -->
+    <div v-if="activeTab === 'workout'" class="tab-content">
+
+      <!-- Skeleton -->
+      <div v-if="loading.data" class="skeleton-block">
+        <div class="week-skeleton">
+          <div v-for="i in 7" :key="i" class="skeleton skeleton--day" />
+        </div>
+        <div class="skeleton skeleton--card" />
       </div>
-      
+
       <template v-else>
-        <!-- Week Navigation Widget -->
-        <div class="mb-10 bg-white rounded-[2.5rem] border border-slate-100 p-2 shadow-sm overflow-hidden">
-          <div class="flex gap-1 overflow-x-auto pb-1 no-scrollbar">
-            <button 
-              v-for="day in weekOverview" 
+        <!-- ── Week nav ── -->
+        <div class="week-nav">
+          <div class="week-nav-scroll">
+            <button
+              v-for="day in weekOverview"
               :key="day.dayIndex"
               @click="selectedDayIndex = day.dayIndex"
-              class="flex-1 min-w-[70px] relative py-5 flex flex-col items-center gap-2 rounded-3xl transition-all active:scale-95"
-              :class="day.dayIndex === selectedDayIndex ? 'bg-indigo-600 text-white shadow-xl shadow-indigo-100/40' : 'text-slate-400 hover:bg-slate-50'"
+              class="day-btn"
+              :class="{ 'day-btn--active': day.dayIndex === selectedDayIndex }"
             >
-              <span class="text-[10px] font-black uppercase tracking-widest">{{ day.label.slice(0, 3) }}</span>
-              <div class="p-1.5 rounded-full transition-colors"
-                :class="[
-                  day.dayIndex === selectedDayIndex
-                    ? 'bg-white/20'
-                    : (day.session === 'REPOS' ? 'bg-slate-100' : (day.session === 'MATCH' ? 'bg-amber-100/60' : (day.session === 'CARDIO' ? 'bg-teal-100/60' : 'bg-indigo-100/60')))
-                ]"
-              >
+              <span class="day-btn-label">{{ day.label.slice(0, 2) }}</span>
+              <div class="day-btn-icon-wrap">
                 <component
-                  :is="day.session === 'REPOS' ? Moon : (day.session === 'MATCH' ? Trophy : (day.session === 'CARDIO' ? Heart : Dumbbell))"
-                  :size="18"
-                  :stroke-width="day.dayIndex === selectedDayIndex ? 3 : 2.5"
-                  :class="[
-                    day.dayIndex === selectedDayIndex
-                      ? 'text-white'
-                      : (day.session === 'REPOS' ? 'text-slate-500' : (day.session === 'MATCH' ? 'text-amber-600' : (day.session === 'CARDIO' ? 'text-teal-600' : 'text-indigo-600')))
-                  ]"
+                  :is="day.session === 'REPOS' ? Moon : day.session === 'MATCH' ? Trophy : day.session === 'CARDIO' ? Heart : Dumbbell"
+                  :size="15"
+                  stroke-width="1.75"
                 />
               </div>
-              <div v-if="day.dayIndex === todayDayIndex" class="absolute top-2 right-2 w-1.5 h-1.5 bg-rose-500 rounded-full"></div>
+              <div v-if="day.dayIndex === todayDayIndex" class="today-pip" />
             </button>
           </div>
         </div>
 
-        <!-- Selected Session Card -->
-        <div v-if="selectedPlan" class="mb-10 group">
-          <div 
-            class="relative rounded-[2.5rem] overflow-hidden border border-slate-100 shadow-2xl shadow-slate-100/50 transition-all hover:border-slate-200"
-            :class="isRestDay ? 'bg-slate-50/50' : 'bg-white'"
-          >
-            <!-- Premium Header -->
-            <div class="p-8 pb-6 flex flex-wrap justify-between items-start gap-4">
-              <div class="flex-1 min-w-[200px]">
-                <div class="flex items-center gap-2 mb-3">
-                  <span class="px-3 py-1 bg-slate-900 text-white text-[10px] font-black uppercase tracking-widest rounded-full">
-                    {{ isSelectedToday ? "Aujourd'hui" : selectedPlan.label }}
-                  </span>
-                  <span v-if="selectedPlan.note" class="px-3 py-1 bg-indigo-50 text-indigo-600 text-[10px] font-black uppercase tracking-widest rounded-full">
-                    {{ selectedPlan.note }}
-                  </span>
-                </div>
-                <h3 class="text-4xl font-black text-slate-900 tracking-tighter leading-tight mb-1">
-                  {{ selectedPlan.template.label }}
-                </h3>
-                <p class="text-slate-400 font-bold text-sm">{{ selectedPlan.template.description }}</p>
-              </div>
+        <!-- ── Session card ── -->
+        <div v-if="selectedPlan" class="session-card">
 
-              <!-- Action Buttons -->
-              <div class="flex items-center gap-2">
-                <button 
-                  v-if="selectedPlan.template.exercises.length > 0"
-                  @click="editingTemplate = !editingTemplate" 
-                  class="w-12 h-12 rounded-2xl flex items-center justify-center transition-all bg-slate-50 text-slate-400 hover:text-indigo-600 hover:bg-white border border-transparent hover:border-slate-100 shadow-sm"
-                  :title="editingTemplate ? 'Valider' : 'Éditer les charges'"
-                >
-                  <component :is="editingTemplate ? CheckCircle2 : Pencil" :size="22" />
-                </button>
+          <!-- Header -->
+          <div class="session-card-head">
+            <div class="session-meta">
+              <div class="session-badges">
+                <span class="badge badge--dark">
+                  {{ isSelectedToday ? "Aujourd'hui" : selectedPlan.label }}
+                </span>
+                <span v-if="selectedPlan.note" class="badge badge--accent">{{ selectedPlan.note }}</span>
+              </div>
+              <h3 class="session-title">{{ selectedPlan.template.label }}</h3>
+              <p class="session-desc">{{ selectedPlan.template.description }}</p>
+            </div>
+            <button
+              v-if="selectedPlan.template.exercises?.length"
+              @click="editingTemplate = !editingTemplate"
+              class="icon-btn"
+              :class="{ 'icon-btn--active': editingTemplate }"
+            >
+              <component :is="editingTemplate ? CheckCircle2 : Pencil" :size="16" stroke-width="1.75" />
+            </button>
+          </div>
+
+          <!-- CARDIO -->
+          <div v-if="isCardioSession" class="session-card-body">
+            <div class="cardio-options">
+              <div v-for="option in selectedPlan.template.cardioOptions" :key="option.name" class="cardio-option">
+                <div class="cardio-option-icon">
+                  <Heart :size="14" stroke-width="1.75" style="color:var(--module-nutri)" />
+                </div>
+                <div>
+                  <p class="cardio-option-name">{{ option.name }}</p>
+                  <p class="cardio-option-dur">{{ option.duration }}</p>
+                  <p v-if="option.note" class="cardio-option-note">{{ option.note }}</p>
+                </div>
               </div>
             </div>
 
-            <!-- CARDIO SESSION -->
-            <div v-if="isCardioSession" class="px-8 pb-8">
-              <div class="space-y-3 mb-8">
-                <div v-for="option in selectedPlan.template.cardioOptions" :key="option.name"
-                  class="flex items-start gap-4 p-4 rounded-2xl bg-teal-50/60 border border-teal-100/50">
-                  <div class="p-2 bg-teal-100 rounded-xl text-teal-600 flex-shrink-0">
-                    <Heart :size="16" />
-                  </div>
-                  <div>
-                    <p class="text-sm font-black text-slate-800">{{ option.name }}</p>
-                    <p class="text-xs font-bold text-teal-600 mt-0.5">{{ option.duration }}</p>
-                    <p class="text-[10px] text-slate-400 mt-0.5">{{ option.note }}</p>
-                  </div>
+            <!-- Cardio form -->
+            <div v-if="isSelectedToday && currentWorkout && !cardioSaved" class="cardio-form">
+              <div class="field-grid-2">
+                <div class="field-group">
+                  <label class="field-label">Activité</label>
+                  <input v-model="cardioLog.activity" placeholder="Vélo, marche…" class="field-input" />
                 </div>
-              </div>
-
-              <!-- Active cardio logging form -->
-              <div v-if="isSelectedToday && currentWorkout && !cardioSaved" class="space-y-4">
-                <div class="grid grid-cols-2 gap-3">
-                  <div>
-                    <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Activité</label>
-                    <input v-model="cardioLog.activity" placeholder="Vélo, marche…"
-                      class="w-full px-4 py-3 bg-slate-50 border border-slate-100 rounded-2xl font-bold text-sm focus:ring-2 focus:ring-teal-500 outline-none" />
-                  </div>
-                  <div>
-                    <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Durée (min)</label>
-                    <input v-model.number="cardioLog.duration" type="number" placeholder="35"
-                      class="w-full px-4 py-3 bg-slate-50 border border-slate-100 rounded-2xl font-bold text-sm focus:ring-2 focus:ring-teal-500 outline-none" />
-                  </div>
-                  <div>
-                    <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">FC moy. (bpm)</label>
-                    <input v-model.number="cardioLog.avgHR" type="number" placeholder="130"
-                      class="w-full px-4 py-3 bg-slate-50 border border-slate-100 rounded-2xl font-bold text-sm focus:ring-2 focus:ring-teal-500 outline-none" />
-                  </div>
-                  <div>
-                    <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Zone</label>
-                    <select v-model="cardioLog.zone"
-                      class="w-full px-4 py-3 bg-slate-50 border border-slate-100 rounded-2xl font-bold text-sm focus:ring-2 focus:ring-teal-500 outline-none appearance-none">
+                <div class="field-group">
+                  <label class="field-label">Durée (min)</label>
+                  <input v-model.number="cardioLog.duration" type="number" placeholder="35" class="field-input" />
+                </div>
+                <div class="field-group">
+                  <label class="field-label">FC moy. (bpm)</label>
+                  <input v-model.number="cardioLog.avgHR" type="number" placeholder="130" class="field-input" />
+                </div>
+                <div class="field-group">
+                  <label class="field-label">Zone</label>
+                  <div class="select-wrap">
+                    <select v-model="cardioLog.zone" class="field-input field-select">
                       <option value="2">Zone 2 (LISS)</option>
                       <option value="3">Zone 3</option>
                       <option value="4">Zone 4</option>
                     </select>
+                    <ChevronRight :size="14" stroke-width="1.75" class="select-chevron" />
                   </div>
                 </div>
-                <button @click="saveCardioLog"
-                  class="w-full bg-teal-600 hover:bg-teal-700 text-white py-5 rounded-[2rem] font-black text-lg transition-all active:scale-[0.98] flex items-center justify-center gap-3 shadow-xl">
-                  <CheckCircle2 :size="22" />
-                  Valider la séance cardio
-                </button>
               </div>
-
-              <!-- Cardio done state -->
-              <div v-else-if="isSelectedToday && currentWorkout && cardioSaved" class="bg-teal-50 border border-teal-100 p-5 rounded-[2rem] flex items-center justify-center gap-3">
-                <CheckCircle2 :size="18" class="text-teal-600" />
-                <div class="text-center">
-                  <p class="text-sm font-black text-teal-700">Cardio enregistré ✓</p>
-                  <p v-if="cardioLog.duration" class="text-xs text-teal-500 mt-0.5">{{ cardioLog.activity || 'Séance' }} · {{ cardioLog.duration }} min<span v-if="cardioLog.avgHR"> · {{ cardioLog.avgHR }} bpm moy.</span></p>
-                </div>
-              </div>
-
-              <!-- Start cardio button -->
-              <button v-if="isSelectedToday && !currentWorkout" @click="startCardio" :disabled="loading.workout"
-                class="w-full bg-teal-600 hover:bg-teal-700 text-white py-6 rounded-[2rem] font-black text-lg transition-all active:scale-[0.98] flex items-center justify-center gap-3 shadow-xl disabled:opacity-50">
-                <div v-if="loading.workout" class="w-5 h-5 border-4 border-white/20 border-t-white rounded-full animate-spin"></div>
-                <Play v-else :size="24" />
-                Démarrer le cardio
+              <button @click="saveCardioLog" class="btn-primary">
+                <CheckCircle2 :size="15" stroke-width="1.75" />
+                Valider la séance cardio
               </button>
             </div>
 
-            <!-- STRENGTH SESSION — Exercises Quick List -->
-            <div v-else-if="selectedPlan.template.exercises.length > 0" class="px-8 pb-8">
-              <div class="grid grid-cols-1 md:grid-cols-2 gap-x-3 gap-y-2 mb-8">
-                <template v-for="item in enrichedExercises" :key="item.isSep ? 'sep-' + item.label : item.name + item.num">
-                  <!-- Section separator -->
-                  <div v-if="item.isSep" class="col-span-full pt-4 pb-1">
-                    <span class="text-[10px] font-black text-slate-400 uppercase tracking-[0.15em]">{{ item.label }}</span>
-                  </div>
-                  <!-- Exercise card -->
-                  <div v-else
-                    class="flex flex-col p-5 rounded-3xl transition-all gap-3"
-                    :class="editingTemplate ? 'bg-indigo-50/50 border border-indigo-100' : 'bg-slate-50 border border-transparent'"
-                  >
-                    <!-- Top row: number + name + badges -->
-                    <div class="flex items-start justify-between gap-2">
-                      <div class="flex items-start gap-3 min-w-0 flex-1">
-                        <span class="text-xs font-black text-slate-300 w-4 text-center mt-0.5 flex-shrink-0">{{ item.num }}</span>
-                        <div class="min-w-0">
-                          <p class="text-sm font-black text-slate-800 whitespace-normal break-words leading-tight">{{ item.name }}</p>
-                          <p v-if="item.note && !editingTemplate" class="text-[10px] font-medium text-slate-400 mt-1 leading-tight">{{ item.note }}</p>
-                          <p v-if="!editingTemplate && getSetup(getExerciseDbId(item.name))" class="flex items-center gap-1 text-[10px] font-bold text-indigo-500 mt-1">
-                            <SlidersHorizontal :size="10" />{{ getSetup(getExerciseDbId(item.name)) }}
-                          </p>
-                        </div>
-                      </div>
-                      <div class="flex flex-col items-end gap-1 flex-shrink-0 pt-0.5 ml-1">
-                        <template v-if="editingTemplate">
-                          <div class="flex items-center gap-1">
-                            <input type="number" :value="item.sets"
-                              @change="updateTemplateField(selectedPlan.session, item.num - 1, 'sets', $event.target.value)"
-                              class="w-8 py-1.5 text-xs font-black text-center bg-white border border-indigo-100 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none" />
-                            <span class="text-indigo-300 text-[10px] font-black">×</span>
-                            <input type="text" :value="item.repsRange"
-                              @change="updateTemplateField(selectedPlan.session, item.num - 1, 'repsRange', $event.target.value)"
-                              class="w-12 py-1.5 text-xs font-black text-center bg-white border border-indigo-100 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none" />
-                            <input type="number" :value="item.targetWeight"
-                              @change="updateExerciseWeight(selectedPlan.session, item.num - 1, Number($event.target.value))"
-                              class="w-14 py-1.5 text-xs font-black text-center bg-indigo-600 text-white rounded-xl outline-none" placeholder="kg" />
-                          </div>
-                        </template>
-                        <template v-else>
-                          <span class="px-3 py-1.5 bg-slate-200/50 text-slate-700 text-[10px] font-black rounded-lg whitespace-nowrap">{{ item.sets }} × {{ item.repsRange }}</span>
-                          <span class="px-3 py-1.5 bg-indigo-600 text-white text-[10px] font-black rounded-lg">
-                            {{ item.targetWeight > 0 ? `${item.targetWeight}kg` : 'PDC' }}
-                          </span>
-                          <span v-if="item.restTime" class="text-[10px] text-slate-400 font-bold">{{ item.restTime }}</span>
-                        </template>
-                      </div>
-                    </div>
+            <div v-else-if="isSelectedToday && currentWorkout && cardioSaved" class="status-done">
+              <CheckCircle2 :size="15" stroke-width="1.75" style="color:var(--status-success)" />
+              <div>
+                <p class="status-done-title">Cardio enregistré</p>
+                <p v-if="cardioLog.duration" class="status-done-sub">{{ cardioLog.activity || 'Séance' }} · {{ cardioLog.duration }} min<span v-if="cardioLog.avgHR"> · {{ cardioLog.avgHR }} bpm</span></p>
+              </div>
+            </div>
 
-                    <!-- Overload status row (viewing mode only) -->
-                    <div v-if="!editingTemplate && getExerciseDbId(item.name)"
-                      class="flex items-center justify-between gap-2 pt-2 border-t border-slate-200/60">
-                      <span class="text-[10px] text-slate-400 font-medium">
-                        {{ getOverloadStatus(getExerciseDbId(item.name), item.repsRange)?.lastPerf || '—' }}
+            <button v-if="isSelectedToday && !currentWorkout" @click="startCardio" :disabled="loading.workout" class="btn-primary">
+              <span v-if="loading.workout" class="btn-spinner" />
+              <Play v-else :size="15" stroke-width="1.75" />
+              Démarrer le cardio
+            </button>
+          </div>
+
+          <!-- STRENGTH exercises preview -->
+          <div v-else-if="selectedPlan.template.exercises?.length" class="session-card-body">
+            <div class="exercise-preview-grid">
+              <template v-for="item in enrichedExercises" :key="item.isSep ? 'sep-' + item.label : item.name + item.num">
+                <div v-if="item.isSep" class="exercise-section-sep">{{ item.label }}</div>
+                <div v-else class="exercise-item" :class="{ 'exercise-item--editing': editingTemplate }">
+                  <div class="exercise-item-main">
+                    <span class="exercise-num">{{ item.num }}</span>
+                    <div class="exercise-item-info">
+                      <p class="exercise-item-name">{{ item.name }}</p>
+                      <p v-if="item.note && !editingTemplate" class="exercise-item-note">{{ item.note }}</p>
+                      <p v-if="!editingTemplate && getSetup(getExerciseDbId(item.name))" class="exercise-item-setup">
+                        <SlidersHorizontal :size="9" stroke-width="1.75" />
+                        {{ getSetup(getExerciseDbId(item.name)) }}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div class="exercise-item-right">
+                    <template v-if="editingTemplate">
+                      <div class="edit-fields">
+                        <input type="number" :value="item.sets"
+                          @change="updateTemplateField(selectedPlan.session, item.num-1, 'sets', $event.target.value)"
+                          class="edit-input edit-input--sm" />
+                        <span class="edit-sep">×</span>
+                        <input type="text" :value="item.repsRange"
+                          @change="updateTemplateField(selectedPlan.session, item.num-1, 'repsRange', $event.target.value)"
+                          class="edit-input" />
+                        <input type="number" :value="item.targetWeight"
+                          @change="updateExerciseWeight(selectedPlan.session, item.num-1, Number($event.target.value))"
+                          class="edit-input edit-input--accent" placeholder="kg" />
+                      </div>
+                    </template>
+                    <template v-else>
+                      <span class="sets-badge">{{ item.sets }} × {{ item.repsRange }}</span>
+                      <span class="weight-badge">{{ item.targetWeight > 0 ? `${item.targetWeight}kg` : 'PDC' }}</span>
+                      <span v-if="item.restTime" class="rest-badge">{{ item.restTime }}</span>
+                    </template>
+                  </div>
+
+                  <!-- Overload row -->
+                  <div v-if="!editingTemplate && getExerciseDbId(item.name)" class="overload-row">
+                    <span class="overload-last">
+                      {{ getOverloadStatus(getExerciseDbId(item.name), item.repsRange)?.lastPerf || '—' }}
+                    </span>
+                    <div v-if="getOverloadStatus(getExerciseDbId(item.name), item.repsRange)" class="overload-badge"
+                      :class="`overload-badge--${getOverloadStatus(getExerciseDbId(item.name), item.repsRange).status.toLowerCase()}`">
+                      <span class="overload-dot" />
+                      {{ getOverloadStatus(getExerciseDbId(item.name), item.repsRange).label }}
+                      <span v-if="getOverloadStatus(getExerciseDbId(item.name), item.repsRange).detail" class="overload-detail">
+                        · {{ getOverloadStatus(getExerciseDbId(item.name), item.repsRange).detail }}
                       </span>
-                      <div v-if="getOverloadStatus(getExerciseDbId(item.name), item.repsRange)"
-                        class="flex items-center gap-1.5">
-                        <span class="w-1.5 h-1.5 rounded-full flex-shrink-0"
-                          :class="overloadStyles[getOverloadStatus(getExerciseDbId(item.name), item.repsRange).status]?.dot"></span>
-                        <span class="text-[10px] font-black"
-                          :class="overloadStyles[getOverloadStatus(getExerciseDbId(item.name), item.repsRange).status]?.text">
-                          {{ getOverloadStatus(getExerciseDbId(item.name), item.repsRange).label }}
-                        </span>
-                        <span v-if="getOverloadStatus(getExerciseDbId(item.name), item.repsRange).detail"
-                          class="text-[10px] text-slate-400">
-                          {{ getOverloadStatus(getExerciseDbId(item.name), item.repsRange).detail }}
-                        </span>
-                      </div>
                     </div>
                   </div>
-                </template>
-              </div>
-
-              <!-- Action Start Button -->
-              <button
-                v-if="isSelectedToday && !currentWorkout"
-                @click="startFromTemplate"
-                :disabled="loading.workout"
-                class="w-full bg-slate-900 hover:bg-black text-white py-6 rounded-[2rem] font-black text-lg transition-all active:scale-[0.98] flex items-center justify-center gap-3 shadow-xl group/btn disabled:opacity-50"
-              >
-                <div v-if="loading.workout" class="w-5 h-5 border-4 border-white/20 border-t-white rounded-full animate-spin"></div>
-                <Play v-else :size="24" class="group-hover/btn:translate-x-1 transition-transform" />
-                Démarrer la séance
-              </button>
-
-              <div v-if="isSelectedToday && currentWorkout" class="bg-emerald-50 border border-emerald-100 p-5 rounded-[2rem] flex items-center justify-center gap-3">
-                <div class="p-1.5 bg-emerald-100 text-emerald-600 rounded-full">
-                  <CheckCircle2 :size="18" />
                 </div>
-                <p class="text-sm font-black text-emerald-700 text-center">Séance active — Enregistrez vos performances ci-dessous</p>
-              </div>
+              </template>
             </div>
 
-            <!-- Rest Day Premium Empty State -->
-            <div v-else class="p-16 flex flex-col items-center text-center">
-              <div class="w-24 h-24 bg-slate-50 rounded-[2.5rem] flex items-center justify-center text-slate-200 mb-6 shadow-inner">
-                <Trophy :size="48" />
-              </div>
-              <p class="text-slate-900 font-black text-2xl tracking-tight">Jour de Récupération</p>
-              <p class="text-slate-400 font-medium text-sm max-w-xs mt-3 leading-relaxed">Votre corps se reconstruit aujourd'hui. Profitez-en pour bien vous hydrater.</p>
+            <button v-if="isSelectedToday && !currentWorkout" @click="startFromTemplate" :disabled="loading.workout" class="btn-primary btn-primary--lg">
+              <span v-if="loading.workout" class="btn-spinner" />
+              <Play v-else :size="15" stroke-width="1.75" />
+              Démarrer la séance
+            </button>
+
+            <div v-if="isSelectedToday && currentWorkout" class="status-active">
+              <div class="status-active-dot" />
+              <p>Séance active — saisissez vos performances ci-dessous</p>
             </div>
+          </div>
+
+          <!-- Rest day -->
+          <div v-else class="rest-state">
+            <div class="rest-state-icon"><Trophy :size="32" stroke-width="1.25" /></div>
+            <p class="rest-state-title">Récupération</p>
+            <p class="rest-state-sub">Votre corps se reconstruit. Hydratez-vous bien.</p>
           </div>
         </div>
 
-        <!-- Volume Stats Badge Widget -->
-        <div v-if="hasStats" class="mb-10 flex flex-wrap gap-2 animate-fade-in group">
-          <div 
-            v-for="(vol, group) in volumeLoadByMuscleGroup" 
-            :key="group" 
-            class="relative overflow-hidden px-4 py-3 bg-white border border-slate-100 rounded-2xl shadow-sm flex flex-col min-w-[100px]"
-          >
-            <span class="text-[9px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">{{ group }}</span>
-            <span class="text-lg font-black text-slate-900 tracking-tighter">{{ vol }}<span class="text-xs text-slate-300 ml-0.5 font-bold">kg</span></span>
-            <div class="absolute bottom-0 left-0 h-1 bg-indigo-600/20" :style="{ width: '100%' }"></div>
+        <!-- ── Volume stats ── -->
+        <div v-if="hasStats" class="volume-row animate-fade-in">
+          <div v-for="(vol, group) in volumeLoadByMuscleGroup" :key="group" class="volume-chip">
+            <span class="volume-chip-label">{{ group }}</span>
+            <span class="volume-chip-value">{{ vol }}<span class="volume-chip-unit">kg</span></span>
           </div>
         </div>
 
-        <!-- Start/Current Workout (free-form or active) -->
-        <div v-if="!currentWorkout && (!todayPlan || isRestDay)" class="mb-10 text-center">
-          <button 
-            @click="startWorkout" 
-            :disabled="loading.workout" 
-            class="w-full bg-slate-50 hover:bg-white border-2 border-dashed border-slate-200 hover:border-indigo-200 p-12 rounded-[2.5rem] transition-all active:scale-[0.99] group shadow-inner"
-          >
-            <div class="w-20 h-20 bg-white rounded-3xl flex items-center justify-center text-slate-300 group-hover:text-indigo-600 transition-colors mx-auto mb-6 shadow-sm border border-slate-100">
-              <Flame :size="40" />
+        <!-- ── Free-form start ── -->
+        <div v-if="!currentWorkout && (!todayPlan || isRestDay)" class="free-start">
+          <button @click="startWorkout" :disabled="loading.workout" class="free-start-btn">
+            <div class="free-start-icon">
+              <Flame :size="28" stroke-width="1.5" />
             </div>
-            <p class="text-slate-900 font-black text-xl tracking-tight">Démarrer une séance libre</p>
-            <p class="text-slate-400 font-bold text-xs uppercase tracking-widest mt-2">Aucun programme prévu pour aujourd'hui</p>
+            <p class="free-start-title">Séance libre</p>
+            <p class="free-start-sub">Aucun programme prévu aujourd'hui</p>
           </button>
         </div>
 
-        <div v-if="currentWorkout" class="space-y-8 relative">
-          <!-- Floating Volume Badge for Active Session -->
-          <div class="sticky top-4 z-40 mb-4 px-6 py-4 bg-slate-900/95 backdrop-blur-md rounded-3xl border border-slate-800 shadow-2xl flex justify-between items-center text-white">
-            <div class="flex items-center gap-3">
-              <div class="p-2 bg-indigo-600 rounded-2xl">
-                <Activity :size="20" />
-              </div>
+        <!-- ── Active workout ── -->
+        <div v-if="currentWorkout" class="active-workout">
+
+          <!-- Sticky volume -->
+          <div class="volume-sticky">
+            <div class="volume-sticky-left">
+              <div class="volume-sticky-icon"><Activity :size="16" stroke-width="1.75" /></div>
               <div>
-                <p class="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Volume Total</p>
-                <p class="text-xl font-black tracking-tighter">{{ Object.values(volumeLoadByMuscleGroup).reduce((a, b) => a + b, 0) }} kg</p>
+                <p class="volume-sticky-eyebrow">Volume total</p>
+                <p class="volume-sticky-value">{{ Object.values(volumeLoadByMuscleGroup).reduce((a, b) => a + b, 0) }}<span class="volume-sticky-unit">kg</span></p>
               </div>
             </div>
-            <p class="text-[10px] font-black bg-white/10 px-3 py-1.5 rounded-full uppercase tracking-widest border border-white/5">Séance Active</p>
+            <span class="session-live-badge">En cours</span>
           </div>
 
-          <!-- Workout Blocks (Exercises) -->
-          <div v-for="(block, bIndex) in workoutBlocks" :key="bIndex" class="bg-white rounded-[2rem] md:rounded-[2.5rem] border border-slate-100 shadow-xl shadow-slate-100/30 overflow-hidden transition-all hover:border-slate-200 mb-6">
-            <!-- Block Header -->
-            <div class="p-5 md:p-6 bg-slate-50/50 border-b border-slate-100 flex justify-between items-center gap-3">
-              <div class="relative flex-1">
-                <select 
-                  v-model="block.exercise_id" 
-                  class="w-full bg-transparent font-black text-slate-900 text-lg md:text-2xl outline-none appearance-none cursor-pointer tracking-tight"
-                >
-                  <option value="" disabled>Choisir un exercice...</option>
+          <!-- Exercise blocks -->
+          <div v-for="(block, bIndex) in workoutBlocks" :key="bIndex" class="exercise-block">
+
+            <!-- Block header -->
+            <div class="block-head">
+              <div class="block-select-wrap">
+                <select v-model="block.exercise_id" class="block-select">
+                  <option value="" disabled>Choisir un exercice…</option>
                   <option v-for="ex in exercises" :key="ex.id" :value="ex.id">{{ ex.name }}</option>
                 </select>
-                <div class="absolute right-0 top-1/2 -translate-y-1/2 pointer-events-none text-slate-300">
-                  <ChevronRight :size="16" md:size="20" class="rotate-90" />
-                </div>
+                <ChevronRight :size="14" stroke-width="1.75" class="block-select-chevron" />
               </div>
-              <button @click="removeBlock(bIndex)" class="w-10 h-10 md:w-12 md:h-12 flex items-center justify-center bg-white border border-slate-100 text-slate-300 hover:text-rose-500 rounded-xl md:rounded-2xl shadow-sm transition-colors">
-                <Trash2 :size="18" md:size="20" />
+              <button @click="removeBlock(bIndex)" class="icon-btn icon-btn--danger">
+                <Trash2 :size="15" stroke-width="1.75" />
               </button>
             </div>
-            
+
             <!-- Setup row -->
-            <div v-if="block.exercise_id" class="px-5 md:px-6 py-2.5 border-b border-slate-100 flex items-center gap-2 min-h-[44px]">
-              <SlidersHorizontal :size="13" class="text-slate-300 flex-shrink-0" />
+            <div v-if="block.exercise_id" class="setup-row">
+              <SlidersHorizontal :size="11" stroke-width="1.75" class="setup-row-icon" />
               <template v-if="editingSetupId === block.exercise_id">
                 <input
                   :value="getSetup(block.exercise_id)"
@@ -424,138 +350,81 @@
                   @keydown.enter="e => { saveSetup(block.exercise_id, e.target.value); editingSetupId = null }"
                   @keydown.escape="editingSetupId = null"
                   type="text"
-                  placeholder="Ex: Siège 5 · Guide pos. 2 · Prise large…"
-                  class="flex-1 text-xs font-bold text-slate-700 bg-transparent outline-none placeholder:text-slate-300"
+                  placeholder="Siège 5 · Guide pos. 2 · Prise large…"
+                  class="setup-input"
                   autofocus
                 />
               </template>
               <template v-else>
-                <button
-                  @click="editingSetupId = block.exercise_id"
-                  class="flex-1 text-left text-xs font-bold transition-colors"
-                  :class="getSetup(block.exercise_id) ? 'text-slate-600 hover:text-indigo-600' : 'text-slate-300 hover:text-slate-400'"
-                >
+                <button @click="editingSetupId = block.exercise_id" class="setup-display" :class="{ 'setup-display--set': getSetup(block.exercise_id) }">
                   {{ getSetup(block.exercise_id) || 'Ajouter un setup machine…' }}
-                </button>
-                <button v-if="getSetup(block.exercise_id)" @click="editingSetupId = block.exercise_id" class="text-slate-300 hover:text-indigo-500 transition-colors flex-shrink-0">
-                  <Pencil :size="12" />
                 </button>
               </template>
             </div>
 
-            <div class="p-5 md:p-8" v-if="block.exercise_id">
-              <!-- Previous performance + overload indicator -->
-              <template v-if="getLastSession(block.exercise_id) || getTemplateExercise(block.exercise_id)">
-                <div class="mb-5 rounded-2xl overflow-hidden border"
-                  :class="getOverloadStatus(block.exercise_id, getTemplateExercise(block.exercise_id)?.repsRange)?.status === 'INCREASE'
-                    ? 'bg-emerald-50 border-emerald-200'
-                    : getOverloadStatus(block.exercise_id, getTemplateExercise(block.exercise_id)?.repsRange)?.status === 'PROGRESS'
-                      ? 'bg-amber-50 border-amber-200'
-                      : getOverloadStatus(block.exercise_id, getTemplateExercise(block.exercise_id)?.repsRange)?.status === 'CONSOLIDATE'
-                        ? 'bg-rose-50 border-rose-200'
-                        : 'bg-slate-50 border-slate-200'"
-                >
-                  <div class="px-4 py-3 flex items-center justify-between gap-3 flex-wrap">
-                    <!-- Last session detail -->
-                    <div>
-                      <p class="text-[10px] font-black uppercase tracking-widest mb-1"
-                        :class="getOverloadStatus(block.exercise_id, getTemplateExercise(block.exercise_id)?.repsRange)?.status === 'INCREASE' ? 'text-emerald-600'
-                          : getOverloadStatus(block.exercise_id, getTemplateExercise(block.exercise_id)?.repsRange)?.status === 'PROGRESS' ? 'text-amber-600'
-                          : getOverloadStatus(block.exercise_id, getTemplateExercise(block.exercise_id)?.repsRange)?.status === 'CONSOLIDATE' ? 'text-rose-600'
-                          : 'text-slate-400'">
-                        Séance précédente
-                      </p>
-                      <p v-if="getLastSession(block.exercise_id)" class="text-sm font-black text-slate-800">
-                        {{ getLastSession(block.exercise_id).sets.map(s => `${s.weight > 0 ? s.weight + 'kg' : 'PDC'} × ${s.reps}`).join(' · ') }}
-                      </p>
-                      <p v-else class="text-sm font-medium text-slate-400 italic">Première séance avec cet exercice</p>
-                    </div>
-                    <!-- Overload badge -->
-                    <div v-if="getOverloadStatus(block.exercise_id, getTemplateExercise(block.exercise_id)?.repsRange)"
-                      class="flex flex-col items-end gap-0.5">
-                      <div class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl"
-                        :class="overloadStyles[getOverloadStatus(block.exercise_id, getTemplateExercise(block.exercise_id)?.repsRange).status]?.bg">
-                        <span class="w-1.5 h-1.5 rounded-full flex-shrink-0"
-                          :class="overloadStyles[getOverloadStatus(block.exercise_id, getTemplateExercise(block.exercise_id)?.repsRange).status]?.dot"></span>
-                        <span class="text-xs font-black"
-                          :class="overloadStyles[getOverloadStatus(block.exercise_id, getTemplateExercise(block.exercise_id)?.repsRange).status]?.text">
-                          {{ getOverloadStatus(block.exercise_id, getTemplateExercise(block.exercise_id)?.repsRange).label }}
-                        </span>
-                      </div>
-                      <span v-if="getOverloadStatus(block.exercise_id, getTemplateExercise(block.exercise_id)?.repsRange).detail"
-                        class="text-[10px] text-slate-500 font-medium mt-0.5">
-                        {{ getOverloadStatus(block.exercise_id, getTemplateExercise(block.exercise_id)?.repsRange).detail }}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              </template>
+            <div v-if="block.exercise_id" class="block-body">
 
-              <!-- Sets Headers (Desktop) -->
-              <div class="hidden md:grid grid-cols-[3.5rem_1fr_1fr_1fr_3rem] gap-4 mb-4 px-2">
-                <div class="text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Set</div>
-                <div class="text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Poids (kg)</div>
-                <div class="text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Reps</div>
-                <div class="text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">RPE</div>
-                <div></div>
-              </div>
-              
-              <!-- Sets Data -->
-              <transition-group name="list" tag="div" class="space-y-3 md:space-y-4">
-                <div v-for="(set, sIndex) in block.sets" :key="sIndex" class="grid grid-cols-[2.5rem_1fr_1fr_1fr_2.5rem] md:grid-cols-[3.5rem_1fr_1fr_1fr_3rem] gap-2 md:gap-4 items-center">
-                  <div class="h-12 md:h-14 flex items-center justify-center font-black text-slate-400 bg-slate-50 rounded-xl md:rounded-2xl text-xs md:text-sm border border-slate-100">
-                    {{ sIndex + 1 }}
+              <!-- Previous performance + overload -->
+              <div v-if="getLastSession(block.exercise_id) || getTemplateExercise(block.exercise_id)"
+                class="prev-perf"
+                :class="`prev-perf--${(getOverloadStatus(block.exercise_id, getTemplateExercise(block.exercise_id)?.repsRange)?.status || 'start').toLowerCase()}`">
+                <div class="prev-perf-left">
+                  <p class="prev-perf-eyebrow">Séance précédente</p>
+                  <p v-if="getLastSession(block.exercise_id)" class="prev-perf-sets">
+                    {{ getLastSession(block.exercise_id).sets.map(s => `${s.weight > 0 ? s.weight + 'kg' : 'PDC'} × ${s.reps}`).join(' · ') }}
+                  </p>
+                  <p v-else class="prev-perf-empty">Première séance</p>
+                </div>
+                <div v-if="getOverloadStatus(block.exercise_id, getTemplateExercise(block.exercise_id)?.repsRange)" class="prev-perf-right">
+                  <div class="overload-badge"
+                    :class="`overload-badge--${getOverloadStatus(block.exercise_id, getTemplateExercise(block.exercise_id)?.repsRange).status.toLowerCase()}`">
+                    <span class="overload-dot" />
+                    {{ getOverloadStatus(block.exercise_id, getTemplateExercise(block.exercise_id)?.repsRange).label }}
                   </div>
-                  <input 
-                    v-model.number="set.weight" 
-                    @blur="saveSet(set, block.exercise_id)" 
-                    type="number" 
-                    class="w-full text-center h-12 md:h-14 text-lg md:text-xl font-black text-slate-900 bg-white border border-slate-100 rounded-xl md:rounded-2xl focus:ring-2 focus:ring-indigo-500 outline-none transition-shadow shadow-sm placeholder:text-slate-200" 
-                    placeholder="W" 
-                  />
-                  <input 
-                    v-model.number="set.reps" 
-                    @blur="saveSet(set, block.exercise_id)" 
-                    type="number" 
-                    class="w-full text-center h-12 md:h-14 text-lg md:text-xl font-black text-slate-900 bg-white border border-slate-100 rounded-xl md:rounded-2xl focus:ring-2 focus:ring-indigo-500 outline-none transition-shadow shadow-sm placeholder:text-slate-200" 
-                    placeholder="R" 
-                  />
-                  <input 
-                    v-model.number="set.rpe" 
-                    @blur="saveSet(set, block.exercise_id)" 
-                    type="number" 
-                    class="w-full text-center h-12 md:h-14 text-lg md:text-xl font-black text-slate-500 bg-slate-50/50 border border-slate-100 rounded-xl md:rounded-2xl focus:ring-2 focus:ring-indigo-500 outline-none transition-shadow placeholder:text-slate-200" 
-                    placeholder="E" 
-                  />
-                  <button @click="removeSet(block, sIndex)" class="h-12 md:h-14 w-full flex items-center justify-center text-slate-200 hover:text-rose-400 transition-colors">
-                    <X :size="16" md:size="18" />
+                  <span v-if="getOverloadStatus(block.exercise_id, getTemplateExercise(block.exercise_id)?.repsRange).detail" class="overload-detail-sm">
+                    {{ getOverloadStatus(block.exercise_id, getTemplateExercise(block.exercise_id)?.repsRange).detail }}
+                  </span>
+                </div>
+              </div>
+
+              <!-- Set headers -->
+              <div class="sets-header">
+                <div class="sets-header-cell">Set</div>
+                <div class="sets-header-cell">Poids</div>
+                <div class="sets-header-cell">Reps</div>
+                <div class="sets-header-cell">RPE</div>
+                <div />
+              </div>
+
+              <!-- Sets -->
+              <transition-group name="set-list" tag="div" class="sets-list">
+                <div v-for="(set, sIndex) in block.sets" :key="sIndex" class="set-row">
+                  <div class="set-num">{{ sIndex + 1 }}</div>
+                  <input v-model.number="set.weight" @blur="saveSet(set, block.exercise_id)"
+                    type="number" class="set-input" placeholder="—" />
+                  <input v-model.number="set.reps" @blur="saveSet(set, block.exercise_id)"
+                    type="number" class="set-input" placeholder="—" />
+                  <input v-model.number="set.rpe" @blur="saveSet(set, block.exercise_id)"
+                    type="number" class="set-input set-input--rpe" placeholder="—" />
+                  <button @click="removeSet(block, sIndex)" class="set-remove">
+                    <X :size="14" stroke-width="1.75" />
                   </button>
                 </div>
               </transition-group>
-              
-              <!-- Add Set Button -->
-              <button
-                @click="addSet(block)"
-                class="mt-6 md:mt-8 w-full py-4 md:py-5 bg-indigo-50 border border-indigo-100 text-indigo-600 hover:bg-white rounded-2xl md:rounded-3xl font-black text-xs uppercase tracking-widest transition-all shadow-sm flex items-center justify-center gap-2"
-              >
-                <Plus :size="16" /> Série
+
+              <button @click="addSet(block)" class="add-set-btn">
+                <Plus :size="14" stroke-width="1.75" /> Série
               </button>
 
-              <!-- Live completion indicator -->
-              <div v-if="getLiveCompletion(block)"
-                class="mt-3 px-4 py-3 bg-emerald-50 border border-emerald-200 rounded-2xl flex items-center gap-2">
-                <CheckCircle2 :size="16" class="text-emerald-600 flex-shrink-0" />
-                <p class="text-xs font-black text-emerald-700">{{ getLiveCompletion(block).text }}</p>
+              <div v-if="getLiveCompletion(block)" class="completion-hint">
+                <CheckCircle2 :size="13" stroke-width="1.75" style="color:var(--status-success);flex-shrink:0" />
+                <p>{{ getLiveCompletion(block).text }}</p>
               </div>
             </div>
           </div>
 
-          <!-- Add Exercise Block -->
-          <button 
-            @click="addBlock" 
-            class="w-full bg-slate-900 hover:bg-black text-white py-6 md:py-8 rounded-[2rem] font-black text-lg md:text-xl transition-all active:scale-[0.98] flex items-center justify-center gap-3 md:gap-4 shadow-2xl shadow-indigo-200/50 mt-8 mb-20"
-          >
-            <Plus :size="24" md:size="28" />
+          <button @click="addBlock" class="add-block-btn">
+            <Plus :size="18" stroke-width="1.75" />
             Exercice
           </button>
         </div>
@@ -573,57 +442,36 @@ import { useWorkoutPrograms } from '@/composables/useWorkoutPrograms'
 import { useProgressiveOverload } from '@/composables/useProgressiveOverload'
 import { useExerciseSetup } from '@/composables/useExerciseSetup'
 import {
-  Dumbbell,
-  Plus,
-  Trash2,
-  Play,
-  Activity,
-  ChevronRight,
-  CheckCircle2,
-  X,
-  Pencil,
-  Save,
-  Trophy,
-  Target,
-  Flame,
-  Moon,
-  Heart,
-  Timer,
-  Layout as LayoutIcon,
-  SlidersHorizontal
+  Dumbbell, Plus, Trash2, Play, Activity, ChevronRight,
+  CheckCircle2, X, Pencil, Save, Trophy, Target, Flame,
+  Moon, Heart, Layout as LayoutIcon, SlidersHorizontal
 } from 'lucide-vue-next'
-// Body scroll lock logic (consistent with NutritionView if any modals are added later)
-const showModals = ref(false) // Placeholder if needed
+
+const showModals = ref(false)
 watch(showModals, (isOpen) => {
-  if (isOpen) document.body.style.overflow = 'hidden'
-  else document.body.style.overflow = ''
+  document.body.style.overflow = isOpen ? 'hidden' : ''
 })
 
 const { user } = useAuth()
-const { 
-  planningMode, 
+const {
+  planningMode,
   selectedDayIndex,
-  todayDayIndex, 
-  weekOverview, 
-  selectedPlan, 
+  todayDayIndex,
+  weekOverview,
+  selectedPlan,
   isSelectedToday,
-  isRestDay, 
+  isRestDay,
   templates,
   updateExerciseWeight,
-  generateBlocks 
+  generateBlocks
 } = useWorkoutPrograms()
 
 const editingTemplate = ref(false)
 
-// ── Progressive overload ──
 const { exerciseHistory, fetchHistoryForExercises, getLastSession, getOverloadStatus } = useProgressiveOverload()
-
-// ── Exercise setups ──
 const { getSetup, saveSetup } = useExerciseSetup()
-const editingSetupId = ref(null) // exercise_id currently being edited
+const editingSetupId = ref(null)
 
-// fetchHistoryForPlan is called inside loadData (after exercises are loaded)
-// and when the user switches day in the week overview
 const fetchHistoryForPlan = async (plan) => {
   if (!plan?.template?.exercises?.length || !exercises.value.length) return
   const uid = user.value?.id
@@ -634,11 +482,9 @@ const fetchHistoryForPlan = async (plan) => {
   if (ids.length) await fetchHistoryForExercises(uid, ids)
 }
 
-// Helper: get DB id for a template exercise by name
 const getExerciseDbId = (name) =>
   exercises.value.find(e => e.name.toLowerCase() === name.toLowerCase())?.id || null
 
-// Helper: get the template exercise definition for an active block
 const getTemplateExercise = (exerciseId) => {
   if (!exerciseId || !selectedPlan.value?.template?.exercises) return null
   const name = exercises.value.find(e => e.id === exerciseId)?.name
@@ -648,15 +494,6 @@ const getTemplateExercise = (exerciseId) => {
   ) || null
 }
 
-// Overload badge style map
-const overloadStyles = {
-  INCREASE:   { bg: 'bg-emerald-100', text: 'text-emerald-700', dot: 'bg-emerald-500' },
-  PROGRESS:   { bg: 'bg-amber-100',   text: 'text-amber-700',   dot: 'bg-amber-500'   },
-  CONSOLIDATE:{ bg: 'bg-rose-100',    text: 'text-rose-700',    dot: 'bg-rose-500'    },
-  START:      { bg: 'bg-slate-100',   text: 'text-slate-500',   dot: 'bg-slate-400'   },
-}
-
-// Live: did the user hit the max rep range on all completed sets?
 const getLiveCompletion = (block) => {
   const tplEx = getTemplateExercise(block.exercise_id)
   if (!tplEx) return null
@@ -671,14 +508,13 @@ const getLiveCompletion = (block) => {
   return null
 }
 
-// ── Computed: exercises enriched with section separators ──
 const enrichedExercises = computed(() => {
-  const exercises = selectedPlan.value?.template?.exercises
-  if (!exercises?.length) return []
+  const exs = selectedPlan.value?.template?.exercises
+  if (!exs?.length) return []
   const result = []
   let lastSection = null
   let num = 0
-  exercises.forEach(ex => {
+  exs.forEach(ex => {
     if (ex.section && ex.section !== lastSection) {
       result.push({ isSep: true, label: ex.section })
       lastSection = ex.section
@@ -691,9 +527,7 @@ const enrichedExercises = computed(() => {
 
 const isCardioSession = computed(() => !!selectedPlan.value?.template?.isCardio)
 
-// ── Cardio session logging ──
 const CARDIO_LOG_KEY = 'omnidash_cardio_log'
-
 const cardioLog = ref({ activity: '', duration: null, avgHR: null, zone: '2' })
 const cardioSaved = ref(false)
 
@@ -729,15 +563,11 @@ const saveCardioLog = () => {
 
 const updateTemplateField = (sessionKey, exerciseIndex, field, value) => {
   if (templates.value[sessionKey]?.exercises[exerciseIndex]) {
-    if (field === 'sets') {
-      templates.value[sessionKey].exercises[exerciseIndex].sets = Number(value) || 1
-    } else if (field === 'repsRange') {
-      templates.value[sessionKey].exercises[exerciseIndex].repsRange = value
-    }
+    if (field === 'sets') templates.value[sessionKey].exercises[exerciseIndex].sets = Number(value) || 1
+    else if (field === 'repsRange') templates.value[sessionKey].exercises[exerciseIndex].repsRange = value
   }
 }
 
-// Core State
 const activeTab = ref('workout')
 const loading = ref({ data: true, workout: false, exercises: false })
 const muscleGroups = ref([])
@@ -745,23 +575,15 @@ const exercises = ref([])
 const currentWorkout = ref(null)
 const workoutBlocks = ref([])
 
-// Form State
 const newMuscleGroup = ref('')
 const newExercise = ref({ name: '', muscle_group_id: '' })
 
-// Stats Integration
 const flatSets = computed(() => {
   const result = []
   workoutBlocks.value.forEach(b => {
     if (!b.exercise_id) return
     b.sets.forEach(s => {
-      if (s.weight > 0 && s.reps > 0) {
-        result.push({
-          exercise_id: b.exercise_id,
-          weight: s.weight,
-          reps: s.reps
-        })
-      }
+      if (s.weight > 0 && s.reps > 0) result.push({ exercise_id: b.exercise_id, weight: s.weight, reps: s.reps })
     })
   })
   return result
@@ -773,134 +595,78 @@ const hasStats = computed(() => Object.keys(volumeLoadByMuscleGroup.value).lengt
 onMounted(async () => {
   const { data: { session } } = await supabase.auth.getSession()
   const userId = session?.user?.id || user.value?.id
-
-  if (userId) {
-    await loadData(userId)
-  }
-
-  if (isCardioSession.value) {
-    loadCardioLog()
-  }
+  if (userId) await loadData(userId)
+  if (isCardioSession.value) loadCardioLog()
 })
 
 const loadData = async (userId) => {
   loading.value.data = true
-  
   try {
     const [mgResponse, exResponse] = await Promise.all([
       supabase.from('muscle_groups').select('*'),
       supabase.from('exercises').select('*')
     ])
-    
     if (mgResponse.data) muscleGroups.value = mgResponse.data
     if (exResponse.data) exercises.value = exResponse.data
-    
+
     const todayStr = new Date().toISOString().split('T')[0]
-    
     const { data: w } = await supabase.from('workouts')
-      .select('*')
-      .eq('user_id', userId)
+      .select('*').eq('user_id', userId)
       .gte('date', todayStr + 'T00:00:00.000Z')
       .lte('date', todayStr + 'T23:59:59.999Z')
-      .limit(1)
-      .single()
-      
+      .limit(1).single()
+
     if (w) {
       currentWorkout.value = w
       const { data: sets } = await supabase.from('workout_sets')
-        .select('*')
-        .eq('workout_id', w.id)
-        .order('id', { ascending: true })
-        
+        .select('*').eq('workout_id', w.id).order('id', { ascending: true })
+
       if (sets && sets.length > 0) {
         const blocksMap = new Map()
         sets.forEach(set => {
-          if (!blocksMap.has(set.exercise_id)) {
-             blocksMap.set(set.exercise_id, { exercise_id: set.exercise_id, sets: [] })
-          }
-          blocksMap.get(set.exercise_id).sets.push({
-            id: set.id,
-            weight: set.weight,
-            reps: set.reps,
-            rpe: set.rpe
-          })
+          if (!blocksMap.has(set.exercise_id))
+            blocksMap.set(set.exercise_id, { exercise_id: set.exercise_id, sets: [] })
+          blocksMap.get(set.exercise_id).sets.push({ id: set.id, weight: set.weight, reps: set.reps, rpe: set.rpe })
         })
         workoutBlocks.value = Array.from(blocksMap.values())
       } else if (selectedPlan.value?.template?.exercises?.length) {
-        // No sets saved yet (e.g. immediate refresh after starting) — restore from template
-        workoutBlocks.value = selectedPlan.value.template.exercises
-          .map(tplEx => {
-            const dbEx = exercises.value.find(
-              e => e.name.trim().toLowerCase() === tplEx.name.trim().toLowerCase()
-            )
-            if (!dbEx) return null
-            const defaultReps = parseInt(tplEx.repsRange.split('-')[0]) || 10
-            const lastSession = getLastSession(dbEx.id)
-            const lastWeight = lastSession?.sets?.[0]?.weight ?? tplEx.targetWeight
-            return {
-              exercise_id: dbEx.id,
-              sets: Array.from({ length: tplEx.sets }, () => ({
-                weight: lastWeight,
-                reps: defaultReps,
-                rpe: null
-              }))
-            }
-          })
-          .filter(Boolean)
+        workoutBlocks.value = selectedPlan.value.template.exercises.map(tplEx => {
+          const dbEx = exercises.value.find(e => e.name.trim().toLowerCase() === tplEx.name.trim().toLowerCase())
+          if (!dbEx) return null
+          const defaultReps = parseInt(tplEx.repsRange.split('-')[0]) || 10
+          const lastSession = getLastSession(dbEx.id)
+          const lastWeight = lastSession?.sets?.[0]?.weight ?? tplEx.targetWeight
+          return { exercise_id: dbEx.id, sets: Array.from({ length: tplEx.sets }, () => ({ weight: lastWeight, reps: defaultReps, rpe: null })) }
+        }).filter(Boolean)
       }
     }
   } catch (err) {
-    console.error("Error loading workout data:", err)
+    console.error('Error loading workout data:', err)
   } finally {
     loading.value.data = false
   }
-
-  // Fetch progressive overload history for today's plan
   await fetchHistoryForPlan(selectedPlan.value)
 }
 
-// Refetch when user navigates to a different day
 watch(selectedDayIndex, () => fetchHistoryForPlan(selectedPlan.value))
 
-// ═══ Template-based Workout Start ═══
 const startFromTemplate = async () => {
   if (!selectedPlan.value || isRestDay.value || !isSelectedToday.value) return
-
   loading.value.workout = true
   try {
-    const { data, error } = await supabase.from('workouts').insert({
-      date: new Date().toISOString(),
-      user_id: user.value.id
-    }).select()
-
+    const { data, error } = await supabase.from('workouts').insert({ date: new Date().toISOString(), user_id: user.value.id }).select()
     if (error) throw error
     if (!data?.length) return
-
     currentWorkout.value = data[0]
-
-    // Pre-fill weight from last session if available, otherwise from template
     const template = selectedPlan.value.template
-    workoutBlocks.value = template.exercises
-      .map(tplEx => {
-        const dbEx = exercises.value.find(
-          e => e.name.trim().toLowerCase() === tplEx.name.trim().toLowerCase()
-        )
-        if (!dbEx) return null
-
-        const lastSession = getLastSession(dbEx.id)
-        const lastWeight = lastSession?.sets?.[0]?.weight ?? tplEx.targetWeight
-        const defaultReps = parseInt(tplEx.repsRange.split('-')[0]) || 10
-
-        return {
-          exercise_id: dbEx.id,
-          sets: Array.from({ length: tplEx.sets }, () => ({
-            weight: lastWeight,
-            reps: defaultReps,
-            rpe: null
-          }))
-        }
-      })
-      .filter(Boolean)
+    workoutBlocks.value = template.exercises.map(tplEx => {
+      const dbEx = exercises.value.find(e => e.name.trim().toLowerCase() === tplEx.name.trim().toLowerCase())
+      if (!dbEx) return null
+      const lastSession = getLastSession(dbEx.id)
+      const lastWeight = lastSession?.sets?.[0]?.weight ?? tplEx.targetWeight
+      const defaultReps = parseInt(tplEx.repsRange.split('-')[0]) || 10
+      return { exercise_id: dbEx.id, sets: Array.from({ length: tplEx.sets }, () => ({ weight: lastWeight, reps: defaultReps, rpe: null })) }
+    }).filter(Boolean)
   } catch (e) {
     console.error('Error starting template workout:', e)
   } finally {
@@ -908,122 +674,1041 @@ const startFromTemplate = async () => {
   }
 }
 
-// Exercise Management Methods
 const handleAddMuscleGroup = async () => {
   if (!newMuscleGroup.value.trim()) return
-  const { data, error } = await supabase.from('muscle_groups').insert({
-    name: newMuscleGroup.value.trim(),
-    category: 'Custom'
-  }).select()
-  
-  if (data) {
-    muscleGroups.value.push(data[0])
-    newMuscleGroup.value = ''
-  }
+  const { data } = await supabase.from('muscle_groups').insert({ name: newMuscleGroup.value.trim(), category: 'Custom' }).select()
+  if (data) { muscleGroups.value.push(data[0]); newMuscleGroup.value = '' }
 }
 
 const addExercise = async () => {
   loading.value.exercises = true
-  const { data, error } = await supabase.from('exercises').insert({
-    name: newExercise.value.name,
-    muscle_group_id: newExercise.value.muscle_group_id,
-    type: 'custom'
-  }).select()
-  
-  if (data) {
-    exercises.value.push(data[0])
-    newExercise.value = { name: '', muscle_group_id: '' }
-    activeTab.value = 'workout'
-  }
+  const { data } = await supabase.from('exercises').insert({ name: newExercise.value.name, muscle_group_id: newExercise.value.muscle_group_id, type: 'custom' }).select()
+  if (data) { exercises.value.push(data[0]); newExercise.value = { name: '', muscle_group_id: '' }; activeTab.value = 'workout' }
   loading.value.exercises = false
 }
 
-// Workout Management Methods
 const startWorkout = async () => {
   loading.value.workout = true
-  const { data, error } = await supabase.from('workouts').insert({
-    date: new Date().toISOString(),
-    user_id: user.value.id
-  }).select()
-  
-  if (data) {
-    currentWorkout.value = data[0]
-  }
+  const { data } = await supabase.from('workouts').insert({ date: new Date().toISOString(), user_id: user.value.id }).select()
+  if (data) currentWorkout.value = data[0]
   loading.value.workout = false
 }
 
-const addBlock = () => {
-  workoutBlocks.value.push({
-    exercise_id: '',
-    sets: [{ weight: null, reps: null, rpe: null }]
-  })
-}
+const addBlock = () => workoutBlocks.value.push({ exercise_id: '', sets: [{ weight: null, reps: null, rpe: null }] })
 
 const addSet = (block) => {
-  const lastSet = block.sets[block.sets.length - 1]
-  block.sets.push({ 
-    weight: lastSet ? lastSet.weight : null, 
-    reps: lastSet ? lastSet.reps : null, 
-    rpe: lastSet ? lastSet.rpe : null 
-  })
+  const last = block.sets[block.sets.length - 1]
+  block.sets.push({ weight: last?.weight ?? null, reps: last?.reps ?? null, rpe: last?.rpe ?? null })
 }
 
 const saveSet = async (set, exercise_id) => {
   if (!exercise_id || set.weight == null || !set.reps) return
-
   try {
     if (set.id) {
-      await supabase.from('workout_sets').update({
-        weight: set.weight,
-        reps: set.reps,
-        rpe: set.rpe || null,
-      }).eq('id', set.id)
+      await supabase.from('workout_sets').update({ weight: set.weight, reps: set.reps, rpe: set.rpe || null }).eq('id', set.id)
     } else {
-      const { data } = await supabase.from('workout_sets').insert({
-        workout_id: currentWorkout.value.id,
-        exercise_id,
-        weight: set.weight,
-        reps: set.reps,
-        rpe: set.rpe || null,
-        user_id: user.value.id
-      }).select()
+      const { data } = await supabase.from('workout_sets').insert({ workout_id: currentWorkout.value.id, exercise_id, weight: set.weight, reps: set.reps, rpe: set.rpe || null, user_id: user.value.id }).select()
       if (data?.length > 0) set.id = data[0].id
     }
-  } catch(e) {
-    console.error("Save set error:", e)
-  }
+  } catch(e) { console.error('Save set error:', e) }
 }
 
 const removeBlock = async (bIndex) => {
   const block = workoutBlocks.value[bIndex]
   const setIds = block.sets.filter(s => s.id).map(s => s.id)
-  if (setIds.length > 0) {
-    await supabase.from('workout_sets').delete().in('id', setIds)
-  }
+  if (setIds.length > 0) await supabase.from('workout_sets').delete().in('id', setIds)
   workoutBlocks.value.splice(bIndex, 1)
 }
 
 const removeSet = async (block, sIndex) => {
-   const set = block.sets[sIndex]
-   if (set.id) {
-     await supabase.from('workout_sets').delete().eq('id', set.id)
-   }
-   block.sets.splice(sIndex, 1)
-   
-   if (block.sets.length === 0) {
-     block.sets.push({ weight: null, reps: null, rpe: null })
-   }
+  const set = block.sets[sIndex]
+  if (set.id) await supabase.from('workout_sets').delete().eq('id', set.id)
+  block.sets.splice(sIndex, 1)
+  if (block.sets.length === 0) block.sets.push({ weight: null, reps: null, rpe: null })
 }
 </script>
 
 <style scoped>
-.list-enter-active,
-.list-leave-active {
-  transition: all 0.3s ease;
+/* ── Layout ── */
+.workout-view {
+  max-width: 600px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
 }
-.list-enter-from,
-.list-leave-to {
-  opacity: 0;
-  transform: translateX(-20px);
+
+/* ── Module header ── */
+.module-header {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding-bottom: 4px;
 }
+
+@media (min-width: 480px) {
+  .module-header {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+  }
+}
+
+.module-header-title {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.module-icon {
+  width: 38px;
+  height: 38px;
+  border-radius: var(--radius-sm);
+  background: color-mix(in srgb, var(--color) 12%, transparent);
+  border: 1px solid color-mix(in srgb, var(--color) 20%, transparent);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color);
+  flex-shrink: 0;
+}
+
+.module-name {
+  font-family: var(--font-serif);
+  font-size: var(--text-xl);
+  font-weight: 400;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.module-sub {
+  font-size: 10px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+
+/* ── Tab switcher ── */
+.tab-switcher {
+  display: flex;
+  gap: 2px;
+  background: var(--bg-raised);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  padding: 3px;
+}
+
+.tab-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  border-radius: calc(var(--radius-md) - 4px);
+  font-size: var(--text-sm);
+  font-weight: 400;
+  color: var(--text-muted);
+  background: none;
+  border: none;
+  cursor: pointer;
+  transition:
+    color var(--dur-fast) var(--ease-out),
+    background var(--dur-fast) var(--ease-out);
+  white-space: nowrap;
+}
+
+.tab-btn:hover { color: var(--text-secondary); }
+
+.tab-btn--active {
+  background: var(--bg-overlay);
+  color: var(--text-primary);
+}
+
+/* ── Tab content ── */
+.tab-content { display: flex; flex-direction: column; gap: 12px; }
+
+/* ── Form card ── */
+.form-card {
+  background: var(--bg-raised);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-xl);
+  padding: 28px 24px;
+}
+
+.form-card-title {
+  font-family: var(--font-serif);
+  font-size: var(--text-lg);
+  font-weight: 400;
+  color: var(--text-primary);
+  margin-bottom: 24px;
+}
+
+.field-stack { display: flex; flex-direction: column; gap: 20px; }
+.field-group { display: flex; flex-direction: column; gap: 8px; }
+.field-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+.field-label {
+  font-size: 10px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--text-muted);
+}
+
+.field-row { display: flex; gap: 8px; }
+
+.field-input {
+  width: 100%;
+  padding: 12px 16px;
+  background: var(--bg-subtle);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-md);
+  font-family: var(--font-sans);
+  font-size: var(--text-sm);
+  color: var(--text-primary);
+  outline: none;
+  transition:
+    border-color var(--dur-fast) var(--ease-out),
+    box-shadow var(--dur-fast) var(--ease-out);
+}
+
+.field-input::placeholder { color: var(--text-disabled); }
+
+.field-input:focus {
+  border-color: var(--accent-border);
+  box-shadow: 0 0 0 3px var(--accent-dim);
+}
+
+.field-select { appearance: none; cursor: pointer; }
+
+.select-wrap { position: relative; }
+
+.select-chevron {
+  position: absolute;
+  right: 14px;
+  top: 50%;
+  transform: translateY(-50%) rotate(90deg);
+  color: var(--text-muted);
+  pointer-events: none;
+}
+
+.form-divider {
+  height: 1px;
+  background: var(--border-subtle);
+  margin: 8px 0;
+}
+
+/* ── Buttons ── */
+.btn-primary {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  padding: 14px;
+  background: var(--text-primary);
+  color: var(--bg-base);
+  border: none;
+  border-radius: var(--radius-md);
+  font-family: var(--font-sans);
+  font-size: var(--text-sm);
+  font-weight: 500;
+  cursor: pointer;
+  transition:
+    background var(--dur-fast) var(--ease-out),
+    transform var(--dur-fast) var(--ease-out);
+}
+
+.btn-primary:hover { background: #fff; }
+.btn-primary:active { transform: scale(0.98); }
+.btn-primary:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+
+.btn-primary--lg { padding: 16px; font-size: var(--text-md); }
+
+.btn-spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(0,0,0,0.15);
+  border-top-color: var(--bg-base);
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+  flex-shrink: 0;
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.icon-btn {
+  width: 40px;
+  height: 40px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-subtle);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-sm);
+  color: var(--text-muted);
+  cursor: pointer;
+  transition:
+    color var(--dur-fast) var(--ease-out),
+    border-color var(--dur-fast) var(--ease-out);
+}
+
+.icon-btn:hover { color: var(--text-secondary); }
+.icon-btn--active { color: var(--status-success); border-color: var(--status-success-dim); }
+.icon-btn--danger:hover { color: var(--status-error); border-color: var(--status-error-dim); }
+
+/* ── Skeletons ── */
+.skeleton-block { display: flex; flex-direction: column; gap: 12px; }
+
+.week-skeleton { display: flex; gap: 6px; }
+
+@keyframes shimmer {
+  0%   { background-position: -200% 0; }
+  100% { background-position:  200% 0; }
+}
+
+.skeleton {
+  border-radius: var(--radius-sm);
+  background: linear-gradient(90deg, var(--bg-overlay) 25%, var(--bg-muted) 50%, var(--bg-overlay) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.6s ease-in-out infinite;
+}
+
+.skeleton--day { flex: 1; height: 80px; border-radius: var(--radius-md); }
+.skeleton--card { height: 280px; border-radius: var(--radius-xl); }
+
+/* ── Week nav ── */
+.week-nav {
+  background: var(--bg-raised);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-xl);
+  padding: 6px;
+}
+
+.week-nav-scroll {
+  display: flex;
+  gap: 4px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.week-nav-scroll::-webkit-scrollbar { display: none; }
+
+.day-btn {
+  flex: 1;
+  min-width: 52px;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 14px 8px;
+  border-radius: var(--radius-lg);
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--text-muted);
+  transition:
+    background var(--dur-fast) var(--ease-out),
+    color var(--dur-fast) var(--ease-out);
+}
+
+.day-btn:hover { background: var(--bg-subtle); color: var(--text-secondary); }
+
+.day-btn--active {
+  background: var(--accent-dim);
+  color: var(--accent);
+  border: 1px solid var(--accent-border);
+}
+
+.day-btn-label {
+  font-size: 10px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.day-btn-icon-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.today-pip {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--accent);
+}
+
+/* ── Session card ── */
+.session-card {
+  background: var(--bg-raised);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-xl);
+  overflow: hidden;
+}
+
+.session-card-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 24px;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.session-meta { flex: 1; min-width: 0; }
+
+.session-badges { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  border-radius: var(--radius-pill);
+  font-size: 10px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+.badge--dark {
+  background: var(--bg-muted);
+  color: var(--text-secondary);
+  border: 1px solid var(--border-default);
+}
+
+.badge--accent {
+  background: var(--accent-dim);
+  color: var(--accent);
+  border: 1px solid var(--accent-border);
+}
+
+.session-title {
+  font-family: var(--font-serif);
+  font-size: var(--text-2xl);
+  font-weight: 400;
+  color: var(--text-primary);
+  margin-bottom: 6px;
+  line-height: 1.1;
+}
+
+.session-desc {
+  font-size: var(--text-sm);
+  color: var(--text-muted);
+  line-height: 1.4;
+}
+
+.session-card-body { padding: 20px 24px 24px; }
+
+/* ── Cardio options ── */
+.cardio-options { display: flex; flex-direction: column; gap: 8px; margin-bottom: 20px; }
+
+.cardio-option {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 14px;
+  background: var(--bg-overlay);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+}
+
+.cardio-option-icon {
+  width: 32px;
+  height: 32px;
+  flex-shrink: 0;
+  background: var(--module-nutri-dim);
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.cardio-option-name { font-size: var(--text-sm); color: var(--text-secondary); font-weight: 500; }
+.cardio-option-dur  { font-size: var(--text-xs); color: var(--module-nutri); margin-top: 2px; }
+.cardio-option-note { font-size: 10px; color: var(--text-muted); margin-top: 2px; }
+
+.cardio-form { display: flex; flex-direction: column; gap: 16px; margin-top: 16px; }
+
+/* ── Status states ── */
+.status-done {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 16px;
+  background: var(--status-success-dim);
+  border: 1px solid rgba(106, 170, 126, 0.15);
+  border-radius: var(--radius-md);
+}
+
+.status-done-title { font-size: var(--text-sm); color: var(--status-success); font-weight: 500; }
+.status-done-sub   { font-size: 11px; color: var(--text-muted); margin-top: 1px; }
+
+.status-active {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px;
+  background: var(--accent-dim);
+  border: 1px solid var(--accent-border);
+  border-radius: var(--radius-md);
+  font-size: var(--text-sm);
+  color: var(--accent);
+}
+
+.status-active-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--accent);
+  animation: pulse 2s ease-in-out infinite;
+  flex-shrink: 0;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.4; }
+}
+
+/* ── Exercise preview ── */
+.exercise-preview-grid { display: flex; flex-direction: column; margin-bottom: 20px; }
+
+.exercise-section-sep {
+  font-size: 10px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--text-muted);
+  padding: 14px 0 6px;
+}
+
+.exercise-item {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.exercise-item:last-child { border-bottom: none; }
+
+.exercise-item--editing {
+  background: var(--accent-dim);
+  border-color: var(--accent-border);
+  border-radius: var(--radius-sm);
+  padding: 12px;
+  margin-bottom: 4px;
+}
+
+.exercise-item-main {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.exercise-num {
+  font-size: 11px;
+  color: var(--text-disabled);
+  width: 16px;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.exercise-item-info { flex: 1; min-width: 0; }
+.exercise-item-name { font-size: var(--text-sm); color: var(--text-secondary); }
+.exercise-item-note { font-size: 11px; color: var(--text-muted); margin-top: 3px; }
+
+.exercise-item-setup {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 10px;
+  color: var(--accent);
+  margin-top: 4px;
+  opacity: 0.7;
+}
+
+.exercise-item-right {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.sets-badge, .weight-badge, .rest-badge {
+  display: inline-flex;
+  padding: 4px 9px;
+  border-radius: var(--radius-sm);
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+}
+
+.sets-badge  { background: var(--bg-overlay); color: var(--text-muted); }
+.weight-badge { background: var(--accent-dim); color: var(--accent); border: 1px solid var(--accent-border); }
+.rest-badge  { font-size: 10px; color: var(--text-disabled); }
+
+.edit-fields { display: flex; align-items: center; gap: 4px; }
+
+.edit-input {
+  width: 44px;
+  padding: 6px 8px;
+  background: var(--bg-subtle);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-sm);
+  text-align: center;
+  font-size: var(--text-xs);
+  color: var(--text-primary);
+  outline: none;
+  font-family: var(--font-sans);
+}
+
+.edit-input:focus { border-color: var(--accent-border); }
+.edit-input--sm   { width: 36px; }
+.edit-input--accent { background: var(--accent); color: var(--bg-base); border-color: transparent; width: 52px; }
+
+.edit-sep { font-size: 10px; color: var(--text-muted); }
+
+/* ── Overload badges ── */
+.overload-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid var(--border-subtle);
+}
+
+.overload-last { font-size: 11px; color: var(--text-muted); }
+
+.overload-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 9px;
+  border-radius: var(--radius-pill);
+  font-size: 10px;
+  font-weight: 500;
+}
+
+.overload-badge--increase   { background: rgba(106,170,126,0.12); color: #6AAA7E; }
+.overload-badge--progress   { background: rgba(201,160,76,0.12);  color: #C9A04C; }
+.overload-badge--consolidate{ background: rgba(176,90,90,0.12);   color: #B05A5A; }
+.overload-badge--start      { background: var(--bg-muted);        color: var(--text-muted); }
+
+.overload-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: currentColor;
+  flex-shrink: 0;
+}
+
+.overload-detail    { font-size: 10px; opacity: 0.7; }
+.overload-detail-sm { font-size: 10px; color: var(--text-muted); margin-top: 4px; display: block; text-align: right; }
+
+/* ── Rest state ── */
+.rest-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 48px 24px;
+  text-align: center;
+  gap: 10px;
+}
+
+.rest-state-icon {
+  width: 56px;
+  height: 56px;
+  border-radius: var(--radius-md);
+  background: var(--bg-overlay);
+  border: 1px solid var(--border-subtle);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-disabled);
+  margin-bottom: 8px;
+}
+
+.rest-state-title {
+  font-family: var(--font-serif);
+  font-size: var(--text-lg);
+  color: var(--text-primary);
+}
+
+.rest-state-sub { font-size: var(--text-sm); color: var(--text-muted); max-width: 240px; line-height: 1.5; }
+
+/* ── Volume row ── */
+.volume-row { display: flex; flex-wrap: wrap; gap: 6px; }
+
+.volume-chip {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 10px 14px;
+  background: var(--bg-raised);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  min-width: 80px;
+}
+
+.volume-chip-label { font-size: 9px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-muted); }
+.volume-chip-value { font-size: var(--text-lg); font-weight: 300; color: var(--text-primary); line-height: 1; }
+.volume-chip-unit  { font-size: 11px; color: var(--text-muted); margin-left: 2px; }
+
+/* ── Free start ── */
+.free-start { padding: 4px 0; }
+
+.free-start-btn {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 40px 24px;
+  background: var(--bg-raised);
+  border: 1px dashed var(--border-default);
+  border-radius: var(--radius-xl);
+  cursor: pointer;
+  text-align: center;
+  transition:
+    border-color var(--dur-fast) var(--ease-out),
+    background var(--dur-fast) var(--ease-out);
+}
+
+.free-start-btn:hover {
+  border-color: var(--accent-border);
+  background: var(--accent-dim);
+}
+
+.free-start-icon {
+  width: 56px;
+  height: 56px;
+  border-radius: var(--radius-md);
+  background: var(--bg-overlay);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-muted);
+  transition: color var(--dur-fast) var(--ease-out);
+}
+
+.free-start-btn:hover .free-start-icon { color: var(--accent); }
+
+.free-start-title { font-family: var(--font-serif); font-size: var(--text-lg); color: var(--text-primary); }
+.free-start-sub   { font-size: var(--text-xs); color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.1em; }
+
+/* ── Active workout ── */
+.active-workout { display: flex; flex-direction: column; gap: 12px; }
+
+.volume-sticky {
+  position: sticky;
+  top: 8px;
+  z-index: var(--z-raised);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 18px;
+  background: color-mix(in srgb, var(--bg-overlay) 92%, transparent);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md);
+}
+
+.volume-sticky-left { display: flex; align-items: center; gap: 12px; }
+
+.volume-sticky-icon {
+  width: 34px;
+  height: 34px;
+  border-radius: var(--radius-sm);
+  background: var(--accent-dim);
+  border: 1px solid var(--accent-border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--accent);
+}
+
+.volume-sticky-eyebrow { font-size: 9px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-muted); }
+.volume-sticky-value   { font-size: var(--text-lg); color: var(--text-primary); font-weight: 300; line-height: 1; margin-top: 2px; }
+.volume-sticky-unit    { font-size: 11px; color: var(--text-muted); }
+
+.session-live-badge {
+  padding: 5px 12px;
+  background: var(--accent-dim);
+  border: 1px solid var(--accent-border);
+  border-radius: var(--radius-pill);
+  font-size: 10px;
+  font-weight: 500;
+  color: var(--accent);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+/* ── Exercise block ── */
+.exercise-block {
+  background: var(--bg-raised);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-xl);
+  overflow: hidden;
+}
+
+.block-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 16px 20px;
+  background: var(--bg-overlay);
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.block-select-wrap { flex: 1; position: relative; }
+
+.block-select {
+  width: 100%;
+  background: transparent;
+  border: none;
+  outline: none;
+  font-family: var(--font-serif);
+  font-size: var(--text-lg);
+  font-weight: 400;
+  color: var(--text-primary);
+  cursor: pointer;
+  appearance: none;
+  padding-right: 20px;
+}
+
+.block-select-chevron {
+  position: absolute;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%) rotate(90deg);
+  color: var(--text-muted);
+  pointer-events: none;
+}
+
+.setup-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 20px;
+  border-bottom: 1px solid var(--border-subtle);
+  min-height: 40px;
+}
+
+.setup-row-icon { color: var(--text-disabled); flex-shrink: 0; }
+
+.setup-input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  outline: none;
+  font-family: var(--font-sans);
+  font-size: var(--text-xs);
+  color: var(--text-secondary);
+}
+
+.setup-input::placeholder { color: var(--text-disabled); }
+
+.setup-display {
+  flex: 1;
+  text-align: left;
+  background: none;
+  border: none;
+  font-family: var(--font-sans);
+  font-size: var(--text-xs);
+  color: var(--text-disabled);
+  cursor: pointer;
+  transition: color var(--dur-fast) var(--ease-out);
+}
+
+.setup-display--set { color: var(--text-muted); }
+.setup-display:hover { color: var(--text-secondary); }
+
+.block-body { padding: 20px; }
+
+/* ── Prev performance ── */
+.prev-perf {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px;
+  border-radius: var(--radius-md);
+  margin-bottom: 16px;
+  border: 1px solid;
+}
+
+.prev-perf--increase    { background: rgba(106,170,126,0.06); border-color: rgba(106,170,126,0.15); }
+.prev-perf--progress    { background: rgba(201,160,76,0.06);  border-color: rgba(201,160,76,0.15);  }
+.prev-perf--consolidate { background: rgba(176,90,90,0.06);   border-color: rgba(176,90,90,0.15);   }
+.prev-perf--start       { background: var(--bg-overlay);      border-color: var(--border-subtle);   }
+
+.prev-perf-eyebrow { font-size: 10px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-muted); margin-bottom: 5px; }
+.prev-perf-sets    { font-size: var(--text-sm); color: var(--text-secondary); }
+.prev-perf-empty   { font-size: var(--text-sm); color: var(--text-disabled); font-style: italic; }
+
+.prev-perf-right { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; flex-shrink: 0; }
+
+/* ── Sets ── */
+.sets-header {
+  display: grid;
+  grid-template-columns: 2.5rem 1fr 1fr 1fr 2rem;
+  gap: 8px;
+  margin-bottom: 8px;
+  padding: 0 2px;
+}
+
+.sets-header-cell {
+  font-size: 9px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--text-muted);
+  text-align: center;
+}
+
+.sets-list { display: flex; flex-direction: column; gap: 6px; }
+
+.set-row {
+  display: grid;
+  grid-template-columns: 2.5rem 1fr 1fr 1fr 2rem;
+  gap: 8px;
+  align-items: center;
+}
+
+.set-num {
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-overlay);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+}
+
+.set-input {
+  height: 44px;
+  width: 100%;
+  text-align: center;
+  background: var(--bg-subtle);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-sm);
+  font-family: var(--font-sans);
+  font-size: var(--text-md);
+  font-weight: 300;
+  color: var(--text-primary);
+  outline: none;
+  transition:
+    border-color var(--dur-fast) var(--ease-out),
+    box-shadow var(--dur-fast) var(--ease-out);
+}
+
+.set-input::placeholder { color: var(--text-disabled); }
+
+.set-input:focus {
+  border-color: var(--accent-border);
+  box-shadow: 0 0 0 3px var(--accent-dim);
+}
+
+.set-input--rpe { color: var(--text-muted); }
+
+.set-remove {
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  color: var(--text-disabled);
+  cursor: pointer;
+  border-radius: var(--radius-sm);
+  transition: color var(--dur-fast) var(--ease-out);
+}
+
+.set-remove:hover { color: var(--status-error); }
+
+.add-set-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: 100%;
+  margin-top: 12px;
+  padding: 12px;
+  background: none;
+  border: 1px dashed var(--border-default);
+  border-radius: var(--radius-md);
+  font-family: var(--font-sans);
+  font-size: var(--text-xs);
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition:
+    border-color var(--dur-fast) var(--ease-out),
+    color var(--dur-fast) var(--ease-out);
+}
+
+.add-set-btn:hover { border-color: var(--accent-border); color: var(--accent); }
+
+.completion-hint {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 10px;
+  padding: 11px 14px;
+  background: var(--status-success-dim);
+  border: 1px solid rgba(106,170,126,0.15);
+  border-radius: var(--radius-md);
+  font-size: var(--text-xs);
+  color: var(--status-success);
+}
+
+/* ── Add block button ── */
+.add-block-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
+  padding: 18px;
+  background: var(--text-primary);
+  color: var(--bg-base);
+  border: none;
+  border-radius: var(--radius-lg);
+  font-family: var(--font-sans);
+  font-size: var(--text-md);
+  font-weight: 500;
+  cursor: pointer;
+  transition:
+    background var(--dur-fast) var(--ease-out),
+    transform var(--dur-fast) var(--ease-out);
+  margin-bottom: 32px;
+}
+
+.add-block-btn:hover  { background: #fff; }
+.add-block-btn:active { transform: scale(0.98); }
+
+/* ── Set list transition ── */
+.set-list-enter-active {
+  transition: opacity var(--dur-base) var(--ease-out), transform var(--dur-base) var(--ease-out);
+}
+.set-list-leave-active {
+  transition: opacity var(--dur-fast) var(--ease-in), transform var(--dur-fast) var(--ease-in);
+}
+.set-list-enter-from { opacity: 0; transform: translateX(-10px); }
+.set-list-leave-to   { opacity: 0; transform: translateX(-10px); }
 </style>
