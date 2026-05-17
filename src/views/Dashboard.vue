@@ -1,179 +1,196 @@
 <template>
-  <div class="animate-fade-in max-w-2xl mx-auto pb-24 select-none">
+  <div class="dashboard">
 
-    <!-- ── Greeting Hero ── -->
-    <div class="relative overflow-hidden rounded-[2.5rem] bg-slate-900 text-white p-7 mb-5 shadow-2xl shadow-slate-900/20">
-      <div class="absolute inset-0 bg-gradient-to-br from-indigo-600/30 via-transparent to-purple-600/20 pointer-events-none" />
-      <div class="relative">
-        <p class="text-[10px] font-black uppercase tracking-[0.2em] text-white/40 mb-2">{{ currentDayFull }}</p>
-        <h2 class="text-[1.75rem] font-black tracking-tight leading-tight mb-1">{{ greeting }}, {{ firstName }}</h2>
-        <p class="text-white/50 font-bold text-sm leading-snug">{{ motivationalLine }}</p>
-        <div v-if="streak > 1" class="mt-5 inline-flex items-center gap-2 bg-white/10 border border-white/10 rounded-2xl px-4 py-2">
-          <Flame :size="13" class="text-orange-400" />
-          <span class="text-xs font-black">{{ streak }} jours consécutifs</span>
-        </div>
+    <!-- ── Hero ── -->
+    <section class="hero">
+      <p class="hero-date">{{ currentDayFull }}</p>
+      <h2 class="hero-greeting">{{ greeting }},<br>{{ firstName }}.</h2>
+      <p class="hero-line">{{ motivationalLine }}</p>
+      <div v-if="streak > 1" class="streak-badge">
+        <Flame :size="12" />
+        <span>{{ streak }} jours</span>
       </div>
-    </div>
+    </section>
 
-    <!-- ── KPI Pills ── -->
-    <div class="grid grid-cols-3 gap-3 mb-5">
+    <!-- ── KPI row ── -->
+    <div class="kpi-row">
+
       <!-- Sommeil -->
-      <div class="bg-white rounded-[1.5rem] border border-slate-100 p-4 shadow-sm flex flex-col gap-1">
-        <div class="flex items-center gap-1.5 mb-0.5">
-          <Moon :size="12" class="text-violet-500" stroke-width="2.5" />
-          <span class="text-[9px] font-black text-slate-400 uppercase tracking-widest">Sommeil</span>
+      <router-link to="/sommeil" class="kpi-card">
+        <div class="kpi-label">
+          <Moon :size="10" stroke-width="2" style="color: var(--module-sleep)" />
+          <span>Sommeil</span>
         </div>
-        <p class="text-2xl font-black tracking-tighter leading-none" :class="lastSleepScore != null ? 'text-slate-900' : 'text-slate-200'">
-          {{ lastSleepScore ?? '—' }}
-        </p>
-        <p class="text-[10px] font-bold text-slate-400">{{ lastSleepScore != null ? '/100 · hier' : 'Non renseigné' }}</p>
-      </div>
+        <template v-if="loading">
+          <div class="skeleton skeleton--value" />
+          <div class="skeleton skeleton--sub" />
+        </template>
+        <template v-else>
+          <p class="kpi-value" :style="lastSleepScore != null ? 'color: var(--module-sleep)' : ''">
+            {{ lastSleepScore ?? '—' }}
+          </p>
+          <p class="kpi-sub">{{ lastSleepScore != null ? '/100 hier' : 'Non renseigné' }}</p>
+        </template>
+      </router-link>
 
-      <!-- Aujourd'hui -->
-      <div class="bg-white rounded-[1.5rem] border border-slate-100 p-4 shadow-sm flex flex-col gap-1">
-        <div class="flex items-center gap-1.5 mb-0.5">
-          <Target :size="12" class="text-indigo-600" stroke-width="2.5" />
-          <span class="text-[9px] font-black text-slate-400 uppercase tracking-widest">Séance</span>
+      <!-- Séance -->
+      <router-link to="/musculation" class="kpi-card">
+        <div class="kpi-label">
+          <Dumbbell :size="10" stroke-width="2" style="color: var(--module-muscu)" />
+          <span>Séance</span>
         </div>
-        <p class="text-sm font-black text-slate-900 tracking-tight leading-tight">{{ todayPlan?.template?.label ?? '—' }}</p>
-        <p class="text-[10px] font-bold" :class="todayWorkoutDone ? 'text-emerald-500' : isRestToday ? 'text-slate-300' : 'text-amber-500'">
-          {{ todayWorkoutDone ? '✓ Complète' : isRestToday ? 'Repos' : 'À faire' }}
-        </p>
-      </div>
+        <template v-if="loading">
+          <div class="skeleton skeleton--value skeleton--short" />
+          <div class="skeleton skeleton--sub" />
+        </template>
+        <template v-else>
+          <p class="kpi-value kpi-value--sm">{{ todayPlan?.template?.label ?? '—' }}</p>
+          <p class="kpi-sub" :style="todayWorkoutDone
+            ? 'color:var(--status-success)'
+            : isRestToday
+              ? 'color:var(--text-disabled)'
+              : 'color:var(--status-warning)'">
+            {{ todayWorkoutDone ? 'Complète' : isRestToday ? 'Repos' : 'À faire' }}
+          </p>
+        </template>
+      </router-link>
 
       <!-- Semaine -->
-      <div class="bg-white rounded-[1.5rem] border border-slate-100 p-4 shadow-sm flex flex-col gap-1">
-        <div class="flex items-center gap-1.5 mb-0.5">
-          <Activity :size="12" class="text-emerald-500" stroke-width="2.5" />
-          <span class="text-[9px] font-black text-slate-400 uppercase tracking-widest">Semaine</span>
+      <div class="kpi-card kpi-card--plain">
+        <div class="kpi-label">
+          <Activity :size="10" stroke-width="2" style="color: var(--status-success)" />
+          <span>Semaine</span>
         </div>
-        <p class="text-2xl font-black text-slate-900 tracking-tighter leading-none">{{ weekSessionCount }}</p>
-        <p class="text-[10px] font-bold text-slate-400">séance{{ weekSessionCount > 1 ? 's' : '' }}</p>
+        <template v-if="loading">
+          <div class="skeleton skeleton--value" />
+          <div class="skeleton skeleton--sub" />
+        </template>
+        <template v-else>
+          <p class="kpi-value" style="color: var(--status-success)">{{ weekSessionCount }}</p>
+          <p class="kpi-sub">séance{{ weekSessionCount > 1 ? 's' : '' }}</p>
+        </template>
       </div>
     </div>
 
-    <!-- ── Today's session card ── -->
-    <div v-if="!isRestToday && todayPlan" class="bg-white rounded-[2.5rem] border border-slate-100 shadow-xl shadow-slate-100/30 overflow-hidden mb-5">
-      <div class="p-7">
-        <div class="flex items-start justify-between gap-4 mb-5">
-          <div class="min-w-0">
-            <p class="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-1">Programme du jour</p>
-            <h3 class="text-2xl font-black text-slate-900 tracking-tight flex items-center gap-2">
-              {{ todayPlan.template.label }}
-              <span v-if="todayWorkoutDone" class="text-lg text-emerald-500">✓</span>
-            </h3>
-            <p class="text-slate-400 font-bold text-sm mt-0.5 leading-snug">{{ todayPlan.template.description }}</p>
-          </div>
-          <div class="w-14 h-14 rounded-2xl flex items-center justify-center text-2xl flex-shrink-0 bg-slate-50 border border-slate-100">
-            {{ todayPlan.template.emoji || '🏋️' }}
-          </div>
+    <!-- ── Session du jour ── -->
+    <div v-if="!loading && !isRestToday && todayPlan" class="session-card">
+      <div class="session-header">
+        <div class="session-meta">
+          <p class="section-eyebrow">Programme du jour</p>
+          <h3 class="session-title">
+            {{ todayPlan.template.label }}
+            <span v-if="todayWorkoutDone" class="session-done-mark">✓</span>
+          </h3>
+          <p class="session-desc">{{ todayPlan.template.description }}</p>
         </div>
+        <div class="session-emoji">{{ todayPlan.template.emoji || '🏋️' }}</div>
+      </div>
 
-        <!-- Exercise list preview -->
-        <div v-if="todayPlan.template.exercises?.length" class="space-y-0 mb-6">
-          <div
-            v-for="(ex, i) in todayPlan.template.exercises.slice(0, 4)"
-            :key="i"
-            class="flex items-center justify-between py-2.5 border-b border-slate-50 last:border-0"
-          >
-            <span class="text-sm font-bold text-slate-700 truncate pr-2">{{ ex.name }}</span>
-            <span class="text-xs text-slate-400 font-black flex-shrink-0">{{ ex.sets }}×{{ ex.repsRange }}</span>
-          </div>
-          <p v-if="todayPlan.template.exercises.length > 4" class="text-[10px] text-slate-400 font-bold pt-2.5">
-            +{{ todayPlan.template.exercises.length - 4 }} exercices
-          </p>
-        </div>
-
-        <!-- Cardio options preview -->
-        <div v-else-if="todayPlan.template.cardioOptions?.length" class="space-y-2 mb-6">
-          <div v-for="opt in todayPlan.template.cardioOptions" :key="opt.name"
-            class="flex items-center gap-3 py-2.5 border-b border-slate-50 last:border-0">
-            <Heart :size="13" class="text-teal-500 flex-shrink-0" />
-            <span class="text-sm font-bold text-slate-700 truncate">{{ opt.name }}</span>
-            <span class="text-xs text-teal-600 font-black ml-auto flex-shrink-0">{{ opt.duration }}</span>
-          </div>
-        </div>
-
-        <router-link
-          to="/musculation"
-          class="w-full flex items-center justify-center gap-3 py-4 rounded-2xl font-black text-sm transition-all active:scale-[0.98]"
-          :class="todayWorkoutDone
-            ? 'bg-slate-50 text-slate-500 border border-slate-100'
-            : 'bg-slate-900 text-white shadow-lg hover:bg-black'"
+      <!-- Exercises -->
+      <div v-if="todayPlan.template.exercises?.length" class="exercise-list">
+        <div
+          v-for="(ex, i) in todayPlan.template.exercises.slice(0, 3)"
+          :key="i"
+          class="exercise-row"
         >
-          <component :is="todayWorkoutDone ? CheckCircle2 : Play" :size="17" />
-          {{ todayWorkoutDone ? 'Voir la séance' : 'Commencer la séance' }}
-        </router-link>
+          <span class="exercise-name">{{ ex.name }}</span>
+          <span class="exercise-sets">{{ ex.sets }}×{{ ex.repsRange }}</span>
+        </div>
+        <p v-if="todayPlan.template.exercises.length > 3" class="exercise-more">
+          +{{ todayPlan.template.exercises.length - 3 }} exercices
+        </p>
       </div>
+
+      <!-- Cardio -->
+      <div v-else-if="todayPlan.template.cardioOptions?.length" class="exercise-list">
+        <div v-for="opt in todayPlan.template.cardioOptions" :key="opt.name" class="exercise-row">
+          <Heart :size="11" stroke-width="1.75" style="color:var(--module-nutri);flex-shrink:0" />
+          <span class="exercise-name">{{ opt.name }}</span>
+          <span class="exercise-sets">{{ opt.duration }}</span>
+        </div>
+      </div>
+
+      <router-link
+        to="/musculation"
+        class="session-cta"
+        :class="todayWorkoutDone ? 'session-cta--done' : 'session-cta--primary'"
+      >
+        <component :is="todayWorkoutDone ? CheckCircle2 : Play" :size="14" stroke-width="1.75" />
+        {{ todayWorkoutDone ? 'Voir la séance' : 'Commencer la séance' }}
+      </router-link>
     </div>
 
-    <!-- ── Rest day ── -->
-    <div v-else-if="isRestToday" class="bg-slate-50 rounded-[2.5rem] border border-slate-100 p-10 mb-5 text-center">
-      <p class="text-5xl mb-3">😴</p>
-      <p class="font-black text-slate-700 text-xl tracking-tight">Jour de repos</p>
-      <p class="text-slate-400 font-medium text-sm mt-2 leading-relaxed max-w-xs mx-auto">La récupération fait partie de la performance.</p>
+    <!-- Skeleton session card -->
+    <div v-else-if="loading" class="session-card">
+      <div class="skeleton skeleton--title" />
+      <div class="skeleton skeleton--body" style="margin-top:8px" />
+      <div class="skeleton skeleton--body" style="width:70%;margin-top:6px" />
+      <div class="skeleton skeleton--cta" style="margin-top:24px" />
     </div>
 
-    <!-- ── Weekly activity strip ── -->
-    <div class="bg-white rounded-[2.5rem] border border-slate-100 p-6 shadow-sm mb-5">
-      <p class="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-5">Activité de la semaine</p>
-      <div class="grid grid-cols-7 gap-1">
+    <!-- ── Repos ── -->
+    <div v-else-if="!loading && isRestToday" class="rest-card">
+      <span class="rest-icon">😴</span>
+      <p class="rest-title">Jour de repos</p>
+      <p class="rest-sub">La récupération fait partie de la performance.</p>
+    </div>
+
+    <!-- ── Activité semaine ── -->
+    <div class="week-card">
+      <p class="section-eyebrow">Cette semaine</p>
+      <div class="week-grid">
         <div
           v-for="day in weekActivity"
           :key="day.dayIndex"
-          class="flex flex-col items-center gap-2 transition-opacity"
-          :class="day.isFuture ? 'opacity-30' : 'opacity-100'"
+          class="day-col"
+          :class="{ 'day-col--future': day.isFuture }"
         >
-          <span
-            class="text-[9px] font-black uppercase tracking-wider"
-            :class="day.isToday ? 'text-indigo-600' : 'text-slate-300'"
-          >{{ day.shortLabel }}</span>
-
+          <span class="day-label" :class="{ 'day-label--today': day.isToday }">
+            {{ day.shortLabel }}
+          </span>
           <div
-            class="w-9 h-9 rounded-xl flex items-center justify-center transition-all"
+            class="day-cell"
             :class="[
-              day.done ? 'bg-indigo-600 shadow-md shadow-indigo-200/60' :
-              day.isToday ? 'bg-indigo-50 ring-2 ring-indigo-200' :
-              'bg-slate-50 border border-slate-100'
+              day.done    ? 'day-cell--done' :
+              day.isToday ? 'day-cell--today' :
+                            'day-cell--empty'
             ]"
           >
             <component
               :is="day.session === 'CARDIO' ? Heart : (day.session === 'REPOS' || day.session === 'MATCH') ? Moon : Dumbbell"
-              :size="14"
+              :size="12"
+              stroke-width="1.75"
+              class="day-icon"
               :class="[
-                day.done ? 'text-white' :
-                day.isToday ? 'text-indigo-400' :
-                'text-slate-300'
+                day.done    ? 'day-icon--done' :
+                day.isToday ? 'day-icon--today' :
+                              'day-icon--empty'
               ]"
             />
           </div>
-
-          <!-- Today dot -->
-          <div class="w-1 h-1 rounded-full" :class="day.isToday ? 'bg-indigo-600' : 'bg-transparent'" />
+          <div class="day-dot" :class="{ 'day-dot--today': day.isToday }" />
         </div>
       </div>
     </div>
 
-    <!-- ── Progressive overload ready ── -->
-    <div v-if="increaseReadyExercises.length > 0" class="bg-white rounded-[2.5rem] border border-emerald-100 p-6 shadow-sm">
-      <div class="flex items-center gap-2 mb-4">
-        <div class="p-1.5 bg-emerald-100 rounded-xl">
-          <TrendingUp :size="14" class="text-emerald-600" />
-        </div>
-        <p class="text-[10px] font-black text-emerald-700 uppercase tracking-[0.2em]">Prêt à augmenter la charge</p>
+    <!-- ── Progressive overload ── -->
+    <div v-if="!loading && increaseReadyExercises.length > 0" class="overload-card">
+      <div class="overload-header">
+        <TrendingUp :size="13" stroke-width="1.75" style="color:var(--status-success)" />
+        <p class="section-eyebrow" style="color:var(--status-success)">Prêt à progresser</p>
       </div>
-      <div class="space-y-2">
+      <div class="overload-list">
         <div
           v-for="ex in increaseReadyExercises"
           :key="ex.name"
-          class="flex items-center justify-between py-2.5 px-4 bg-emerald-50/70 rounded-2xl"
+          class="overload-row"
         >
-          <span class="text-sm font-black text-slate-800 truncate pr-2">{{ ex.name }}</span>
-          <span class="text-xs font-black text-emerald-700 flex-shrink-0">{{ ex.detail }}</span>
+          <span class="overload-name">{{ ex.name }}</span>
+          <span class="overload-detail">{{ ex.detail }}</span>
         </div>
       </div>
-      <router-link to="/musculation" class="mt-4 flex items-center gap-1.5 text-xs font-black text-emerald-600 hover:text-emerald-700 transition-colors">
-        Aller à la séance <ArrowRight :size="13" />
+      <router-link to="/musculation" class="overload-link">
+        Voir la séance <ArrowRight :size="11" />
       </router-link>
     </div>
 
@@ -199,8 +216,8 @@ const lastSleepScore = ref(null)
 const workoutDatesAll = ref(new Set())
 const weekWorkoutDates = ref(new Set())
 const exercises = ref([])
+const loading = ref(true)
 
-// ── Identity ──
 const firstName = computed(() => {
   const email = user.value?.email || ''
   const raw = email.split('@')[0].split('.')[0]
@@ -219,20 +236,19 @@ const currentDayFull = computed(() =>
 )
 
 const motivationalLine = computed(() => {
-  if (isRestToday.value) return "Aujourd'hui c'est repos — récupère bien."
+  if (isRestToday.value) return "Repos actif — récupère bien."
   const s = todayPlan.value?.session
   const lines = {
-    PUSH:  'Push day — pecs, épaules & triceps.',
-    PULL:  'Pull day — dos & biceps.',
-    LEGS:  'Leg day — tout le monde déteste, tout le monde progresse.',
-    UPPER: 'Upper body — le V-taper se construit ici.',
-    LOWER: 'Lower body — chaîne postérieure.',
-    CARDIO: 'Zone 2 aujourd\'hui — base aérobie.'
+    PUSH:   'Push — pecs, épaules & triceps.',
+    PULL:   'Pull — dos & biceps.',
+    LEGS:   'Legs — la base de tout.',
+    UPPER:  'Upper body — construire le V.',
+    LOWER:  'Lower body — chaîne postérieure.',
+    CARDIO: 'Zone 2 — base aérobie.'
   }
   return lines[s] || 'Bonne journée.'
 })
 
-// ── Workout state ──
 const todayWorkoutDone = computed(() => {
   const todayStr = new Date().toISOString().split('T')[0]
   return workoutDatesAll.value.has(todayStr)
@@ -255,7 +271,6 @@ const streak = computed(() => {
   return count
 })
 
-// ── Weekly activity strip (Mon → Sun) ──
 const weekActivity = computed(() => {
   const today = new Date()
   const todayStr = today.toISOString().split('T')[0]
@@ -274,12 +289,11 @@ const weekActivity = computed(() => {
       isToday: dateStr === todayStr,
       isFuture: dateStr > todayStr,
       done: workoutDatesAll.value.has(dateStr),
-      shortLabel: day.label.slice(0, 3)
+      shortLabel: day.label.slice(0, 1)
     }
   })
 })
 
-// ── Progressive overload — INCREASE only ──
 const increaseReadyExercises = computed(() => {
   if (!exercises.value.length) return []
   const result = []
@@ -297,27 +311,24 @@ const increaseReadyExercises = computed(() => {
   return result.slice(0, 5)
 })
 
-// ── Data fetching ──
 onMounted(async () => {
   const { data: { session } } = await supabase.auth.getSession()
   const userId = session?.user?.id || user.value?.id
-  if (!userId) return
+  if (!userId) { loading.value = false; return }
   await fetchData(userId)
+  loading.value = false
 })
 
 const fetchData = async (userId) => {
   const today = new Date()
   const todayStr = today.toISOString().split('T')[0]
-
   const yesterday = new Date(today)
   yesterday.setDate(today.getDate() - 1)
   const yesterdayStr = yesterday.toISOString().split('T')[0]
-
   const monday = new Date(today)
   const mondayOffset = today.getDay() === 0 ? 6 : today.getDay() - 1
   monday.setDate(today.getDate() - mondayOffset)
   const weekStart = monday.toISOString().split('T')[0]
-
   const sixtyDaysAgo = new Date(today)
   sixtyDaysAgo.setDate(today.getDate() - 60)
   const sixtyDaysAgoStr = sixtyDaysAgo.toISOString().split('T')[0]
@@ -353,3 +364,452 @@ const fetchData = async (userId) => {
   }
 }
 </script>
+
+<style scoped>
+.dashboard {
+  max-width: 480px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  user-select: none;
+}
+
+/* ── Hero ── */
+.hero {
+  padding: 8px 4px 20px;
+}
+
+.hero-date {
+  font-size: var(--text-2xs);
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: var(--text-muted);
+  margin-bottom: 14px;
+}
+
+.hero-greeting {
+  font-family: var(--font-serif);
+  font-size: clamp(2.2rem, 8vw, 2.8rem);
+  font-weight: 400;
+  color: var(--text-primary);
+  line-height: 1.1;
+  margin-bottom: 10px;
+  letter-spacing: -0.02em;
+}
+
+.hero-line {
+  font-size: var(--text-sm);
+  color: var(--text-muted);
+  line-height: 1.5;
+  max-width: 280px;
+}
+
+.streak-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 16px;
+  padding: 6px 12px;
+  background: var(--accent-dim);
+  border: 1px solid var(--accent-border);
+  border-radius: var(--radius-pill);
+  font-size: var(--text-xs);
+  color: var(--accent);
+}
+
+/* ── KPI Row ── */
+.kpi-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+
+.kpi-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 18px 16px;
+  background: var(--bg-raised);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  text-decoration: none;
+  transition: border-color var(--dur-fast) var(--ease-out);
+}
+
+.kpi-card:hover {
+  border-color: var(--border-default);
+}
+
+.kpi-card--plain {
+  cursor: default;
+}
+
+.kpi-label {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 9px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--text-muted);
+}
+
+.kpi-value {
+  font-size: 1.7rem;
+  font-weight: 300;
+  line-height: 1;
+  color: var(--text-primary);
+  letter-spacing: -0.02em;
+}
+
+.kpi-value--sm {
+  font-size: var(--text-sm);
+  font-weight: 500;
+  line-height: 1.3;
+  color: var(--text-primary);
+  letter-spacing: 0;
+}
+
+.kpi-sub {
+  font-size: 10px;
+  color: var(--text-muted);
+}
+
+/* ── Session card ── */
+.session-card {
+  background: var(--bg-raised);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-xl);
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.session-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.section-eyebrow {
+  font-size: 10px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: var(--text-muted);
+  margin-bottom: 8px;
+}
+
+.session-title {
+  font-family: var(--font-serif);
+  font-size: var(--text-xl);
+  font-weight: 400;
+  color: var(--text-primary);
+  line-height: 1.2;
+  margin-bottom: 6px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.session-done-mark {
+  font-family: var(--font-sans);
+  font-size: var(--text-sm);
+  color: var(--status-success);
+}
+
+.session-desc {
+  font-size: var(--text-sm);
+  color: var(--text-muted);
+  line-height: 1.4;
+}
+
+.session-emoji {
+  width: 44px;
+  height: 44px;
+  flex-shrink: 0;
+  background: var(--bg-overlay);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2rem;
+}
+
+/* ── Exercise list ── */
+.exercise-list {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 20px;
+}
+
+.exercise-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 11px 0;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.exercise-row:last-of-type {
+  border-bottom: none;
+}
+
+.exercise-name {
+  flex: 1;
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.exercise-sets {
+  flex-shrink: 0;
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.exercise-more {
+  font-size: 11px;
+  color: var(--text-disabled);
+  padding-top: 10px;
+}
+
+/* ── Session CTA ── */
+.session-cta {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  padding: 14px;
+  border-radius: var(--radius-md);
+  font-size: var(--text-sm);
+  font-weight: 500;
+  text-decoration: none;
+  transition:
+    background var(--dur-fast) var(--ease-out),
+    transform var(--dur-fast) var(--ease-out);
+}
+
+.session-cta:active {
+  transform: scale(0.98);
+}
+
+.session-cta--primary {
+  background: var(--text-primary);
+  color: var(--bg-base);
+}
+
+.session-cta--primary:hover {
+  background: #fff;
+}
+
+.session-cta--done {
+  background: var(--bg-subtle);
+  color: var(--text-muted);
+  border: 1px solid var(--border-subtle);
+}
+
+/* ── Rest card ── */
+.rest-card {
+  background: var(--bg-raised);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-xl);
+  padding: 40px 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 8px;
+}
+
+.rest-icon { font-size: 2.5rem; }
+
+.rest-title {
+  font-family: var(--font-serif);
+  font-size: var(--text-lg);
+  color: var(--text-primary);
+  margin-top: 4px;
+}
+
+.rest-sub {
+  font-size: var(--text-sm);
+  color: var(--text-muted);
+  max-width: 220px;
+  line-height: 1.5;
+}
+
+/* ── Week card ── */
+.week-card {
+  background: var(--bg-raised);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-xl);
+  padding: 22px 20px;
+}
+
+.week-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 4px;
+  margin-top: 14px;
+}
+
+.day-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  transition: opacity var(--dur-base) var(--ease-out);
+}
+
+.day-col--future { opacity: 0.22; }
+
+.day-label {
+  font-size: 9px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-muted);
+}
+
+.day-label--today { color: var(--accent); }
+
+.day-cell {
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition:
+    background var(--dur-base) var(--ease-out),
+    box-shadow var(--dur-base) var(--ease-out);
+}
+
+.day-cell--done {
+  background: var(--accent);
+  box-shadow: 0 4px 12px rgba(212, 151, 106, 0.3);
+}
+
+.day-cell--today {
+  background: var(--accent-dim);
+  border: 1px solid var(--accent-border);
+}
+
+.day-cell--empty {
+  background: var(--bg-overlay);
+  border: 1px solid var(--border-subtle);
+}
+
+.day-icon { flex-shrink: 0; }
+.day-icon--done  { color: var(--bg-base); }
+.day-icon--today { color: var(--accent); }
+.day-icon--empty { color: var(--text-disabled); }
+
+.day-dot {
+  width: 3px;
+  height: 3px;
+  border-radius: 999px;
+  background: var(--accent);
+  opacity: 0;
+  transition: opacity var(--dur-base) var(--ease-out);
+}
+
+.day-dot--today { opacity: 1; }
+
+/* ── Overload card ── */
+.overload-card {
+  background: var(--bg-raised);
+  border: 1px solid var(--border-subtle);
+  border-top-color: rgba(106, 170, 126, 0.2);
+  border-radius: var(--radius-xl);
+  padding: 22px 24px;
+}
+
+.overload-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.overload-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.overload-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.overload-row:last-child { border-bottom: none; }
+
+.overload-name {
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+  truncate: true;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1;
+  padding-right: 12px;
+}
+
+.overload-detail {
+  font-size: var(--text-xs);
+  color: var(--status-success);
+  flex-shrink: 0;
+}
+
+.overload-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 14px;
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+  text-decoration: none;
+  transition: color var(--dur-fast) var(--ease-out);
+}
+
+.overload-link:hover { color: var(--text-secondary); }
+
+/* ── Skeletons ── */
+@keyframes shimmer {
+  0%   { background-position: -200% 0; }
+  100% { background-position:  200% 0; }
+}
+
+.skeleton {
+  border-radius: 6px;
+  background: linear-gradient(
+    90deg,
+    var(--bg-overlay) 25%,
+    var(--bg-muted)   50%,
+    var(--bg-overlay) 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.6s ease-in-out infinite;
+}
+
+.skeleton--value  { height: 28px; width: 48px; }
+.skeleton--short  { height: 16px; width: 64px; }
+.skeleton--sub    { height: 10px; width: 52px; }
+.skeleton--title  { height: 22px; width: 60%; }
+.skeleton--body   { height: 14px; width: 100%; }
+.skeleton--cta    { height: 48px; width: 100%; border-radius: var(--radius-md); }
+</style>
