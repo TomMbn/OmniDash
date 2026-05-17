@@ -83,7 +83,9 @@
           </h3>
           <p class="session-desc">{{ todayPlan.template.description }}</p>
         </div>
-        <div class="session-emoji">{{ todayPlan.template.emoji || '🏋️' }}</div>
+        <div class="session-icon">
+          <Dumbbell :size="20" stroke-width="1.5" />
+        </div>
       </div>
 
       <!-- Exercises -->
@@ -130,7 +132,9 @@
 
     <!-- ── Repos ── -->
     <div v-else-if="!loading && isRestToday" class="rest-card">
-      <span class="rest-icon">😴</span>
+      <div class="rest-icon">
+        <Moon :size="32" stroke-width="1.25" />
+      </div>
       <p class="rest-title">Jour de repos</p>
       <p class="rest-sub">La récupération fait partie de la performance.</p>
     </div>
@@ -530,17 +534,17 @@ const fetchData = async (userId) => {
   line-height: 1.4;
 }
 
-.session-emoji {
+.session-icon {
   width: 44px;
   height: 44px;
   flex-shrink: 0;
-  background: var(--bg-overlay);
-  border: 1px solid var(--border-subtle);
+  background: color-mix(in srgb, var(--module-muscu) 12%, transparent);
+  border: 1px solid color-mix(in srgb, var(--module-muscu) 25%, transparent);
   border-radius: var(--radius-md);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1.2rem;
+  color: var(--module-muscu);
 }
 
 /* ── Exercise list ── */
@@ -606,12 +610,15 @@ const fetchData = async (userId) => {
 }
 
 .session-cta--primary {
-  background: var(--text-primary);
-  color: var(--bg-base);
+  background: var(--accent);
+  color: #fff;
+  border-radius: 14px;
+  height: 52px;
+  transition: opacity 150ms ease, transform 150ms ease;
 }
 
 .session-cta--primary:hover {
-  background: #fff;
+  opacity: 0.9;
 }
 
 .session-cta--done {
@@ -633,7 +640,16 @@ const fetchData = async (userId) => {
   gap: 8px;
 }
 
-.rest-icon { font-size: 2.5rem; }
+.rest-icon {
+  width: 56px;
+  height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: color-mix(in srgb, var(--module-sleep) 12%, transparent);
+  border-radius: 50%;
+  color: var(--module-sleep);
+}
 
 .rest-title {
   font-family: var(--font-serif);

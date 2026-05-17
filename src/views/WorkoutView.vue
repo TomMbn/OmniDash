@@ -216,9 +216,8 @@
             <div class="exercise-preview-grid">
               <template v-for="item in enrichedExercises" :key="item.isSep ? 'sep-' + item.label : item.name + item.num">
                 <div v-if="item.isSep" class="exercise-section-sep">{{ item.label }}</div>
-                <div v-else class="exercise-item" :class="{ 'exercise-item--editing': editingTemplate }">
+                <div v-else class="exercise-item" :class="{ 'exercise-item--editing': editingTemplate, 'exercise-item--new': getOverloadStatus(getExerciseDbId(item.name), item.repsRange)?.status === 'start' }">
                   <div class="exercise-item-main">
-                    <span class="exercise-num">{{ item.num }}</span>
                     <div class="exercise-item-info">
                       <p class="exercise-item-name">{{ item.name }}</p>
                       <p v-if="item.note && !editingTemplate" class="exercise-item-note">{{ item.note }}</p>
@@ -256,7 +255,7 @@
                     <span class="overload-last">
                       {{ getOverloadStatus(getExerciseDbId(item.name), item.repsRange)?.lastPerf || '—' }}
                     </span>
-                    <div v-if="getOverloadStatus(getExerciseDbId(item.name), item.repsRange)" class="overload-badge"
+                    <div v-if="getOverloadStatus(getExerciseDbId(item.name), item.repsRange) && getOverloadStatus(getExerciseDbId(item.name), item.repsRange).status !== 'start'" class="overload-badge"
                       :class="`overload-badge--${getOverloadStatus(getExerciseDbId(item.name), item.repsRange).status.toLowerCase()}`">
                       <span class="overload-dot" />
                       {{ getOverloadStatus(getExerciseDbId(item.name), item.repsRange).label }}
@@ -793,29 +792,32 @@ const removeSet = async (block, sIndex) => {
 /* ── Tab switcher ── */
 .tab-switcher {
   display: flex;
-  gap: 2px;
+  height: 44px;
   background: var(--bg-raised);
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-md);
   padding: 3px;
+  gap: 2px;
 }
 
 .tab-btn {
+  flex: 1;
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 6px;
-  padding: 8px 16px;
+  height: 100%;
+  padding: 0 16px;
   border-radius: calc(var(--radius-md) - 4px);
   font-size: var(--text-sm);
-  font-weight: 400;
+  font-weight: 500;
   color: var(--text-muted);
   background: none;
   border: none;
   cursor: pointer;
-  transition:
-    color var(--dur-fast) var(--ease-out),
-    background var(--dur-fast) var(--ease-out);
+  transition: color 250ms ease-out, background 250ms ease-out;
   white-space: nowrap;
+  user-select: none;
 }
 
 .tab-btn:hover { color: var(--text-secondary); }
@@ -823,6 +825,7 @@ const removeSet = async (block, sIndex) => {
 .tab-btn--active {
   background: var(--bg-overlay);
   color: var(--text-primary);
+  font-weight: 600;
 }
 
 /* ── Tab content ── */
@@ -906,25 +909,31 @@ const removeSet = async (block, sIndex) => {
   justify-content: center;
   gap: 8px;
   width: 100%;
-  padding: 14px;
-  background: var(--text-primary);
+  height: 48px;
+  padding: 0 20px;
+  background: var(--accent);
   color: var(--bg-base);
   border: none;
-  border-radius: var(--radius-md);
+  border-radius: 14px;
   font-family: var(--font-sans);
   font-size: var(--text-sm);
   font-weight: 500;
+  letter-spacing: 0.02em;
   cursor: pointer;
-  transition:
-    background var(--dur-fast) var(--ease-out),
-    transform var(--dur-fast) var(--ease-out);
+  transition: opacity 150ms ease, transform 150ms ease;
 }
 
-.btn-primary:hover { background: #fff; }
-.btn-primary:active { transform: scale(0.98); }
-.btn-primary:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+.btn-primary:hover:not(:disabled) { opacity: 0.9; }
+.btn-primary:active:not(:disabled) { transform: scale(0.98); opacity: 0.85; }
+.btn-primary:disabled { opacity: 0.4; cursor: not-allowed; }
 
-.btn-primary--lg { padding: 16px; font-size: var(--text-md); }
+.btn-primary--lg {
+  width: calc(100% - 32px);
+  height: 52px;
+  margin: 4px auto 0;
+  display: flex;
+  font-size: var(--text-md);
+}
 
 .btn-spinner {
   width: 16px;
@@ -988,31 +997,25 @@ const removeSet = async (block, sIndex) => {
 }
 
 .week-nav-scroll {
-  display: flex;
-  gap: 4px;
-  overflow-x: auto;
-  scrollbar-width: none;
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 3px;
 }
 
-.week-nav-scroll::-webkit-scrollbar { display: none; }
-
 .day-btn {
-  flex: 1;
-  min-width: 52px;
   position: relative;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 8px;
-  padding: 14px 8px;
-  border-radius: var(--radius-lg);
+  gap: 6px;
+  padding: 10px 2px;
+  min-height: 44px;
+  border-radius: var(--radius-md);
   background: none;
   border: none;
   cursor: pointer;
   color: var(--text-muted);
-  transition:
-    background var(--dur-fast) var(--ease-out),
-    color var(--dur-fast) var(--ease-out);
+  transition: background 250ms ease-out, color 250ms ease-out;
 }
 
 .day-btn:hover { background: var(--bg-subtle); color: var(--text-secondary); }
@@ -1024,10 +1027,10 @@ const removeSet = async (block, sIndex) => {
 }
 
 .day-btn-label {
-  font-size: 10px;
+  font-size: 9px;
   font-weight: 500;
   text-transform: uppercase;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.06em;
 }
 
 .day-btn-icon-wrap {
@@ -1036,15 +1039,7 @@ const removeSet = async (block, sIndex) => {
   justify-content: center;
 }
 
-.today-pip {
-  position: absolute;
-  top: 8px;
-  right: 8px;
-  width: 5px;
-  height: 5px;
-  border-radius: 50%;
-  background: var(--accent);
-}
+.today-pip { display: none; }
 
 /* ── Session card ── */
 .session-card {
@@ -1193,8 +1188,8 @@ const removeSet = async (block, sIndex) => {
   display: grid;
   grid-template-columns: 1fr;
   gap: 0;
-  padding: 12px 0;
-  border-bottom: 1px solid var(--border-subtle);
+  padding: 14px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
 }
 
 .exercise-item:last-child { border-bottom: none; }
@@ -1213,17 +1208,29 @@ const removeSet = async (block, sIndex) => {
   gap: 10px;
 }
 
-.exercise-num {
-  font-size: 11px;
-  color: var(--text-disabled);
-  width: 16px;
-  flex-shrink: 0;
-  margin-top: 2px;
-}
 
 .exercise-item-info { flex: 1; min-width: 0; }
-.exercise-item-name { font-size: var(--text-sm); color: var(--text-secondary); }
-.exercise-item-note { font-size: 11px; color: var(--text-muted); margin-top: 3px; }
+
+.exercise-item-name {
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--text-primary);
+  line-height: 1.4;
+}
+
+.exercise-item-note {
+  font-size: 13px;
+  color: var(--text-muted);
+  font-style: italic;
+  opacity: 0.45;
+  margin-top: 2px;
+  line-height: 1.4;
+}
+
+.exercise-item--new .exercise-item-name {
+  opacity: 0.55;
+  font-style: italic;
+}
 
 .exercise-item-setup {
   display: flex;
@@ -1244,15 +1251,29 @@ const removeSet = async (block, sIndex) => {
 
 .sets-badge, .weight-badge, .rest-badge {
   display: inline-flex;
-  padding: 4px 9px;
-  border-radius: var(--radius-sm);
-  font-size: 11px;
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 12px;
   font-variant-numeric: tabular-nums;
 }
 
-.sets-badge  { background: var(--bg-overlay); color: var(--text-muted); }
-.weight-badge { background: var(--accent-dim); color: var(--accent); border: 1px solid var(--accent-border); }
-.rest-badge  { font-size: 10px; color: var(--text-disabled); }
+.sets-badge {
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: var(--text-secondary);
+}
+
+.weight-badge {
+  background: rgba(212, 151, 106, 0.15);
+  border: 1px solid rgba(212, 151, 106, 0.40);
+  color: var(--accent);
+}
+
+.rest-badge {
+  color: var(--text-muted);
+  opacity: 0.4;
+  border: none;
+}
 
 .edit-fields { display: flex; align-items: center; gap: 4px; }
 
@@ -1683,24 +1704,24 @@ const removeSet = async (block, sIndex) => {
   align-items: center;
   justify-content: center;
   gap: 10px;
-  width: 100%;
-  padding: 18px;
-  background: var(--text-primary);
+  width: calc(100% - 32px);
+  height: 52px;
+  margin: 0 auto 32px;
+  padding: 0 20px;
+  background: var(--accent);
   color: var(--bg-base);
   border: none;
-  border-radius: var(--radius-lg);
+  border-radius: 14px;
   font-family: var(--font-sans);
   font-size: var(--text-md);
   font-weight: 500;
+  letter-spacing: 0.02em;
   cursor: pointer;
-  transition:
-    background var(--dur-fast) var(--ease-out),
-    transform var(--dur-fast) var(--ease-out);
-  margin-bottom: 32px;
+  transition: opacity 150ms ease, transform 150ms ease;
 }
 
-.add-block-btn:hover  { background: #fff; }
-.add-block-btn:active { transform: scale(0.98); }
+.add-block-btn:hover  { opacity: 0.9; }
+.add-block-btn:active { transform: scale(0.98); opacity: 0.85; }
 
 /* ── Set list transition ── */
 .set-list-enter-active {
