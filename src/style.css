@@ -1,9 +1,25 @@
+@import './assets/styles/tokens.css';
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
+@layer base {
+  html {
+    background: var(--bg-base);
+  }
+  body {
+    font-family: var(--font-sans);
+    background: var(--bg-base);
+    color: var(--text-primary);
+  }
+}
+
 @layer utilities {
   .safe-area-pb {
     padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  .font-serif {
+    font-family: var(--font-serif);
   }
 }

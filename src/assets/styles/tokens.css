@@ -1,0 +1,164 @@
+/* ══════════════════════════════════════════════
+   OmniDash — Design Tokens v1
+   ══════════════════════════════════════════════ */
+
+@import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:opsz,wght@9..40,300;400;500;600&display=swap');
+
+:root {
+
+  /* ── Backgrounds ── */
+  --bg-base:      #0A0A0A;
+  --bg-raised:    #111111;
+  --bg-overlay:   #1A1A1A;
+  --bg-subtle:    #222222;
+  --bg-muted:     #2C2C2C;
+
+  /* ── Borders ── */
+  --border-subtle:  rgba(255, 255, 255, 0.05);
+  --border-default: rgba(255, 255, 255, 0.09);
+  --border-strong:  rgba(255, 255, 255, 0.16);
+
+  /* ── Text ── */
+  --text-primary:   #F0EBE3;
+  --text-secondary: rgba(240, 235, 227, 0.52);
+  --text-muted:     rgba(240, 235, 227, 0.28);
+  --text-disabled:  rgba(240, 235, 227, 0.15);
+
+  /* ── Accent global — Cuivré chaud ── */
+  --accent:        #D4976A;
+  --accent-dim:    rgba(212, 151, 106, 0.10);
+  --accent-border: rgba(212, 151, 106, 0.22);
+  --accent-glow:   0 8px 32px rgba(212, 151, 106, 0.18);
+
+  /* ── Accents par module ── */
+  --module-muscu:  #D4976A;  /* cuivré — physique, chaleur */
+  --module-sleep:  #7A91B8;  /* ardoise bleue — calme, nuit */
+  --module-nutri:  #7DAD8A;  /* vert sauge — nature, vitalité */
+  --module-dress:  #B8967E;  /* taupe rosé — matière, style */
+  --module-travel: #A08B6A;  /* sable — horizon, aventure */
+
+  /* ── Modules dim/border ── */
+  --module-muscu-dim:    rgba(212, 151, 106, 0.10);
+  --module-muscu-border: rgba(212, 151, 106, 0.20);
+  --module-sleep-dim:    rgba(122, 145, 184, 0.10);
+  --module-sleep-border: rgba(122, 145, 184, 0.20);
+  --module-nutri-dim:    rgba(125, 173, 138, 0.10);
+  --module-nutri-border: rgba(125, 173, 138, 0.20);
+  --module-dress-dim:    rgba(184, 150, 126, 0.10);
+  --module-dress-border: rgba(184, 150, 126, 0.20);
+  --module-travel-dim:   rgba(160, 139, 106, 0.10);
+  --module-travel-border:rgba(160, 139, 106, 0.20);
+
+  /* ── Statuts ── */
+  --status-success:       #6AAA7E;
+  --status-success-dim:   rgba(106, 170, 126, 0.12);
+  --status-warning:       #C9A04C;
+  --status-warning-dim:   rgba(201, 160, 76, 0.12);
+  --status-error:         #B05A5A;
+  --status-error-dim:     rgba(176, 90, 90, 0.12);
+
+  /* ── Typographie ── */
+  --font-serif: 'DM Serif Display', Georgia, serif;
+  --font-sans:  'DM Sans', system-ui, sans-serif;
+
+  /* ── Type scale ── */
+  --text-2xs: 0.625rem;   /* 10px — labels caps */
+  --text-xs:  0.75rem;    /* 12px */
+  --text-sm:  0.875rem;   /* 14px */
+  --text-md:  1rem;       /* 16px */
+  --text-lg:  1.125rem;   /* 18px */
+  --text-xl:  1.375rem;   /* 22px */
+  --text-2xl: 1.75rem;    /* 28px */
+  --text-3xl: 2.25rem;    /* 36px */
+  --text-4xl: 3rem;       /* 48px */
+
+  /* ── Radius ── */
+  --radius-sm:  10px;
+  --radius-md:  16px;
+  --radius-lg:  22px;
+  --radius-xl:  28px;
+  --radius-pill: 999px;
+
+  /* ── Spacing ── */
+  --space-1:  4px;
+  --space-2:  8px;
+  --space-3:  12px;
+  --space-4:  16px;
+  --space-5:  20px;
+  --space-6:  24px;
+  --space-8:  32px;
+  --space-10: 40px;
+  --space-12: 48px;
+
+  /* ── Shadows ── */
+  --shadow-sm:  0 1px 4px rgba(0, 0, 0, 0.5);
+  --shadow-md:  0 4px 20px rgba(0, 0, 0, 0.55);
+  --shadow-lg:  0 16px 48px rgba(0, 0, 0, 0.65);
+  --shadow-accent: 0 8px 32px rgba(212, 151, 106, 0.18);
+
+  /* ── Animations ── */
+  --dur-fast:   180ms;
+  --dur-base:   320ms;
+  --dur-slow:   480ms;
+  --ease-out:   cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in:    cubic-bezier(0.55, 0, 1, 0.45);
+  --ease-inout: cubic-bezier(0.4, 0, 0.2, 1);
+
+  /* ── Z-index ── */
+  --z-base:    0;
+  --z-raised:  10;
+  --z-overlay: 100;
+  --z-nav:     200;
+  --z-modal:   300;
+  --z-toast:   400;
+}
+
+/* ── Reduced motion ── */
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --dur-fast: 0ms;
+    --dur-base: 0ms;
+    --dur-slow: 0ms;
+  }
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* ── Base ── */
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+html {
+  background: var(--bg-base);
+}
+
+body {
+  font-family: var(--font-sans);
+  font-size: var(--text-md);
+  font-weight: 400;
+  line-height: 1.6;
+  color: var(--text-primary);
+  background: var(--bg-base);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+h1, h2, h3 {
+  font-family: var(--font-serif);
+  font-weight: 400;
+  line-height: 1.2;
+  letter-spacing: -0.01em;
+  color: var(--text-primary);
+}
+
+/* ── Scrollbar ── */
+::-webkit-scrollbar { width: 0; height: 0; }
+
+/* ── Selection ── */
+::selection {
+  background: var(--accent-dim);
+  color: var(--accent);
+}
