@@ -1,88 +1,56 @@
 <template>
-  <div class="h-screen flex flex-col md:flex-row overflow-hidden bg-slate-50 text-slate-900">
-    <!-- Sidebar for Desktop -->
-    <aside v-if="user" class="hidden md:flex flex-col w-64 bg-white border-r border-slate-100 flex-shrink-0 relative">
-      <div class="h-20 flex items-center px-8">
-        <h1 class="text-xl font-black tracking-tight text-slate-900 flex items-center gap-2">
-          <img src="/pwa-192x192.png" alt="Logo" class="w-8 h-8 rounded-xl object-contain shadow-sm" />
-          OmniDash
-        </h1>
+  <div class="app-shell">
+
+    <!-- ── Desktop Sidebar ── -->
+    <aside v-if="user" class="sidebar">
+      <div class="sidebar-logo">
+        <img src="/pwa-192x192.png" alt="" class="sidebar-logo-img" />
+        <span class="sidebar-logo-name">OmniDash</span>
       </div>
 
-      <nav class="flex-1 px-4 py-4 space-y-1.5 overflow-y-auto font-sans text-[13px] select-none">
-        <router-link to="/" class="nav-item group">
-          <div class="active-bar"></div>
-          <LayoutDashboard :size="20" class="icon" />
-          <span class="font-bold uppercase tracking-wider">Dashboard</span>
-        </router-link>
-        
-        <router-link to="/musculation" class="nav-item group">
-          <div class="active-bar"></div>
-          <Dumbbell :size="20" class="icon" />
-          <span class="font-bold uppercase tracking-wider">Musculation</span>
-        </router-link>
-        
-        <router-link to="/nutrition" class="nav-item group">
-          <div class="active-bar"></div>
-          <Utensils :size="20" class="icon" />
-          <span class="font-bold uppercase tracking-wider">Nutrition</span>
-        </router-link>
-        
-        <router-link to="/sommeil" class="nav-item group">
-          <div class="active-bar"></div>
-          <Moon :size="20" class="icon" />
-          <span class="font-bold uppercase tracking-wider">Sommeil</span>
-        </router-link>
-        
-        <router-link to="/travel" class="nav-item group">
-          <div class="active-bar"></div>
-          <Plane :size="20" class="icon" />
-          <span class="font-bold uppercase tracking-wider">Travel</span>
-        </router-link>
-
-        <router-link to="/dressing" class="nav-item group">
-          <div class="active-bar"></div>
-          <Shirt :size="20" class="icon" />
-          <span class="font-bold uppercase tracking-wider">Dressing</span>
-        </router-link>
-
-        <router-link to="/plan" class="nav-item group">
-          <div class="active-bar"></div>
-          <ClipboardList :size="20" class="icon" />
-          <span class="font-bold uppercase tracking-wider">Plan</span>
+      <nav class="sidebar-nav">
+        <router-link
+          v-for="link in navLinks"
+          :key="link.to"
+          :to="link.to"
+          class="sidebar-link"
+          :style="{ '--module-color': link.color }"
+        >
+          <component :is="link.icon" :size="18" stroke-width="1.75" class="sidebar-link-icon" />
+          <span>{{ link.label }}</span>
         </router-link>
       </nav>
 
-      <div class="p-6 border-t border-slate-50">
-        <button @click="handleLogout" class="w-full flex items-center justify-center gap-3 px-4 py-3 text-[11px] font-black uppercase tracking-widest text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-2xl transition-all group">
-          <LogOut :size="18" class="group-hover:translate-x-0.5 transition-transform" /> 
-          Déconnexion
+      <div class="sidebar-footer">
+        <button @click="handleLogout" class="sidebar-logout">
+          <LogOut :size="16" stroke-width="1.75" />
+          <span>Déconnexion</span>
         </button>
       </div>
     </aside>
 
-    <!-- Main Content -->
-    <main class="flex-1 flex flex-col min-w-0 overflow-hidden">
+    <!-- ── Main ── -->
+    <main class="app-main">
+
       <!-- Mobile Header -->
-      <header v-if="user" class="h-16 flex items-center justify-between md:hidden bg-white/80 backdrop-blur-md border-b border-slate-100 px-6 flex-shrink-0 z-40 select-none">
-        <h1 class="text-lg font-black tracking-tight flex items-center gap-2">
-          <img src="/pwa-192x192.png" alt="Logo" class="w-7 h-7 rounded-lg object-contain" />
-          <span class="bg-gradient-to-r from-slate-900 to-indigo-600 bg-clip-text text-transparent">OmniDash</span>
-        </h1>
-        <button @click="handleLogout" class="text-slate-400 hover:text-rose-600 p-2 transition-colors">
-          <LogOut :size="20" />
+      <header v-if="user" class="mobile-header">
+        <span class="mobile-header-logo">OmniDash</span>
+        <button @click="handleLogout" class="mobile-header-logout" aria-label="Déconnexion">
+          <LogOut :size="18" stroke-width="1.75" />
         </button>
       </header>
 
-      <!-- Content Area with optimized scrolling and bottom space for Tab Bar -->
-      <div class="flex-1 overflow-y-auto bg-slate-50/50 pb-32 md:pb-10">
-        <div class="p-4 sm:p-6 md:p-10 max-w-7xl mx-auto">
-          <router-view></router-view>
-        </div>
+      <!-- Content -->
+      <div class="app-content">
+        <router-view v-slot="{ Component, route }">
+          <Transition name="page" mode="out-in">
+            <component :is="Component" :key="route.path" />
+          </Transition>
+        </router-view>
       </div>
     </main>
 
-    <!-- Bottom Navigation for Mobile (Bottom Tab Bar) -->
+    <!-- Mobile Bottom Nav -->
     <MobileNav v-if="user" />
   </div>
 </template>
@@ -94,30 +62,29 @@ import { useRouter } from 'vue-router'
 import { useAuth } from '@/composables/useAuth'
 import { runAutoSync } from '@/composables/useWithingsAutoSync'
 import {
-  LayoutDashboard,
-  Dumbbell,
-  Utensils,
-  Moon,
-  LogOut,
-  Plane,
-  Shirt,
-  ClipboardList
+  LayoutDashboard, Dumbbell, Utensils, Moon,
+  LogOut, Plane, Shirt, ClipboardList
 } from 'lucide-vue-next'
 
 const router = useRouter()
 const { user, logout } = useAuth()
 
-// Trigger Withings auto-sync in background as soon as the user is authenticated
+const navLinks = [
+  { to: '/',            label: 'Dashboard',   icon: LayoutDashboard, color: 'var(--accent)' },
+  { to: '/musculation', label: 'Musculation', icon: Dumbbell,         color: 'var(--module-muscu)' },
+  { to: '/nutrition',   label: 'Nutrition',   icon: Utensils,         color: 'var(--module-nutri)' },
+  { to: '/sommeil',     label: 'Sommeil',     icon: Moon,             color: 'var(--module-sleep)' },
+  { to: '/travel',      label: 'Travel',      icon: Plane,            color: 'var(--module-travel)' },
+  { to: '/dressing',    label: 'Dressing',    icon: Shirt,            color: 'var(--module-dress)' },
+  { to: '/plan',        label: 'Plan',        icon: ClipboardList,    color: 'var(--accent)' },
+]
+
 onMounted(() => {
   if (user.value?.id) {
     runAutoSync(user.value.id)
   } else {
-    // Wait for auth to resolve (first load)
     const stop = watch(user, (u) => {
-      if (u?.id) {
-        runAutoSync(u.id)
-        stop()
-      }
+      if (u?.id) { runAutoSync(u.id); stop() }
     })
   }
 })
@@ -126,34 +93,212 @@ const handleLogout = async () => {
   try {
     await logout()
     router.push('/login')
-  } catch (error) {
-    console.error('Erreur lors de la déconnexion:', error.message)
+  } catch (e) {
+    console.error(e.message)
   }
 }
 </script>
 
-<style>
-.nav-item {
-  @apply relative flex items-center gap-3 px-5 py-3.5 rounded-2xl text-sm font-medium text-slate-400 hover:text-slate-900 transition-all duration-300;
+<style scoped>
+/* ── Shell ── */
+.app-shell {
+  display: flex;
+  height: 100dvh;
+  overflow: hidden;
+  background: var(--bg-base);
+  color: var(--text-primary);
 }
 
-.nav-item .icon {
-  @apply text-slate-300 group-hover:text-slate-900 transition-colors;
+/* ── Sidebar ── */
+.sidebar {
+  display: none;
+  flex-direction: column;
+  width: 220px;
+  flex-shrink: 0;
+  background: var(--bg-raised);
+  border-right: 1px solid var(--border-subtle);
 }
 
-.nav-item .active-bar {
-  @apply absolute left-0 w-1 h-0 bg-indigo-600 rounded-full transition-all duration-300 opacity-0;
+@media (min-width: 768px) {
+  .sidebar { display: flex; }
 }
 
-.router-link-active.nav-item {
-  @apply bg-indigo-50/50 text-indigo-600;
+.sidebar-logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 28px 24px 24px;
+  border-bottom: 1px solid var(--border-subtle);
 }
 
-.router-link-active.nav-item .icon {
-  @apply text-indigo-600;
+.sidebar-logo-img {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  object-fit: contain;
 }
 
-.router-link-active.nav-item .active-bar {
-  @apply h-6 opacity-100;
+.sidebar-logo-name {
+  font-family: var(--font-serif);
+  font-size: var(--text-lg);
+  color: var(--text-primary);
+  letter-spacing: -0.01em;
+}
+
+.sidebar-nav {
+  flex: 1;
+  padding: 16px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  overflow-y: auto;
+}
+
+.sidebar-link {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 11px 14px;
+  border-radius: var(--radius-md);
+  font-size: var(--text-sm);
+  font-weight: 400;
+  color: var(--text-muted);
+  text-decoration: none;
+  transition:
+    color var(--dur-fast) var(--ease-out),
+    background var(--dur-fast) var(--ease-out);
+  white-space: nowrap;
+}
+
+.sidebar-link:hover {
+  color: var(--text-secondary);
+  background: var(--bg-subtle);
+}
+
+.sidebar-link.router-link-active {
+  color: var(--module-color, var(--accent));
+  background: color-mix(in srgb, var(--module-color, var(--accent)) 8%, transparent);
+}
+
+.sidebar-link-icon {
+  flex-shrink: 0;
+  transition: color var(--dur-fast) var(--ease-out);
+}
+
+.sidebar-footer {
+  padding: 16px 12px;
+  border-top: 1px solid var(--border-subtle);
+}
+
+.sidebar-logout {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 10px 14px;
+  border-radius: var(--radius-md);
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-family: var(--font-sans);
+  font-size: var(--text-sm);
+  color: var(--text-disabled);
+  transition:
+    color var(--dur-fast) var(--ease-out),
+    background var(--dur-fast) var(--ease-out);
+}
+
+.sidebar-logout:hover {
+  color: var(--status-error);
+  background: var(--status-error-dim);
+}
+
+/* ── Main ── */
+.app-main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* ── Mobile Header ── */
+.mobile-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 24px;
+  height: 60px;
+  flex-shrink: 0;
+  background: color-mix(in srgb, var(--bg-base) 80%, transparent);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--border-subtle);
+  position: relative;
+  z-index: var(--z-raised);
+}
+
+@media (min-width: 768px) {
+  .mobile-header { display: none; }
+}
+
+.mobile-header-logo {
+  font-family: var(--font-serif);
+  font-size: var(--text-lg);
+  color: var(--text-primary);
+  letter-spacing: -0.01em;
+}
+
+.mobile-header-logout {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--text-muted);
+  padding: 8px;
+  border-radius: var(--radius-sm);
+  transition: color var(--dur-fast) var(--ease-out);
+  display: flex;
+  align-items: center;
+}
+
+.mobile-header-logout:hover {
+  color: var(--status-error);
+}
+
+/* ── Content ── */
+.app-content {
+  flex: 1;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 24px 16px calc(100px + env(safe-area-inset-bottom, 16px));
+}
+
+@media (min-width: 768px) {
+  .app-content {
+    padding: 40px;
+  }
+}
+
+/* ── Page transition ── */
+.page-enter-active {
+  transition:
+    opacity var(--dur-base) var(--ease-out),
+    transform var(--dur-base) var(--ease-out);
+}
+
+.page-leave-active {
+  transition:
+    opacity var(--dur-fast) var(--ease-in),
+    transform var(--dur-fast) var(--ease-in);
+}
+
+.page-enter-from {
+  opacity: 0;
+  transform: translateY(10px);
+}
+
+.page-leave-to {
+  opacity: 0;
+  transform: translateY(-6px);
 }
 </style>

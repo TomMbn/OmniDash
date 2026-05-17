@@ -1,160 +1,153 @@
 <template>
-  <div class="animate-fade-in max-w-5xl mx-auto pb-24 px-4 sm:px-6 lg:px-8 select-none">
-    <!-- Header -->
-    <header class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6 mb-8 md:mb-12 pt-4 md:pt-6">
-      <div class="flex items-center gap-3">
-        <div class="p-2 md:p-2.5 bg-indigo-600 rounded-xl md:rounded-2xl text-white shadow-lg shadow-indigo-100/50">
-          <Moon :size="20" md:size="24" stroke-width="2.5" />
+  <div class="sleep-view">
+
+    <!-- ── Header ── -->
+    <header class="module-header">
+      <div class="module-header-title">
+        <div class="module-icon">
+          <Moon :size="18" stroke-width="1.75" />
         </div>
         <div>
-          <h2 class="text-2xl md:text-3xl font-black text-slate-900 tracking-tight">Sommeil</h2>
-          <p class="text-slate-400 font-bold text-xs uppercase tracking-[0.2em] mt-1 ml-0.5">Analyse de Récupération</p>
+          <h2 class="module-name">Sommeil</h2>
+          <p class="module-sub">Analyse de récupération</p>
         </div>
       </div>
     </header>
 
-    <!-- Sync Action Widget -->
-    <div class="bg-slate-900 rounded-[2rem] md:rounded-[2.5rem] p-6 md:p-10 relative overflow-hidden mb-8 md:mb-12 shadow-2xl shadow-slate-900/20 group">
-      <div class="absolute top-0 right-0 -mr-16 -mt-16 w-64 h-64 rounded-full bg-indigo-500/10 blur-3xl transition-all duration-700 group-hover:scale-110"></div>
-      <div class="absolute bottom-0 left-0 -ml-12 -mb-12 w-48 h-48 rounded-full bg-slate-800 opacity-50 blur-2xl"></div>
-      
-      <div class="relative z-10 flex flex-col lg:flex-row items-center justify-between gap-6 md:gap-8">
-        <div class="text-center lg:text-left">
-          <div class="flex items-center justify-center lg:justify-start gap-3 mb-3">
-            <div class="p-2 bg-slate-800 rounded-xl">
-              <Zap :size="18" md:size="20" class="text-indigo-400" />
+    <!-- ── Sync widget ── -->
+    <div class="sync-card">
+      <div class="sync-orb" />
+
+      <div class="sync-content">
+        <div class="sync-left">
+          <div class="sync-title-row">
+            <div class="sync-zap-icon">
+              <Zap :size="14" stroke-width="1.75" />
             </div>
-            <h3 class="text-lg md:text-xl font-black text-white tracking-tight">Withings Sleep Analyzer</h3>
+            <h3 class="sync-title">Withings Sleep Analyzer</h3>
           </div>
-          <p class="text-slate-400 font-bold text-xs md:text-sm max-w-sm">Synchronisez vos cycles pour optimiser votre récupération.</p>
+          <p class="sync-desc">Synchronisez vos cycles pour optimiser votre récupération.</p>
 
-          <!-- Last sync timestamp -->
-          <div v-if="lastAutoSyncLabel && !errorMsg" class="mt-3 flex items-center gap-2 text-slate-500">
-            <div class="w-1.5 h-1.5 bg-slate-600 rounded-full"></div>
-            <span class="text-[10px] font-bold">Mis à jour {{ lastAutoSyncLabel }}</span>
+          <div v-if="lastAutoSyncLabel && !errorMsg" class="sync-timestamp">
+            <div class="sync-timestamp-dot" />
+            <span>Mis à jour {{ lastAutoSyncLabel }}</span>
           </div>
 
-          <div v-if="errorMsg" class="mt-4 bg-rose-500/10 text-rose-400 px-4 py-3 rounded-2xl text-[10px] md:text-xs font-black uppercase tracking-widest border border-rose-500/20 flex items-center gap-2">
-            <div class="w-1.5 h-1.5 bg-rose-400 rounded-full animate-pulse"></div>
+          <div v-if="errorMsg" class="sync-error">
+            <div class="sync-error-dot" />
             {{ errorMsg }}
           </div>
         </div>
-        
-        <button 
-          @click="syncSleep()" 
+
+        <button
+          @click="syncSleep()"
           :disabled="syncing"
-          class="bg-indigo-600 text-white hover:bg-indigo-500 px-6 md:px-8 py-3.5 md:py-4 rounded-xl md:rounded-2xl font-black flex items-center justify-center transition-all active:scale-95 shadow-xl shadow-indigo-600/20 w-full lg:w-auto disabled:opacity-50 disabled:cursor-not-allowed group/btn text-xs md:text-sm uppercase tracking-widest"
+          class="sync-btn"
+          :class="{ 'sync-btn--loading': syncing }"
         >
-          <RefreshCw v-if="syncing" class="animate-spin -ml-1 mr-3 h-4 w-4 md:h-5 md:w-5" :stroke-width="3" />
-          <RefreshCw v-else class="mr-3 h-4 w-4 md:h-5 md:w-5 transition-transform group-hover/btn:rotate-180 duration-500" :stroke-width="3" />
-          {{ syncing ? 'SYNC...' : 'SYNCHRONISER' }}
+          <RefreshCw
+            :size="14"
+            stroke-width="2"
+            :class="syncing ? 'sync-icon-spin' : 'sync-icon-idle'"
+          />
+          {{ syncing ? 'Sync…' : 'Synchroniser' }}
         </button>
       </div>
     </div>
 
-    <!-- Loading Data -->
-    <div v-if="loadingRecords" class="flex flex-col items-center justify-center py-24 gap-4">
-      <div class="relative">
-        <div class="absolute inset-0 bg-indigo-400/20 rounded-full animate-ping"></div>
-        <RefreshCw class="animate-spin h-8 w-8 md:h-10 md:w-10 text-indigo-600 relative z-10" :stroke-width="2.5" />
-      </div>
-      <p class="text-slate-400 font-black text-[10px] uppercase tracking-widest mt-4">Chargement...</p>
+    <!-- ── Loading ── -->
+    <div v-if="loadingRecords" class="skeleton-stack">
+      <div v-for="i in 3" :key="i" class="skeleton skeleton--night" />
     </div>
 
-    <!-- Sleep Metrics List -->
-    <div v-if="sleepRecords.length > 0" class="space-y-12 md:space-y-16">
-      <div v-for="record in sleepRecords" :key="record.id" class="space-y-6 md:space-y-8">
-        <div class="flex justify-between items-center px-1">
-          <div class="flex items-center gap-3">
-            <div class="p-1.5 md:p-2 bg-slate-100 rounded-lg md:rounded-xl">
-              <Calendar :size="16" md:size="18" class="text-slate-500" />
-            </div>
-            <h3 class="text-lg md:text-xl font-black text-slate-800 tracking-tight">Nuit du {{ formatDate(record.date) }}</h3>
+    <!-- ── Records ── -->
+    <div v-else-if="sleepRecords.length > 0" class="nights-list">
+      <div v-for="record in sleepRecords" :key="record.id" class="night-card">
+
+        <!-- Score + date -->
+        <div class="night-card-head">
+          <div class="night-date">
+            <Calendar :size="10" stroke-width="1.75" />
+            <span>{{ formatDate(record.date) }}</span>
+          </div>
+          <div class="night-score-wrap">
+            <span
+              class="night-score"
+              :style="scoreColor(record.score)"
+            >{{ record.score }}</span>
+            <span class="night-score-denom">/100</span>
           </div>
         </div>
-        
-        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
-          <!-- Duration -->
-          <div class="bg-white p-6 md:p-8 rounded-[1.5rem] md:rounded-[2rem] border border-slate-100 shadow-sm flex flex-col gap-2 transition-all hover:border-indigo-100 group">
-            <div class="flex items-center gap-2 mb-2">
-              <Clock :size="14" md:size="16" class="text-slate-400" stroke-width="2.5" />
-              <span class="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Durée Totale</span>
+
+        <!-- Score bar -->
+        <div class="score-bar-track">
+          <div
+            class="score-bar-fill"
+            :style="{
+              width: record.score + '%',
+              background: scoreColor(record.score).color
+            }"
+          />
+        </div>
+
+        <!-- 3 metrics -->
+        <div class="night-metrics">
+
+          <div class="metric">
+            <div class="metric-label">
+              <Clock :size="10" stroke-width="1.75" />
+              <span>Durée</span>
             </div>
-            <div class="text-3xl md:text-4xl font-black text-slate-900 tracking-tighter tabular-nums">
-              {{ formatDuration(record.duration_seconds).split(' ')[0] }}<span class="text-lg md:text-xl text-slate-300 ml-0.5">{{ formatDuration(record.duration_seconds).split(' ')[1] || 'h' }}</span> 
-              <span v-if="formatDuration(record.duration_seconds).split(' ')[2]" class="ml-1">
-                {{ formatDuration(record.duration_seconds).split(' ')[2] }}<span class="text-lg md:text-xl text-slate-300 ml-0.5">{{ formatDuration(record.duration_seconds).split(' ')[3] || 'm' }}</span>
-              </span>
+            <p class="metric-value">{{ formatDuration(record.duration_seconds) }}</p>
+            <div class="metric-bar">
+              <div class="metric-bar-fill metric-bar-fill--total"
+                :style="{ width: Math.min(100, (record.duration_seconds / 28800) * 100) + '%' }" />
             </div>
-            <div class="w-full bg-slate-50 h-1.5 mt-4 rounded-full overflow-hidden border border-slate-100">
-               <div class="bg-indigo-600 h-full rounded-full transition-all duration-1000" :style="{ width: Math.min(100, (record.duration_seconds / 28800) * 100) + '%' }"></div>
-            </div>
-          </div>
-          
-          <!-- Deep Sleep -->
-          <div class="bg-white p-6 md:p-8 rounded-[1.5rem] md:rounded-[2rem] border border-slate-100 shadow-sm flex flex-col gap-2 transition-all hover:border-indigo-100">
-            <div class="flex items-center gap-2 mb-2">
-              <Waves :size="14" md:size="16" class="text-indigo-400" stroke-width="2.5" />
-              <span class="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Profond</span>
-            </div>
-            <div class="text-3xl md:text-4xl font-black text-indigo-700 tracking-tighter tabular-nums">
-              {{ formatDuration(record.deep_sleep_seconds).split(' ')[0] }}<span class="text-lg md:text-xl text-indigo-300 ml-0.5">{{ formatDuration(record.deep_sleep_seconds).split(' ')[1] || 'h' }}</span>
-              <span v-if="formatDuration(record.deep_sleep_seconds).split(' ')[2]" class="ml-1 text-2xl">
-                {{ formatDuration(record.deep_sleep_seconds).split(' ')[2] }}<span class="text-base text-indigo-200 ml-0.5">{{ formatDuration(record.deep_sleep_seconds).split(' ')[3] || 'm' }}</span>
-              </span>
-            </div>
-            <p class="text-[9px] font-black text-slate-300 mt-auto uppercase tracking-widest">Récupération physique</p>
-          </div>
-          
-          <!-- REM Sleep -->
-          <div class="bg-white p-6 md:p-8 rounded-[1.5rem] md:rounded-[2rem] border border-slate-100 shadow-sm flex flex-col gap-2 transition-all hover:border-indigo-100">
-            <div class="flex items-center gap-2 mb-2">
-              <Brain :size="14" md:size="16" class="text-purple-400" stroke-width="2.5" />
-              <span class="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Paradoxal</span>
-            </div>
-            <div class="text-3xl md:text-4xl font-black text-purple-600 tracking-tighter tabular-nums">
-              {{ formatDuration(record.rem_sleep_seconds).split(' ')[0] }}<span class="text-lg md:text-xl text-purple-300 ml-0.5">{{ formatDuration(record.rem_sleep_seconds).split(' ')[1] || 'h' }}</span>
-              <span v-if="formatDuration(record.rem_sleep_seconds).split(' ')[2]" class="ml-1 text-2xl">
-                {{ formatDuration(record.rem_sleep_seconds).split(' ')[2] }}<span class="text-base text-purple-200 ml-0.5">{{ formatDuration(record.rem_sleep_seconds).split(' ')[3] || 'm' }}</span>
-              </span>
-            </div>
-            <p class="text-[9px] font-black text-slate-300 mt-auto uppercase tracking-widest">Récupération mentale</p>
           </div>
 
-          <!-- Sleep Score -->
-          <div class="bg-white p-6 md:p-8 rounded-[1.5rem] md:rounded-[2rem] border border-slate-100 shadow-sm flex flex-col gap-2 transition-all hover:border-indigo-100">
-            <div class="flex items-center gap-2 mb-2">
-              <Award :size="14" md:size="16" :class="record.score >= 80 ? 'text-emerald-500' : 'text-slate-400'" stroke-width="2.5" />
-              <span class="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Sommeil Score</span>
+          <div class="metric">
+            <div class="metric-label">
+              <Waves :size="10" stroke-width="1.75" />
+              <span>Profond</span>
             </div>
-            <div 
-              class="text-4xl md:text-5xl font-black tracking-tighter tabular-nums"
-              :class="record.score >= 80 ? 'text-emerald-500' : record.score >= 60 ? 'text-amber-500' : 'text-slate-800'"
-            >
-              {{ record.score }}<span class="text-xl opacity-20 ml-1">/100</span>
+            <p class="metric-value metric-value--deep">{{ formatDuration(record.deep_sleep_seconds) }}</p>
+            <div class="metric-bar">
+              <div class="metric-bar-fill metric-bar-fill--deep"
+                :style="{ width: Math.min(100, (record.deep_sleep_seconds / (record.duration_seconds || 1)) * 100) + '%' }" />
             </div>
-            <p class="text-[9px] font-black text-slate-300 mt-auto uppercase tracking-widest">Indice de qualité</p>
           </div>
+
+          <div class="metric">
+            <div class="metric-label">
+              <Brain :size="10" stroke-width="1.75" />
+              <span>Paradoxal</span>
+            </div>
+            <p class="metric-value metric-value--rem">{{ formatDuration(record.rem_sleep_seconds) }}</p>
+            <div class="metric-bar">
+              <div class="metric-bar-fill metric-bar-fill--rem"
+                :style="{ width: Math.min(100, (record.rem_sleep_seconds / (record.duration_seconds || 1)) * 100) + '%' }" />
+            </div>
+          </div>
+
         </div>
       </div>
     </div>
 
-    <!-- Empty State -->
-    <div v-else-if="!loadingRecords" class="text-center py-24 bg-white rounded-[3rem] border border-slate-100 shadow-sm flex flex-col items-center">
-      <div class="p-6 bg-slate-50 rounded-3xl mb-6">
-        <Bed :size="48" class="text-slate-200" />
+    <!-- ── Empty state ── -->
+    <div v-else class="empty-state">
+      <div class="empty-icon">
+        <Bed :size="28" stroke-width="1.25" />
       </div>
-      <h3 class="text-xl font-black text-slate-900 mb-2">Silence radio</h3>
-      <p class="text-slate-400 font-medium text-sm max-w-xs mx-auto mb-8 leading-relaxed">
+      <h3 class="empty-title">Aucune donnée</h3>
+      <p class="empty-desc">
         Synchronisez vos données Withings pour décoder vos nuits et booster vos performances.
       </p>
-      <button 
-        @click="syncSleep()" 
-        class="bg-slate-900 text-white px-8 py-4 rounded-2xl font-black text-sm uppercase tracking-widest transition-all hover:bg-slate-800 active:scale-95"
-      >
+      <button @click="syncSleep()" class="empty-cta">
+        <RefreshCw :size="14" stroke-width="1.75" />
         Lancer la synchro
       </button>
     </div>
+
   </div>
 </template>
 
@@ -162,19 +155,9 @@
 import { ref, computed, onMounted } from 'vue'
 import { supabase } from '@/supabase'
 import { useAuth } from '@/composables/useAuth'
-import { 
-  Moon, 
-  RefreshCw, 
-  Bed, 
-  Activity, 
-  Award, 
-  Calendar, 
-  Zap,
-  Waves,
-  Brain,
-  Eye,
-  Clock,
-  ChevronRight
+import {
+  Moon, RefreshCw, Bed, Award, Calendar,
+  Zap, Waves, Brain, Clock
 } from 'lucide-vue-next'
 
 const { user } = useAuth()
@@ -191,21 +174,16 @@ const lastAutoSyncLabel = computed(() => getLastSyncLabel())
 onMounted(async () => {
   const { data: { session } } = await supabase.auth.getSession()
   const userId = session?.user?.id || user.value?.id
-
   if (!userId) return
-
   await fetchLatestRecord(userId)
 
-  // Returning from Withings OAuth — exchange code
   const urlParams = new URLSearchParams(window.location.search)
   const code = urlParams.get('code')
   if (code) {
     window.history.replaceState({}, document.title, window.location.pathname)
     await syncSleep(code)
     markSynced()
-    return
   }
-
 })
 
 const fetchLatestRecord = async (userId) => {
@@ -217,10 +195,7 @@ const fetchLatestRecord = async (userId) => {
       .eq('user_id', userId)
       .order('date', { ascending: false })
       .limit(7)
-      
-    if (data) {
-      sleepRecords.value = data
-    }
+    if (data) sleepRecords.value = data
   } catch (e) {
     console.error('Error fetching sleep records:', e)
   } finally {
@@ -230,73 +205,469 @@ const fetchLatestRecord = async (userId) => {
 
 const startWithingsOAuth = () => {
   const clientId = import.meta.env.VITE_WITHINGS_CLIENT_ID
-  
-  if (!clientId) {
-    errorMsg.value = "Identifiant Client Withings manquant dans les variables d'environnement."
-    return
-  }
-
+  if (!clientId) { errorMsg.value = "Client ID Withings manquant."; return }
   const redirectUri = encodeURIComponent(window.location.origin + '/sommeil')
   const state = Math.random().toString(36).substring(7)
-  const url = `https://account.withings.com/oauth2_user/authorize2?response_type=code&client_id=${clientId}&state=${state}&scope=user.metrics,user.activity&redirect_uri=${redirectUri}`
-  
-  window.location.href = url
+  window.location.href = `https://account.withings.com/oauth2_user/authorize2?response_type=code&client_id=${clientId}&state=${state}&scope=user.metrics,user.activity&redirect_uri=${redirectUri}`
 }
-
 
 const syncSleep = async (code = null) => {
   syncing.value = true
   errorMsg.value = ''
-  
   try {
     const payload = {}
-    if (code) {
-      payload.code = code
-      payload.redirect_uri = window.location.origin + '/sommeil'
-    }
-
-    const { data, error } = await supabase.functions.invoke('withings-sync', {
-      body: payload
-    })
-    
+    if (code) { payload.code = code; payload.redirect_uri = window.location.origin + '/sommeil' }
+    const { data, error } = await supabase.functions.invoke('withings-sync', { body: payload })
     if (error) throw error
-    
-    // If needs_auth → redirect to Withings OAuth
-    if (data.needs_auth) {
-      startWithingsOAuth()
-      return
-    }
-    
+    if (data.needs_auth) { startWithingsOAuth(); return }
     if (data.error) throw new Error(data.error)
-    
-    // Successful sync, re-fetch all records
+    const userId = user.value?.id
     if (Array.isArray(data) && data.length > 0) {
-      const userId = user.value?.id
       if (userId) await fetchLatestRecord(userId)
     } else if (Array.isArray(data) && data.length === 0) {
-      errorMsg.value = "Aucune nouvelle donnée de sommeil trouvée chez Withings pour les 7 derniers jours."
+      errorMsg.value = 'Aucune nouvelle donnée Withings ces 7 derniers jours.'
     } else if (data && !Array.isArray(data) && !data.needs_auth) {
       sleepRecords.value = [data]
     }
-    
   } catch (e) {
-    console.error("Withings Sync Error:", e)
-    errorMsg.value = "Erreur de synchronisation : " + (e.message || String(e))
+    console.error('Withings Sync Error:', e)
+    errorMsg.value = 'Erreur : ' + (e.message || String(e))
   } finally {
     syncing.value = false
   }
 }
 
-// Formatting utils
-const formatDate = (dateString) => {
-  const date = new Date(dateString)
-  return new Intl.DateTimeFormat('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' }).format(date)
-}
+const formatDate = (dateString) =>
+  new Intl.DateTimeFormat('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' }).format(new Date(dateString))
 
 const formatDuration = (seconds) => {
-  if (!seconds) return '0h 0m'
+  if (!seconds) return '0h'
   const h = Math.floor(seconds / 3600)
   const m = Math.floor((seconds % 3600) / 60)
-  return `${h}h ${m}m`
+  return m > 0 ? `${h}h ${m}m` : `${h}h`
+}
+
+const scoreColor = (score) => {
+  if (score >= 80) return { color: 'var(--status-success)' }
+  if (score >= 60) return { color: 'var(--status-warning)' }
+  return { color: 'var(--status-error)' }
 }
 </script>
+
+<style scoped>
+/* ── Layout ── */
+.sleep-view {
+  max-width: 560px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  user-select: none;
+}
+
+/* ── Module header ── */
+.module-header { padding-bottom: 4px; }
+
+.module-header-title {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.module-icon {
+  width: 38px;
+  height: 38px;
+  border-radius: var(--radius-sm);
+  background: var(--module-sleep-dim);
+  border: 1px solid var(--module-sleep-border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--module-sleep);
+  flex-shrink: 0;
+}
+
+.module-name {
+  font-family: var(--font-serif);
+  font-size: var(--text-xl);
+  font-weight: 400;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.module-sub {
+  font-size: 10px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+
+/* ── Sync card ── */
+.sync-card {
+  position: relative;
+  overflow: hidden;
+  background: var(--bg-raised);
+  border: 1px solid var(--border-subtle);
+  border-top-color: var(--module-sleep-border);
+  border-radius: var(--radius-xl);
+  padding: 28px 24px;
+}
+
+.sync-orb {
+  position: absolute;
+  top: -60px;
+  right: -60px;
+  width: 200px;
+  height: 200px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(122, 145, 184, 0.08) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+.sync-content {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  align-items: flex-start;
+}
+
+@media (min-width: 480px) {
+  .sync-content {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+  }
+}
+
+.sync-left { flex: 1; }
+
+.sync-title-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.sync-zap-icon {
+  width: 28px;
+  height: 28px;
+  border-radius: var(--radius-sm);
+  background: var(--module-sleep-dim);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--module-sleep);
+  flex-shrink: 0;
+}
+
+.sync-title {
+  font-family: var(--font-serif);
+  font-size: var(--text-md);
+  font-weight: 400;
+  color: var(--text-primary);
+}
+
+.sync-desc {
+  font-size: var(--text-sm);
+  color: var(--text-muted);
+  line-height: 1.5;
+  max-width: 320px;
+}
+
+.sync-timestamp {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 10px;
+  font-size: 10px;
+  color: var(--text-muted);
+}
+
+.sync-timestamp-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--status-success);
+  opacity: 0.7;
+}
+
+.sync-error {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 12px;
+  padding: 10px 14px;
+  background: var(--status-error-dim);
+  border: 1px solid rgba(176, 90, 90, 0.2);
+  border-radius: var(--radius-md);
+  font-size: 11px;
+  color: var(--status-error);
+}
+
+.sync-error-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--status-error);
+  animation: pulse-dot 2s ease-in-out infinite;
+  flex-shrink: 0;
+}
+
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.3; }
+}
+
+.sync-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 20px;
+  background: var(--module-sleep-dim);
+  border: 1px solid var(--module-sleep-border);
+  border-radius: var(--radius-md);
+  font-family: var(--font-sans);
+  font-size: var(--text-sm);
+  font-weight: 500;
+  color: var(--module-sleep);
+  cursor: pointer;
+  white-space: nowrap;
+  flex-shrink: 0;
+  transition:
+    background var(--dur-fast) var(--ease-out),
+    transform var(--dur-fast) var(--ease-out);
+}
+
+.sync-btn:hover {
+  background: color-mix(in srgb, var(--module-sleep) 14%, transparent);
+}
+
+.sync-btn:active { transform: scale(0.97); }
+
+.sync-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.sync-icon-spin { animation: spin 0.9s linear infinite; }
+
+.sync-icon-idle {
+  transition: transform var(--dur-slow) var(--ease-out);
+}
+
+.sync-btn:not(:disabled):hover .sync-icon-idle {
+  transform: rotate(180deg);
+}
+
+/* ── Skeletons ── */
+@keyframes shimmer {
+  0%   { background-position: -200% 0; }
+  100% { background-position:  200% 0; }
+}
+
+.skeleton-stack { display: flex; flex-direction: column; gap: 8px; }
+
+.skeleton {
+  background: linear-gradient(90deg, var(--bg-overlay) 25%, var(--bg-muted) 50%, var(--bg-overlay) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.6s ease-in-out infinite;
+  border-radius: var(--radius-xl);
+}
+
+.skeleton--night { height: 140px; }
+
+/* ── Nights list ── */
+.nights-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* ── Night card ── */
+.night-card {
+  background: var(--bg-raised);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-xl);
+  padding: 22px 22px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  transition: border-color var(--dur-fast) var(--ease-out);
+}
+
+.night-card:hover { border-color: var(--border-default); }
+
+/* Head: date + score */
+.night-card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.night-date {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  color: var(--text-muted);
+  text-transform: capitalize;
+}
+
+.night-score-wrap {
+  display: flex;
+  align-items: baseline;
+  gap: 3px;
+  flex-shrink: 0;
+}
+
+.night-score {
+  font-family: var(--font-serif);
+  font-size: 2.2rem;
+  font-weight: 400;
+  line-height: 1;
+  letter-spacing: -0.02em;
+}
+
+.night-score-denom {
+  font-size: 11px;
+  color: var(--text-disabled);
+}
+
+/* Score progress bar */
+.score-bar-track {
+  height: 2px;
+  background: var(--bg-overlay);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.score-bar-fill {
+  height: 100%;
+  border-radius: 999px;
+  transition: width var(--dur-slow) var(--ease-out);
+  opacity: 0.7;
+}
+
+/* Metrics row */
+.night-metrics {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  padding-top: 2px;
+}
+
+.metric {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.metric-label {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 9px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--text-muted);
+}
+
+.metric-value {
+  font-size: var(--text-md);
+  font-weight: 300;
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+  line-height: 1.2;
+}
+
+.metric-value--deep { color: var(--module-sleep); }
+.metric-value--rem  { color: color-mix(in srgb, var(--module-sleep) 70%, var(--text-primary)); }
+
+.metric-bar {
+  height: 2px;
+  background: var(--bg-overlay);
+  border-radius: 999px;
+  overflow: hidden;
+  margin-top: 2px;
+}
+
+.metric-bar-fill {
+  height: 100%;
+  border-radius: 999px;
+  transition: width var(--dur-slow) var(--ease-out);
+}
+
+.metric-bar-fill--total { background: var(--text-muted); }
+.metric-bar-fill--deep  { background: var(--module-sleep); }
+.metric-bar-fill--rem   { background: color-mix(in srgb, var(--module-sleep) 60%, white); opacity: 0.7; }
+
+/* ── Empty state ── */
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 56px 32px;
+  background: var(--bg-raised);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-xl);
+  gap: 10px;
+}
+
+.empty-icon {
+  width: 56px;
+  height: 56px;
+  border-radius: var(--radius-md);
+  background: var(--bg-overlay);
+  border: 1px solid var(--border-subtle);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-disabled);
+  margin-bottom: 8px;
+}
+
+.empty-title {
+  font-family: var(--font-serif);
+  font-size: var(--text-lg);
+  font-weight: 400;
+  color: var(--text-primary);
+}
+
+.empty-desc {
+  font-size: var(--text-sm);
+  color: var(--text-muted);
+  max-width: 260px;
+  line-height: 1.6;
+}
+
+.empty-cta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 12px;
+  padding: 12px 24px;
+  background: var(--text-primary);
+  color: var(--bg-base);
+  border: none;
+  border-radius: var(--radius-md);
+  font-family: var(--font-sans);
+  font-size: var(--text-sm);
+  font-weight: 500;
+  cursor: pointer;
+  transition:
+    background var(--dur-fast) var(--ease-out),
+    transform var(--dur-fast) var(--ease-out);
+}
+
+.empty-cta:hover  { background: #fff; }
+.empty-cta:active { transform: scale(0.97); }
+</style>
