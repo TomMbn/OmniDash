@@ -123,6 +123,14 @@
           </div>
         </div>
 
+        <!-- ── Sleep recovery banner ── -->
+        <div v-if="lastSleepScore !== null && lastSleepScore < 60" class="sleep-banner sleep-banner--low">
+          Récupération faible ({{ lastSleepScore }}/100) — adapte ton intensité
+        </div>
+        <div v-else-if="lastSleepScore !== null && lastSleepScore >= 80" class="sleep-banner sleep-banner--good" @click="lastSleepScore = null">
+          Excellente récupération — tu es prêt
+        </div>
+
         <!-- ── Session card ── -->
         <div v-if="selectedPlan" class="session-card">
 
@@ -328,7 +336,7 @@
             <!-- Block header -->
             <div class="block-head">
               <div class="block-select-wrap">
-                <select v-model="block.exercise_id" class="block-select">
+                <select v-model="block.exercise_id" class="block-select" @change="onExerciseSelect(block)">
                   <option value="" disabled>Choisir un exercice…</option>
                   <option v-for="ex in exercises" :key="ex.id" :value="ex.id">{{ ex.name }}</option>
                 </select>
@@ -426,9 +434,57 @@
             <Plus :size="18" stroke-width="1.75" />
             Exercice
           </button>
+
+          <button v-if="hasSavedSets && !sessionFinished" @click="sessionFinished = true" class="btn-finish">
+            <CheckCircle2 :size="16" stroke-width="1.75" />
+            Terminer la séance
+          </button>
         </div>
       </template>
     </div>
+
+  <!-- ── Session summary sheet ── -->
+  <Transition name="summary">
+    <div
+      v-if="sessionFinished"
+      class="session-summary"
+      @touchstart.passive="onSummaryTouchStart"
+      @touchend.passive="onSummaryTouchEnd"
+    >
+      <div class="summary-handle" />
+      <p class="summary-eyebrow">Séance terminée</p>
+
+      <div class="summary-stats">
+        <div class="summary-stat">
+          <p class="summary-stat-val">{{ sessionTotalVolume.toLocaleString('fr-FR') }}<span class="summary-stat-unit">kg</span></p>
+          <p class="summary-stat-label">Volume</p>
+        </div>
+        <div class="summary-stat">
+          <p class="summary-stat-val">{{ completedExerciseCount }}</p>
+          <p class="summary-stat-label">Exercices</p>
+        </div>
+        <div class="summary-stat">
+          <p class="summary-stat-val">{{ savedSetCount }}</p>
+          <p class="summary-stat-label">Séries</p>
+        </div>
+      </div>
+
+      <div v-if="prsBeaten.length" class="summary-prs">
+        <p class="summary-prs-label">
+          <Trophy :size="12" stroke-width="1.75" />
+          À augmenter la prochaine fois
+        </p>
+        <div v-for="name in prsBeaten" :key="name" class="summary-pr-item">
+          {{ name }}
+        </div>
+      </div>
+
+      <button @click="sessionFinished = false" class="btn-primary summary-ok">
+        OK
+      </button>
+    </div>
+  </Transition>
+
   </div>
 </template>
 
@@ -554,10 +610,28 @@ const startCardio = async () => {
   loading.value.workout = false
 }
 
-const saveCardioLog = () => {
+const saveCardioLog = async () => {
   const todayStr = new Date().toISOString().split('T')[0]
-  localStorage.setItem(CARDIO_LOG_KEY, JSON.stringify({ ...cardioLog.value, date: todayStr }))
-  cardioSaved.value = true
+  const localPayload = JSON.stringify({ ...cardioLog.value, date: todayStr })
+
+  cardioSaved.value = true // optimistic — UI responds immediately
+
+  try {
+    const { error } = await supabase.from('cardio_sessions').insert({
+      user_id: user.value.id,
+      date: todayStr,
+      activity: cardioLog.value.activity,
+      duration_minutes: cardioLog.value.duration ?? null,
+      avg_hr: cardioLog.value.avgHR ?? null,
+      zone: cardioLog.value.zone ?? null
+    })
+    if (error) throw error
+    // Keep localStorage in sync so loadCardioLog can restore state after refresh
+    localStorage.setItem(CARDIO_LOG_KEY, localPayload)
+  } catch (e) {
+    console.error('[cardio] Supabase insert failed, falling back to localStorage:', e)
+    localStorage.setItem(CARDIO_LOG_KEY, localPayload)
+  }
 }
 
 const updateTemplateField = (sessionKey, exerciseIndex, field, value) => {
@@ -591,11 +665,63 @@ const flatSets = computed(() => {
 const { volumeLoadByMuscleGroup } = useWorkoutStats(flatSets, exercises, muscleGroups)
 const hasStats = computed(() => Object.keys(volumeLoadByMuscleGroup.value).length > 0)
 
+const sessionFinished = ref(false)
+
+const hasSavedSets = computed(() =>
+  workoutBlocks.value.some(b => b.exercise_id && b.sets.some(s => s.weight != null && s.reps != null))
+)
+
+const sessionTotalVolume = computed(() =>
+  workoutBlocks.value.reduce((total, b) => {
+    if (!b.exercise_id) return total
+    return total + b.sets.reduce((s, set) => (set.weight > 0 && set.reps > 0 ? s + set.weight * set.reps : s), 0)
+  }, 0)
+)
+
+const completedExerciseCount = computed(() =>
+  workoutBlocks.value.filter(b => b.exercise_id && b.sets.some(s => s.weight != null && s.reps != null)).length
+)
+
+const savedSetCount = computed(() =>
+  workoutBlocks.value.flatMap(b => b.sets.filter(s => s.weight != null && s.reps != null)).length
+)
+
+const prsBeaten = computed(() =>
+  workoutBlocks.value
+    .filter(b => b.exercise_id && b.sets.some(s => s.weight != null && s.reps != null))
+    .map(b => {
+      const tplEx = getTemplateExercise(b.exercise_id)
+      const status = getOverloadStatus(b.exercise_id, tplEx?.repsRange)
+      if (status?.status !== 'INCREASE') return null
+      return exercises.value.find(e => e.id === b.exercise_id)?.name ?? null
+    })
+    .filter(Boolean)
+)
+
+let _touchStartY = 0
+const onSummaryTouchStart = (e) => { _touchStartY = e.touches[0].clientY }
+const onSummaryTouchEnd = (e) => {
+  if (e.changedTouches[0].clientY - _touchStartY > 60) sessionFinished.value = false
+}
+
+const lastSleepScore = ref(null)
+
 onMounted(async () => {
   const { data: { session } } = await supabase.auth.getSession()
   const userId = session?.user?.id || user.value?.id
   if (userId) await loadData(userId)
   if (isCardioSession.value) loadCardioLog()
+
+  if (userId) {
+    const { data: sleepData } = await supabase
+      .from('sleep_records')
+      .select('score')
+      .eq('user_id', userId)
+      .order('date', { ascending: false })
+      .limit(1)
+      .single()
+    if (sleepData) lastSleepScore.value = sleepData.score
+  }
 })
 
 const loadData = async (userId) => {
@@ -694,6 +820,20 @@ const startWorkout = async () => {
 }
 
 const addBlock = () => workoutBlocks.value.push({ exercise_id: '', sets: [{ weight: null, reps: null, rpe: null }] })
+
+const onExerciseSelect = async (block) => {
+  if (!block.exercise_id) return
+  await fetchHistoryForExercises(user.value.id, [block.exercise_id])
+  const lastSession = getLastSession(block.exercise_id)
+  if (!lastSession?.sets?.length) return
+  const lastSet = lastSession.sets.at(-1)
+  const firstSet = block.sets[0]
+  if (firstSet && firstSet.weight == null && firstSet.reps == null) {
+    firstSet.weight = lastSet.weight ?? null
+    firstSet.reps = lastSet.reps ?? null
+    firstSet.rpe = lastSet.rpe ?? null
+  }
+}
 
 const addSet = (block) => {
   const last = block.sets[block.sets.length - 1]
@@ -1732,4 +1872,163 @@ const removeSet = async (block, sIndex) => {
 }
 .set-list-enter-from { opacity: 0; transform: translateX(-10px); }
 .set-list-leave-to   { opacity: 0; transform: translateX(-10px); }
+
+/* ── Sleep recovery banner ── */
+.sleep-banner {
+  font-size: 13px;
+  font-style: italic;
+  padding: 10px 16px;
+  border-radius: var(--radius-sm);
+  text-align: center;
+  line-height: 1.4;
+}
+
+.sleep-banner--low {
+  color: color-mix(in srgb, var(--accent) 70%, transparent);
+  background: color-mix(in srgb, var(--accent) 8%, transparent);
+}
+
+.sleep-banner--good {
+  color: var(--status-success);
+  background: color-mix(in srgb, var(--status-success) 10%, transparent);
+  cursor: pointer;
+}
+
+/* ── Terminer button ── */
+.btn-finish {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: calc(100% - 32px);
+  margin: 0 auto 32px;
+  height: 52px;
+  border-radius: 14px;
+  border: 1px solid var(--border-default);
+  background: var(--bg-overlay);
+  color: var(--text-muted);
+  font-size: var(--text-sm);
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 150ms ease, color 150ms ease, border-color 150ms ease;
+}
+.btn-finish:hover {
+  background: var(--bg-subtle);
+  color: var(--text-primary);
+  border-color: var(--border-default);
+}
+
+/* ── Session summary sheet ── */
+.session-summary {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 300;
+  background: var(--bg-raised);
+  border-top: 1px solid var(--border-default);
+  border-radius: var(--radius-xl) var(--radius-xl) 0 0;
+  padding: 12px 24px max(32px, calc(16px + env(safe-area-inset-bottom, 0px)));
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.summary-handle {
+  width: 36px;
+  height: 4px;
+  background: var(--border-subtle);
+  border-radius: 2px;
+  margin: 0 auto;
+}
+
+.summary-eyebrow {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-disabled);
+  text-align: center;
+}
+
+.summary-stats {
+  display: flex;
+  justify-content: space-around;
+}
+
+.summary-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.summary-stat-val {
+  font-family: var(--font-serif);
+  font-size: 28px;
+  color: var(--text-primary);
+  line-height: 1;
+}
+
+.summary-stat-unit {
+  font-family: var(--font-sans);
+  font-size: 13px;
+  color: var(--text-muted);
+  margin-left: 2px;
+}
+
+.summary-stat-label {
+  font-size: 11px;
+  color: var(--text-disabled);
+}
+
+.summary-prs {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px 16px;
+  background: color-mix(in srgb, var(--accent) 8%, transparent);
+  border-radius: var(--radius-md);
+}
+
+.summary-prs-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
+.summary-pr-item {
+  font-size: 14px;
+  color: var(--accent);
+  font-weight: 500;
+  padding-left: 18px;
+}
+
+.summary-ok {
+  width: 100%;
+}
+
+/* ── Summary transition ── */
+.summary-enter-active {
+  transition: transform 300ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+.summary-leave-active {
+  transition: transform 200ms ease-in;
+}
+.summary-enter-from,
+.summary-leave-to {
+  transform: translateY(100%);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .summary-enter-active,
+  .summary-leave-active {
+    transition: none;
+  }
+}
 </style>

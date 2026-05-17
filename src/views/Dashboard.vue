@@ -12,10 +12,10 @@
       </div>
     </section>
 
-    <!-- ── KPI row ── -->
-    <div class="kpi-row">
+    <!-- ── KPI Grid ── -->
+    <div class="kpi-grid">
 
-      <!-- Sommeil -->
+      <!-- Card 1 — Sommeil -->
       <router-link to="/sommeil" class="kpi-card">
         <div class="kpi-label">
           <Moon :size="10" stroke-width="2" style="color: var(--module-sleep)" />
@@ -33,7 +33,7 @@
         </template>
       </router-link>
 
-      <!-- Séance -->
+      <!-- Card 2 — Séance -->
       <router-link to="/musculation" class="kpi-card">
         <div class="kpi-label">
           <Dumbbell :size="10" stroke-width="2" style="color: var(--module-muscu)" />
@@ -55,7 +55,7 @@
         </template>
       </router-link>
 
-      <!-- Semaine -->
+      <!-- Card 3 — Semaine (épurée) -->
       <div class="kpi-card kpi-card--plain">
         <div class="kpi-label">
           <Activity :size="10" stroke-width="2" style="color: var(--status-success)" />
@@ -70,6 +70,38 @@
           <p class="kpi-sub">séance{{ weekSessionCount > 1 ? 's' : '' }}</p>
         </template>
       </div>
+
+      <!-- Card 4 — Nutrition -->
+      <router-link to="/nutrition" class="kpi-card">
+        <div class="kpi-label">
+          <Flame :size="10" stroke-width="2" style="color: var(--accent)" />
+          <span>Nutrition</span>
+        </div>
+        <template v-if="loading || loadingNutrition">
+          <div class="skeleton skeleton--value" />
+          <div class="skeleton skeleton--sub" />
+        </template>
+        <template v-else-if="nutritionLoaded">
+          <p class="kpi-value" :class="{ 'kpi-value--over': caloriesOver }">
+            {{ caloriesToday.toLocaleString('fr-FR') }}<span class="kpi-unit"> kcal</span>
+          </p>
+          <p class="kpi-sub">{{ caloriesTarget ? '/ ' + caloriesTarget.toLocaleString('fr-FR') + ' kcal' : 'aujourd\'hui' }}</p>
+        </template>
+        <template v-else>
+          <p class="kpi-value">—</p>
+          <p class="kpi-sub">non disponible</p>
+        </template>
+        <template v-if="nutritionLoaded && caloriesTarget">
+          <div class="nutrition-bar-track">
+            <div
+              class="nutrition-bar-fill"
+              :class="{ 'nutrition-bar-fill--over': caloriesOver }"
+              :style="{ width: (calorieProgress * 100) + '%' }"
+            />
+          </div>
+        </template>
+      </router-link>
+
     </div>
 
     <!-- ── Session du jour ── -->
@@ -219,8 +251,21 @@ const { fetchHistoryForExercises, getOverloadStatus } = useProgressiveOverload()
 const lastSleepScore = ref(null)
 const workoutDatesAll = ref(new Set())
 const weekWorkoutDates = ref(new Set())
+const cardioSessionDates = ref(new Set())
 const exercises = ref([])
 const loading = ref(true)
+
+// TODO: user_settings mériterait un composable partagé (QW3 + future feature poids corporel)
+const caloriesToday = ref(0)
+const caloriesTarget = ref(null)
+const loadingNutrition = ref(true)
+const nutritionLoaded = ref(false)
+
+const calorieProgress = computed(() => {
+  if (!caloriesTarget.value || !caloriesToday.value) return 0
+  return Math.min(caloriesToday.value / caloriesTarget.value, 1)
+})
+const caloriesOver = computed(() => !!caloriesTarget.value && caloriesToday.value > caloriesTarget.value)
 
 const firstName = computed(() => {
   const email = user.value?.email || ''
@@ -292,7 +337,7 @@ const weekActivity = computed(() => {
       dateStr,
       isToday: dateStr === todayStr,
       isFuture: dateStr > todayStr,
-      done: workoutDatesAll.value.has(dateStr),
+      done: workoutDatesAll.value.has(dateStr) || cardioSessionDates.value.has(dateStr),
       shortLabel: day.label.slice(0, 1)
     }
   })
@@ -315,10 +360,28 @@ const increaseReadyExercises = computed(() => {
   return result.slice(0, 5)
 })
 
+const fetchNutrition = async (userId) => {
+  const todayStr = new Date().toISOString().split('T')[0]
+  try {
+    const [caloriesRes, settingsRes] = await Promise.all([
+      supabase.from('nutrition_logs').select('calories').eq('user_id', userId).eq('date', todayStr).eq('is_skipped', false),
+      supabase.from('user_settings').select('calories_target').eq('user_id', userId).single()
+    ])
+    caloriesToday.value = caloriesRes.data?.reduce((sum, log) => sum + (log.calories ?? 0), 0) ?? 0
+    caloriesTarget.value = settingsRes.data?.calories_target ?? null
+    nutritionLoaded.value = true
+  } catch (e) {
+    // Silent fail — section remains hidden
+  } finally {
+    loadingNutrition.value = false
+  }
+}
+
 onMounted(async () => {
   const { data: { session } } = await supabase.auth.getSession()
   const userId = session?.user?.id || user.value?.id
   if (!userId) { loading.value = false; return }
+  fetchNutrition(userId) // non-blocking — does not delay main KPI cards
   await fetchData(userId)
   loading.value = false
 })
@@ -333,15 +396,19 @@ const fetchData = async (userId) => {
   const mondayOffset = today.getDay() === 0 ? 6 : today.getDay() - 1
   monday.setDate(today.getDate() - mondayOffset)
   const weekStart = monday.toISOString().split('T')[0]
+  const weekEndDate = new Date(monday)
+  weekEndDate.setDate(monday.getDate() + 6)
+  const weekEnd = weekEndDate.toISOString().split('T')[0]
   const sixtyDaysAgo = new Date(today)
   sixtyDaysAgo.setDate(today.getDate() - 60)
   const sixtyDaysAgoStr = sixtyDaysAgo.toISOString().split('T')[0]
 
   try {
-    const [sleepRes, workoutsRes, exRes] = await Promise.all([
+    const [sleepRes, workoutsRes, exRes, cardioRes] = await Promise.all([
       supabase.from('sleep_records').select('score').eq('user_id', userId).eq('date', yesterdayStr).maybeSingle(),
       supabase.from('workouts').select('date').eq('user_id', userId).gte('date', sixtyDaysAgoStr + 'T00:00:00.000Z'),
-      supabase.from('exercises').select('id, name')
+      supabase.from('exercises').select('id, name'),
+      supabase.from('cardio_sessions').select('date').eq('user_id', userId).gte('date', weekStart).lte('date', weekEnd)
     ])
 
     if (sleepRes.data) lastSleepScore.value = sleepRes.data.score
@@ -350,6 +417,10 @@ const fetchData = async (userId) => {
       const allDates = new Set(workoutsRes.data.map(w => w.date.split('T')[0]))
       workoutDatesAll.value = allDates
       weekWorkoutDates.value = new Set([...allDates].filter(d => d >= weekStart && d <= todayStr))
+    }
+
+    if (cardioRes.data?.length) {
+      cardioSessionDates.value = new Set(cardioRes.data.map(s => s.date))
     }
 
     if (exRes.data) {
@@ -423,23 +494,32 @@ const fetchData = async (userId) => {
   color: var(--accent);
 }
 
-/* ── KPI Row ── */
-.kpi-row {
+/* ── KPI Grid ── */
+.kpi-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 8px;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+@media (min-width: 768px) {
+  .kpi-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
 }
 
 .kpi-card {
+  position: relative;
   display: flex;
   flex-direction: column;
   gap: 8px;
-  padding: 18px 16px;
+  padding: 16px 16px 20px;
+  min-height: 112px;
   background: var(--bg-raised);
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-lg);
   text-decoration: none;
   transition: border-color var(--dur-fast) var(--ease-out);
+  overflow: hidden;
 }
 
 .kpi-card:hover {
@@ -480,6 +560,40 @@ const fetchData = async (userId) => {
 .kpi-sub {
   font-size: 10px;
   color: var(--text-muted);
+}
+
+.kpi-unit {
+  font-size: 10px;
+  font-weight: 400;
+  color: var(--text-muted);
+  letter-spacing: 0;
+}
+
+.kpi-value--over {
+  color: #E07070;
+}
+
+.nutrition-bar-track {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.nutrition-bar-fill {
+  height: 100%;
+  background: var(--accent);
+  transition: width 600ms ease-out;
+}
+
+.nutrition-bar-fill--over {
+  background: #E07070;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .nutrition-bar-fill { transition: none; }
 }
 
 /* ── Session card ── */
