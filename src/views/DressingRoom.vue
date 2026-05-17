@@ -1,250 +1,193 @@
 <template>
-  <div class="animate-fade-in max-w-2xl mx-auto pb-24 px-4 sm:px-6">
-    <!-- Header Section -->
-    <header class="flex flex-col gap-6 mb-8 pt-4">
-      <div class="flex justify-between items-center px-1">
-        <div class="flex items-center gap-3">
-          <div class="p-2 md:p-2.5 bg-indigo-600 rounded-xl md:rounded-2xl text-white shadow-lg shadow-indigo-100/50">
-            <Shirt :size="20" md:size="24" stroke-width="2.5" />
+  <div class="dressing-view">
+    <!-- Header -->
+    <header class="view-header">
+      <div class="header-top">
+        <div class="module-title-group">
+          <div class="module-icon">
+            <Shirt :size="18" stroke-width="1.75" />
           </div>
           <div>
-            <h2 class="text-2xl md:text-3xl font-black text-slate-900 tracking-tight">Dressing Room</h2>
-            <p class="text-slate-400 text-xs font-bold uppercase tracking-widest mt-1">Intelligence & Style</p>
+            <h1 class="view-title">Dressing Room</h1>
+            <p class="view-sub">Intelligence & Style</p>
           </div>
         </div>
       </div>
 
-      <!-- Tab Navigation -->
-      <div class="flex p-1.5 bg-slate-100 rounded-2xl select-none">
-        <button 
-          v-for="tab in tabs" 
+      <div class="tab-switcher">
+        <button
+          v-for="tab in tabs"
           :key="tab.id"
           @click="activeTab = tab.id"
-          class="flex-1 py-3 px-4 rounded-xl text-xs font-black uppercase tracking-widest transition-all duration-300 flex items-center justify-center gap-2"
-          :class="activeTab === tab.id ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-400 hover:text-slate-600'"
+          class="tab-btn"
+          :class="{ 'tab-btn--active': activeTab === tab.id }"
         >
-          <component :is="tab.icon" :size="16" />
+          <component :is="tab.icon" :size="14" />
           {{ tab.label }}
         </button>
       </div>
     </header>
 
-    <!-- Section 1: Générateur & Conseils -->
-    <div v-if="activeTab === 'generator'" class="space-y-8 animate-slide-up">
-      <section class="bg-white rounded-[2rem] border border-slate-100 p-6 md:p-8 shadow-xl shadow-slate-100/50">
-        <div class="flex items-center gap-3 mb-8">
-          <div class="p-2 bg-indigo-50 text-indigo-500 rounded-xl">
-            <Sparkles :size="20" stroke-width="2.5" />
+    <!-- Generator tab -->
+    <div v-if="activeTab === 'generator'" class="tab-content">
+      <section class="stylist-card">
+        <div class="card-header">
+          <div class="card-icon">
+            <Sparkles :size="16" stroke-width="1.75" />
           </div>
-          <h3 class="text-lg font-black text-slate-900 tracking-tight">Assistant Styliste</h3>
+          <h3 class="card-title">Assistant Styliste</h3>
         </div>
 
-        <div class="space-y-6">
-          <!-- Occasion Selection -->
-          <div class="space-y-3">
-            <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 select-none">L'occasion</label>
-            <div class="grid grid-cols-2 gap-2">
-              <button 
-                v-for="opt in occasions" :key="opt.id"
-                @click="generatorState.occasion = opt.id"
-                class="px-4 py-4 rounded-2xl font-black text-xs uppercase transition-all select-none border"
-                :class="generatorState.occasion === opt.id ? 'bg-slate-900 text-white border-slate-900 shadow-lg' : 'bg-slate-50 text-slate-500 border-slate-100 hover:bg-slate-100'"
-              >
-                {{ opt.label }}
-              </button>
-            </div>
-          </div>
-
-          <!-- Weather Selection -->
-          <div class="space-y-3">
-            <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 select-none">Météo</label>
-            <div class="grid grid-cols-3 gap-2">
-              <button 
-                v-for="opt in weathers" :key="opt.id"
-                @click="generatorState.weather = opt.id"
-                class="px-3 py-4 rounded-2xl font-black text-[10px] uppercase transition-all select-none border flex flex-col items-center gap-2"
-                :class="generatorState.weather === opt.id ? 'bg-indigo-600 text-white border-indigo-600 shadow-lg shadow-indigo-200' : 'bg-slate-50 text-slate-500 border-slate-100 hover:bg-slate-100'"
-              >
-                <component :is="opt.icon" :size="16" />
-                {{ opt.label }}
-              </button>
-            </div>
-          </div>
-
-          <!-- Actions -->
-          <div class="grid grid-cols-1 gap-3 pt-4">
-            <button 
-              @click="generateOutfit"
-              :disabled="isGenerating"
-              class="w-full bg-slate-900 hover:bg-black text-white py-5 rounded-2xl font-black transition-all active:scale-[0.98] flex justify-center items-center gap-2 shadow-xl select-none disabled:opacity-50 disabled:cursor-not-allowed"
+        <div class="field-group">
+          <label class="field-label">L'occasion</label>
+          <div class="occasion-grid">
+            <button
+              v-for="opt in occasions"
+              :key="opt.id"
+              @click="generatorState.occasion = opt.id"
+              class="occasion-btn"
+              :class="{ 'occasion-btn--active': generatorState.occasion === opt.id }"
             >
-              <Wand2 v-if="!isGenerating" :size="18" />
-              <Loader2 v-else class="animate-spin" :size="18" />
-              {{ isGenerating ? 'Styliste en réflexion...' : 'Générer une tenue' }}
-            </button>
-            <button 
-              @click="analyzeGaps"
-              :disabled="isGenerating"
-              class="w-full bg-white hover:bg-slate-50 text-slate-900 py-5 rounded-2xl font-black transition-all active:scale-[0.98] border border-slate-100 flex justify-center items-center gap-2 shadow-sm select-none disabled:opacity-50"
-            >
-              <Search v-if="!isGenerating" :size="18" />
-              <Loader2 v-else class="animate-spin" :size="18" />
-              Analyser les manques
+              {{ opt.label }}
             </button>
           </div>
         </div>
-      </section>
 
-      <!-- AI Results Display -->
-      <section v-if="aiResult" class="space-y-4 animate-fade-in">
-        <div class="bg-white rounded-[2rem] p-8 border border-indigo-100 relative overflow-hidden shadow-xl shadow-indigo-50">
-          <div class="absolute top-0 right-0 p-8 text-indigo-500/5">
-            <Sparkles :size="120" />
-          </div>
-          <div class="relative">
-            <h4 class="text-[10px] font-black text-indigo-500 uppercase tracking-[0.2em] mb-6 flex items-center gap-2">
-              <span class="w-8 h-[1px] bg-indigo-200"></span>
-              Conseil de votre styliste
-            </h4>
-            <div 
-              class="prose prose-slate prose-sm max-w-none prose-headings:text-slate-900 prose-headings:font-black prose-p:text-slate-600 prose-p:leading-relaxed prose-strong:text-indigo-600 prose-li:text-slate-600"
-              v-html="renderedResult"
-            ></div>
+        <div class="field-group">
+          <label class="field-label">Météo</label>
+          <div class="weather-grid">
+            <button
+              v-for="opt in weathers"
+              :key="opt.id"
+              @click="generatorState.weather = opt.id"
+              class="weather-btn"
+              :class="{ 'weather-btn--active': generatorState.weather === opt.id }"
+            >
+              <component :is="opt.icon" :size="15" />
+              {{ opt.label }}
+            </button>
           </div>
         </div>
-        
-        <button 
-          @click="aiResult = null"
-          class="w-full py-4 text-slate-400 text-[10px] font-black uppercase tracking-widest hover:text-indigo-500 transition-colors"
-        >
-          Effacer les conseils
-        </button>
+
+        <div class="actions-group">
+          <button @click="generateOutfit" :disabled="isGenerating" class="btn-primary">
+            <Wand2 v-if="!isGenerating" :size="16" stroke-width="1.75" />
+            <Loader2 v-else class="spin" :size="16" />
+            {{ isGenerating ? 'Styliste en réflexion...' : 'Générer une tenue' }}
+          </button>
+          <button @click="analyzeGaps" :disabled="isGenerating" class="btn-secondary">
+            <Search v-if="!isGenerating" :size="16" stroke-width="1.75" />
+            <Loader2 v-else class="spin" :size="16" />
+            Analyser les manques
+          </button>
+        </div>
       </section>
 
-      <!-- Placeholder Results -->
-      <section v-else class="flex flex-col items-center justify-center py-20 px-8 bg-slate-50/50 rounded-[2.5rem] border border-dashed border-slate-200">
-        <div class="w-16 h-16 bg-white rounded-2xl flex items-center justify-center text-slate-300 border border-slate-100 mb-4 shadow-sm">
-          <Lightbulb :size="32" stroke-width="1.5" />
+      <!-- AI Result -->
+      <section v-if="aiResult" class="ai-result">
+        <div class="sparkles-bg"><Sparkles :size="110" /></div>
+        <div class="ai-result-label">
+          <span class="label-line"></span>
+          Conseil de votre styliste
         </div>
-        <p class="text-slate-400 font-black text-[10px] uppercase tracking-[0.2em] text-center">En attente de génération</p>
-        <p class="text-slate-300 text-[10px] font-bold text-center mt-2">Sélectionnez une occasion et la météo pour commencer.</p>
+        <div class="ai-result-content" v-html="renderedResult"></div>
+        <button @click="aiResult = null" class="clear-btn">Effacer les conseils</button>
+      </section>
+
+      <!-- Empty placeholder -->
+      <section v-else class="empty-state">
+        <div class="empty-icon"><Lightbulb :size="28" stroke-width="1.5" /></div>
+        <p class="empty-title">En attente de génération</p>
+        <p class="empty-sub">Sélectionnez une occasion et la météo pour commencer.</p>
       </section>
     </div>
 
-    <!-- Section 2: Mon Placard -->
-    <div v-if="activeTab === 'wardrobe'" class="space-y-8 animate-slide-up">
-      <!-- Magic Add Section -->
-      <section class="bg-white rounded-[2.5rem] border border-slate-100 p-6 md:p-8 shadow-xl shadow-slate-100/50">
-        <div class="flex items-center gap-3 mb-8">
-          <div class="p-2 bg-emerald-50 text-emerald-500 rounded-xl">
-            <Wand2 :size="20" stroke-width="2.5" />
+    <!-- Wardrobe tab -->
+    <div v-if="activeTab === 'wardrobe'" class="tab-content">
+      <section class="magic-add-card">
+        <div class="card-header">
+          <div class="card-icon card-icon--add">
+            <Wand2 :size="16" stroke-width="1.75" />
           </div>
-          <h3 class="text-lg font-black text-slate-900 tracking-tight">Ajout Magique</h3>
+          <h3 class="card-title">Ajout Magique</h3>
         </div>
 
-        <div class="space-y-6">
-          <div class="space-y-2">
-            <label class="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1 select-none font-sans">Description libre</label>
-            <textarea 
-              v-model="magicForm.rawInput"
-              rows="2"
-              placeholder="Ex: Gros pull en laine rouge un peu ample..."
-              class="w-full px-6 py-5 bg-slate-50 border border-slate-100 rounded-[1.5rem] focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500 outline-none transition-all font-bold text-slate-800 resize-none text-sm placeholder:text-slate-300 shadow-inner"
-              :disabled="isMagicLoading"
-            ></textarea>
-          </div>
-
-          <div class="space-y-2">
-            <label class="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1 select-none font-sans">Lien (optionnel)</label>
-            <input 
-              v-model="magicForm.link"
-              type="url"
-              placeholder="https://www.exemple.com/article..."
-              class="w-full px-6 py-5 bg-slate-50 border border-slate-100 rounded-[1.5rem] focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500 outline-none transition-all font-bold text-slate-800 text-sm placeholder:text-slate-300 shadow-inner"
-              :disabled="isMagicLoading"
-            >
-          </div>
-
-          <button 
-            @click="smartAdd"
-            :disabled="isMagicLoading || !magicForm.rawInput"
-            class="w-full bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white py-5 rounded-[1.5rem] font-black transition-all active:scale-[0.98] shadow-xl shadow-emerald-100 flex justify-center items-center gap-3 select-none"
-          >
-            <Loader2 v-if="isMagicLoading" class="animate-spin" :size="20" />
-            <Sparkles v-else :size="20" />
-            {{ isMagicLoading ? 'Analyse par l\'IA...' : 'Ajout Magique ✨' }}
-          </button>
+        <div class="field-group">
+          <label class="field-label">Description libre</label>
+          <textarea
+            v-model="magicForm.rawInput"
+            rows="2"
+            placeholder="Ex: Gros pull en laine rouge un peu ample..."
+            class="magic-textarea"
+            :disabled="isMagicLoading"
+          ></textarea>
         </div>
+
+        <div class="field-group">
+          <label class="field-label">Lien (optionnel)</label>
+          <input
+            v-model="magicForm.link"
+            type="url"
+            placeholder="https://www.exemple.com/article..."
+            class="magic-input"
+            :disabled="isMagicLoading"
+          />
+        </div>
+
+        <button @click="smartAdd" :disabled="isMagicLoading || !magicForm.rawInput" class="btn-magic">
+          <Loader2 v-if="isMagicLoading" class="spin" :size="16" />
+          <Sparkles v-else :size="16" />
+          {{ isMagicLoading ? "Analyse par l'IA..." : 'Ajout Magique' }}
+        </button>
       </section>
 
-      <!-- Wardrobe List Categorized -->
-      <section v-if="wardrobe && wardrobe.length > 0" class="space-y-12">
-        <div class="flex items-center justify-between px-1">
-          <h3 class="text-xl font-black text-slate-900 tracking-tight">Mon Placard ({{ wardrobe.length }})</h3>
-          <button 
-            @click="copyWardrobeContent"
-            class="flex items-center gap-2 px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl transition-all active:scale-[0.98] group"
-          >
-            <component :is="copyStatus === 'copied' ? Check : ClipboardCopy" :size="16" :class="copyStatus === 'copied' ? 'text-emerald-500' : ''" />
-            <span class="text-[10px] font-black uppercase tracking-widest">{{ copyStatus === 'copied' ? 'Copié !' : 'Copier pour l\'IA' }}</span>
+      <!-- Wardrobe list -->
+      <section v-if="wardrobe && wardrobe.length > 0" class="wardrobe-section">
+        <div class="wardrobe-header">
+          <h3 class="wardrobe-count">Mon Placard ({{ wardrobe.length }})</h3>
+          <button @click="copyWardrobeContent" class="copy-btn">
+            <component :is="copyStatus === 'copied' ? Check : ClipboardCopy" :size="13" />
+            {{ copyStatus === 'copied' ? 'Copié !' : "Copier pour l'IA" }}
           </button>
         </div>
 
-        <div v-for="group in groupedWardrobe" :key="group.id" class="space-y-4">
-          <div class="flex items-center gap-3 px-1 ml-1">
-            <div :class="['p-1.5 rounded-lg', group.bg, group.color]">
-              <component :is="group.icon" :size="14" stroke-width="3" />
+        <div v-for="group in groupedWardrobe" :key="group.id" class="category-group">
+          <div class="category-header">
+            <div class="category-icon" :style="group.iconStyle">
+              <component :is="group.icon" :size="12" stroke-width="2.5" />
             </div>
-            <h4 class="text-xs font-black text-slate-400 capitalize tracking-[0.2em]">{{ group.label }} ({{ group.itemsCount }})</h4>
-            <div class="h-[1px] flex-1 bg-slate-100"></div>
+            <span class="category-label">{{ group.label }} ({{ group.itemsCount }})</span>
+            <div class="category-divider"></div>
           </div>
 
-          <div class="grid grid-cols-1 gap-6">
-            <div v-for="sub in group.subSections" :key="sub.label" class="space-y-3">
-              <div v-if="group.subSections.length > 1" class="flex items-center gap-2 px-1">
-                <span class="text-[9px] font-black uppercase text-slate-300 tracking-[0.15em]">{{ sub.label }}</span>
-                <div class="h-[1px] flex-1 bg-slate-50"></div>
-              </div>
-              
-              <div class="grid grid-cols-1 gap-3">
-                <div 
-                  v-for="item in sub.items" 
-                  :key="item.id"
-                  class="bg-white p-5 rounded-[2rem] border border-slate-100 flex items-center justify-between group hover:border-indigo-100 transition-all shadow-sm"
-                >
-                  <div class="flex items-center gap-4">
-                    <div :class="['p-4 rounded-full transition-colors shadow-sm', group.bg, group.color]">
-                      <component :is="group.icon" :size="24" />
-                    </div>
-                    <div>
-                      <h4 class="font-black text-slate-800 group-hover:text-slate-900 transition-colors">{{ item.name }}</h4>
-                      <div class="flex flex-wrap gap-2 items-center mt-2">
-                        <span v-if="item.quantity > 1" class="text-[9px] font-black uppercase text-white tracking-widest bg-slate-900 px-2.5 py-1 rounded-lg border border-slate-900">x{{ item.quantity }}</span>
-                        <span class="text-[9px] font-black uppercase text-indigo-500 tracking-widest bg-indigo-50/50 px-2.5 py-1 rounded-lg border border-indigo-100">{{ item.color }}</span>
-                        <span v-if="item.brand" class="text-[9px] font-black uppercase text-emerald-600 tracking-widest bg-emerald-50/50 px-2.5 py-1 rounded-lg border border-emerald-100">{{ item.brand }}</span>
-                        <span v-if="item.style" class="text-[9px] font-black uppercase text-slate-400 tracking-widest bg-slate-50 px-2.5 py-1 rounded-lg border border-slate-100">{{ item.style }}</span>
-                      </div>
+          <div v-for="sub in group.subSections" :key="sub.label" class="sub-section">
+            <div v-if="group.subSections.length > 1" class="sub-label">{{ sub.label }}</div>
+            <div class="items-list">
+              <div v-for="item in sub.items" :key="item.id" class="item-card">
+                <div class="item-left">
+                  <div class="item-category-icon" :style="group.iconStyleLarge">
+                    <component :is="group.icon" :size="20" />
+                  </div>
+                  <div class="item-info">
+                    <h4 class="item-name">{{ item.name }}</h4>
+                    <div class="item-tags">
+                      <span v-if="item.quantity > 1" class="tag tag--qty">x{{ item.quantity }}</span>
+                      <span class="tag tag--color">{{ item.color }}</span>
+                      <span v-if="item.brand" class="tag tag--brand">{{ item.brand }}</span>
+                      <span v-if="item.style" class="tag tag--style">{{ item.style }}</span>
                     </div>
                   </div>
-                  <div class="flex items-center gap-1">
-                    <button 
-                      @click="updateQuantity(item, -1)"
-                      class="p-2 text-slate-300 hover:text-rose-500 hover:bg-rose-50 rounded-xl transition-all"
-                      title="Diminuer"
-                    >
-                      <Minus :size="16" />
-                    </button>
-                    <button 
-                      @click="updateQuantity(item, 1)"
-                      class="p-2 text-slate-300 hover:text-emerald-500 hover:bg-emerald-50 rounded-xl transition-all"
-                      title="Augmenter"
-                    >
-                      <Plus :size="16" />
-                    </button>
-                    <a v-if="item.link" :href="item.link" target="_blank" class="p-2 text-slate-300 hover:text-indigo-500 hover:bg-slate-50 rounded-xl transition-all">
-                      <ExternalLink :size="16" />
-                    </a>
-                  </div>
+                </div>
+                <div class="item-actions">
+                  <button @click="updateQuantity(item, -1)" class="action-btn action-btn--minus" title="Diminuer">
+                    <Minus :size="14" />
+                  </button>
+                  <button @click="updateQuantity(item, 1)" class="action-btn action-btn--plus" title="Augmenter">
+                    <Plus :size="14" />
+                  </button>
+                  <a v-if="item.link" :href="item.link" target="_blank" class="action-btn action-btn--link">
+                    <ExternalLink :size="14" />
+                  </a>
                 </div>
               </div>
             </div>
@@ -252,12 +195,11 @@
         </div>
       </section>
 
-      <section v-else-if="!loading" class="flex flex-col items-center justify-center py-20 px-8 bg-slate-50/50 rounded-[2.5rem] border border-dashed border-slate-200">
-        <div class="w-16 h-16 bg-white rounded-2xl flex items-center justify-center text-slate-300 border border-slate-100 mb-4 shadow-sm">
-          <Shirt :size="32" stroke-width="1.5" />
-        </div>
-        <p class="text-slate-400 font-black text-[10px] uppercase tracking-[0.2em] text-center">Placard vide</p>
-        <p class="text-slate-300 text-[10px] font-bold text-center mt-2 underline">Décrivez votre premier vêtement ci-dessus !</p>
+      <!-- Empty wardrobe -->
+      <section v-else-if="!loading" class="empty-state">
+        <div class="empty-icon"><Shirt :size="28" stroke-width="1.5" /></div>
+        <p class="empty-title">Placard vide</p>
+        <p class="empty-sub">Décrivez votre premier vêtement ci-dessus !</p>
       </section>
     </div>
   </div>
@@ -270,15 +212,14 @@ import { useAuth } from '@/composables/useAuth'
 import { marked } from 'marked'
 import { createLucideIcon } from 'lucide-vue-next'
 import { trousers, wardrobe as wardrobeNode } from '@lucide/lab'
-import { 
-  Shirt, 
-  Sparkles, 
-  Wand2, 
-  Search, 
-  ExternalLink, 
-  Library, 
-  Sun, 
-  CloudRain, 
+import {
+  Shirt,
+  Sparkles,
+  Wand2,
+  Search,
+  ExternalLink,
+  Sun,
+  CloudRain,
   ThermometerSnowflake,
   Lightbulb,
   Loader2,
@@ -286,10 +227,8 @@ import {
   Watch,
   ClipboardCopy,
   Check,
-  Columns2,
   Plus,
   Minus,
-  Trash2
 } from 'lucide-vue-next'
 
 const TrousersIcon = createLucideIcon('Trousers', trousers)
@@ -335,11 +274,11 @@ const generateOutfit = async () => {
   isGenerating.value = true
   try {
     const { data, error } = await supabase.functions.invoke('ai-stylist', {
-      body: { 
+      body: {
         action: 'suggest_outfit',
         weather: generatorState.weather,
         occasion: generatorState.occasion,
-        wardrobeData: wardrobe.value 
+        wardrobeData: wardrobe.value
       }
     })
     if (error) throw error
@@ -355,9 +294,9 @@ const analyzeGaps = async () => {
   isGenerating.value = true
   try {
     const { data, error } = await supabase.functions.invoke('ai-stylist', {
-      body: { 
+      body: {
         action: 'analyze_gaps',
-        wardrobeData: wardrobe.value 
+        wardrobeData: wardrobe.value
       }
     })
     if (error) throw error
@@ -398,29 +337,46 @@ const deduceSubCategory = (name) => {
 const groupedWardrobe = computed(() => {
   if (!Array.isArray(wardrobe.value)) return []
   const currentWardrobe = wardrobe.value
-  
+
   const categories = [
-    { id: 'haut', label: 'Hauts', icon: Shirt, color: 'text-indigo-500', bg: 'bg-indigo-50' },
-    { id: 'veste', label: 'Vestes', icon: Shirt, color: 'text-blue-500', bg: 'bg-blue-50' },
-    { id: 'bas', label: 'Bas', icon: TrousersIcon, color: 'text-emerald-500', bg: 'bg-emerald-50' },
-    { id: 'chaussures', label: 'Chaussures', icon: Footprints, color: 'text-orange-500', bg: 'bg-orange-50' },
-    { id: 'accessoire', label: 'Accessoires', icon: Watch, color: 'text-rose-500', bg: 'bg-rose-50' }
+    {
+      id: 'haut', label: 'Hauts', icon: Shirt,
+      iconStyle: { background: 'rgba(184,150,126,0.12)', color: '#B8967E' },
+      iconStyleLarge: { background: 'rgba(184,150,126,0.10)', color: '#B8967E', borderRadius: '10px' }
+    },
+    {
+      id: 'veste', label: 'Vestes', icon: Shirt,
+      iconStyle: { background: 'rgba(122,145,184,0.12)', color: '#7A91B8' },
+      iconStyleLarge: { background: 'rgba(122,145,184,0.10)', color: '#7A91B8', borderRadius: '10px' }
+    },
+    {
+      id: 'bas', label: 'Bas', icon: TrousersIcon,
+      iconStyle: { background: 'rgba(125,173,138,0.12)', color: '#7DAD8A' },
+      iconStyleLarge: { background: 'rgba(125,173,138,0.10)', color: '#7DAD8A', borderRadius: '10px' }
+    },
+    {
+      id: 'chaussures', label: 'Chaussures', icon: Footprints,
+      iconStyle: { background: 'rgba(212,151,106,0.12)', color: '#D4976A' },
+      iconStyleLarge: { background: 'rgba(212,151,106,0.10)', color: '#D4976A', borderRadius: '10px' }
+    },
+    {
+      id: 'accessoire', label: 'Accessoires', icon: Watch,
+      iconStyle: { background: 'rgba(201,160,76,0.12)', color: '#C9A04C' },
+      iconStyleLarge: { background: 'rgba(201,160,76,0.10)', color: '#C9A04C', borderRadius: '10px' }
+    }
   ]
 
   const knownCategories = categories.map(c => c.id)
-  
+
   try {
     const result = categories.map(cat => {
       const catItems = currentWardrobe.filter(item => item && item.category?.toLowerCase() === cat.id)
-      
-      // Group by sub_category
+
       const subSectionsMap = catItems.reduce((acc, item) => {
         let label = item.sub_category || deduceSubCategory(item.name)
-        // Normalize label
-        label = (typeof label === 'string' && label.length > 0) 
-          ? label.charAt(0).toUpperCase() + label.slice(1) 
+        label = (typeof label === 'string' && label.length > 0)
+          ? label.charAt(0).toUpperCase() + label.slice(1)
           : 'Autres'
-        
         if (!acc[label]) acc[label] = []
         acc[label].push(item)
         return acc
@@ -434,15 +390,14 @@ const groupedWardrobe = computed(() => {
       return { ...cat, subSections, itemsCount: catItems.length }
     }).filter(group => group.subSections.length > 0)
 
-    // Handling "Autres" category
     const others = currentWardrobe.filter(item => item && !knownCategories.includes(item.category?.toLowerCase()))
     if (others.length > 0) {
-      result.push({ 
-        id: 'autres', 
-        label: 'Autres', 
-        icon: WardrobeIcon, 
-        color: 'text-slate-500', 
-        bg: 'bg-slate-50', 
+      result.push({
+        id: 'autres',
+        label: 'Autres',
+        icon: WardrobeIcon,
+        iconStyle: { background: 'rgba(240,235,227,0.06)', color: 'var(--text-muted)' },
+        iconStyleLarge: { background: 'rgba(240,235,227,0.05)', color: 'var(--text-muted)', borderRadius: '10px' },
         subSections: [{ label: 'Divers', items: others }],
         itemsCount: others.length
       })
@@ -459,22 +414,20 @@ const groupedWardrobe = computed(() => {
 const copyStatus = ref('idle')
 const copyWardrobeContent = async () => {
   if (wardrobe.value.length === 0) return
-  
+
   const content = wardrobe.value.map(item => {
     let details = `${item.category}, ${item.color}`
     if (item.brand) details += `, ${item.brand}`
     if (item.link) details += ` - ${item.link}`
     return `- ${item.name} (${details})`
   }).join('\n')
-  
+
   const fullPrompt = `Voici le contenu de mon placard utile pour tes conseils de style :\n\n${content}\n\nPeux-tu me suggérer des tenues ou répondre à mes questions en te basant sur ces éléments ?`
-  
+
   try {
     await navigator.clipboard.writeText(fullPrompt)
     copyStatus.value = 'copied'
-    setTimeout(() => {
-      copyStatus.value = 'idle'
-    }, 2000)
+    setTimeout(() => { copyStatus.value = 'idle' }, 2000)
   } catch (err) {
     console.error('Copy error:', err)
   }
@@ -489,7 +442,6 @@ const fetchWardrobe = async () => {
       .select('*')
       .eq('user_id', user.value.id)
       .order('created_at', { ascending: false })
-    
     if (error) throw error
     wardrobe.value = data || []
   } catch (err) {
@@ -507,13 +459,11 @@ const updateQuantity = async (item, delta) => {
     }
     return
   }
-
   try {
     const { error } = await supabase
       .from('wardrobe')
       .update({ quantity: newQuantity })
       .eq('id', item.id)
-    
     if (error) throw error
     item.quantity = newQuantity
   } catch (err) {
@@ -536,20 +486,16 @@ const deleteItem = async (id) => {
 
 const smartAdd = async () => {
   if (!magicForm.rawInput || !user.value) return
-  
   isMagicLoading.value = true
   try {
-    // 1. Appeler l'ia pour extraire les données
     const { data: extractedData, error: functionError } = await supabase.functions.invoke('smart-add-item', {
-      body: { 
+      body: {
         rawInput: magicForm.rawInput,
-        link: magicForm.link 
+        link: magicForm.link
       }
     })
-
     if (functionError) throw functionError
 
-    // 2. Insérer dans Supabase
     const { error: insertError } = await supabase
       .from('wardrobe')
       .insert({
@@ -557,10 +503,8 @@ const smartAdd = async () => {
         link: magicForm.link,
         user_id: user.value.id
       })
-
     if (insertError) throw insertError
 
-    // 3. Reset & Refresh
     magicForm.rawInput = ''
     magicForm.link = ''
     await fetchWardrobe()
@@ -577,25 +521,679 @@ onMounted(() => {
 </script>
 
 <style scoped>
-.animate-fade-in {
-  animation: fadeIn 0.5s ease-out;
+.dressing-view {
+  max-width: 640px;
+  margin: 0 auto;
+  padding: 8px 0 100px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
 }
 
-.animate-slide-up {
-  animation: slideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+/* ── Header ── */
+.view-header {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 0 2px;
 }
 
-@keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
+.header-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
 }
 
-@keyframes slideUp {
-  from { transform: translateY(20px); opacity: 0; }
-  to { transform: translateY(0); opacity: 1; }
+.module-title-group {
+  display: flex;
+  align-items: center;
+  gap: 12px;
 }
 
-::placeholder {
-  @apply opacity-50;
+.module-icon {
+  width: 36px;
+  height: 36px;
+  flex-shrink: 0;
+  border-radius: var(--radius-sm);
+  background: var(--module-dress-dim);
+  border: 1px solid var(--module-dress-border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--module-dress);
 }
+
+.view-title {
+  font-family: var(--font-serif);
+  font-size: var(--text-2xl);
+  font-weight: 400;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.view-sub {
+  font-size: 9px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--text-muted);
+  margin-top: 1px;
+}
+
+/* ── Tab switcher ── */
+.tab-switcher {
+  display: flex;
+  padding: 4px;
+  background: var(--bg-overlay);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+}
+
+.tab-btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 10px 14px;
+  border-radius: calc(var(--radius-lg) - 4px);
+  font-size: 10px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: color var(--dur-fast) var(--ease-out), background var(--dur-fast) var(--ease-out);
+  user-select: none;
+  border: none;
+  background: transparent;
+}
+
+.tab-btn--active {
+  background: var(--bg-raised);
+  color: var(--text-primary);
+  border: 1px solid var(--border-subtle);
+}
+
+.tab-btn:not(.tab-btn--active):hover {
+  color: var(--text-secondary);
+}
+
+/* ── Tab content ── */
+.tab-content {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* ── Shared card ── */
+.stylist-card,
+.magic-add-card {
+  background: var(--bg-raised);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-xl);
+  padding: 24px 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.card-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.card-icon {
+  width: 32px;
+  height: 32px;
+  flex-shrink: 0;
+  border-radius: var(--radius-sm);
+  background: var(--module-dress-dim);
+  border: 1px solid var(--module-dress-border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--module-dress);
+}
+
+.card-icon--add {
+  background: rgba(125, 173, 138, 0.10);
+  border-color: rgba(125, 173, 138, 0.20);
+  color: #7DAD8A;
+}
+
+.card-title {
+  font-family: var(--font-serif);
+  font-size: var(--text-lg);
+  font-weight: 400;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+/* ── Field groups ── */
+.field-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.field-label {
+  font-size: 10px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--text-muted);
+}
+
+/* ── Occasion grid ── */
+.occasion-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.occasion-btn {
+  padding: 14px 16px;
+  border-radius: var(--radius-md);
+  font-size: 11px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-muted);
+  background: var(--bg-subtle);
+  border: 1px solid var(--border-subtle);
+  cursor: pointer;
+  transition: all var(--dur-fast) var(--ease-out);
+  user-select: none;
+}
+
+.occasion-btn:hover {
+  border-color: var(--border-default);
+  color: var(--text-secondary);
+}
+
+.occasion-btn--active {
+  background: var(--module-dress-dim);
+  border-color: var(--module-dress-border);
+  color: var(--module-dress);
+}
+
+/* ── Weather grid ── */
+.weather-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+
+.weather-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 14px 10px;
+  border-radius: var(--radius-md);
+  font-size: 10px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
+  background: var(--bg-subtle);
+  border: 1px solid var(--border-subtle);
+  cursor: pointer;
+  transition: all var(--dur-fast) var(--ease-out);
+  user-select: none;
+}
+
+.weather-btn:hover {
+  border-color: var(--border-default);
+  color: var(--text-secondary);
+}
+
+.weather-btn--active {
+  background: var(--module-dress-dim);
+  border-color: var(--module-dress-border);
+  color: var(--module-dress);
+}
+
+/* ── Action buttons ── */
+.actions-group {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.btn-primary,
+.btn-secondary,
+.btn-magic {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  padding: 14px 20px;
+  border-radius: var(--radius-md);
+  font-family: var(--font-sans);
+  font-size: 11px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  cursor: pointer;
+  transition: all var(--dur-fast) var(--ease-out);
+  user-select: none;
+  border: 1px solid transparent;
+}
+
+.btn-primary:active,
+.btn-secondary:active,
+.btn-magic:active { transform: scale(0.98); }
+
+.btn-primary:disabled,
+.btn-secondary:disabled,
+.btn-magic:disabled { opacity: 0.45; cursor: not-allowed; }
+
+.btn-primary {
+  background: var(--text-primary);
+  color: var(--bg-base);
+}
+
+.btn-primary:hover:not(:disabled) { background: var(--text-secondary); }
+
+.btn-secondary {
+  background: var(--bg-overlay);
+  border-color: var(--border-default);
+  color: var(--text-secondary);
+}
+
+.btn-secondary:hover:not(:disabled) {
+  border-color: var(--module-dress-border);
+  color: var(--module-dress);
+}
+
+.btn-magic {
+  background: var(--module-dress-dim);
+  border-color: var(--module-dress-border);
+  color: var(--module-dress);
+}
+
+.btn-magic:hover:not(:disabled) { background: rgba(184, 150, 126, 0.18); }
+
+/* ── AI Result ── */
+.ai-result {
+  background: var(--bg-raised);
+  border: 1px solid var(--border-subtle);
+  border-top: 2px solid var(--module-dress);
+  border-radius: var(--radius-xl);
+  padding: 26px 22px 22px;
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.sparkles-bg {
+  position: absolute;
+  top: 0;
+  right: 0;
+  padding: 18px;
+  color: var(--module-dress);
+  opacity: 0.04;
+  pointer-events: none;
+}
+
+.ai-result-label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 9px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.2em;
+  color: var(--module-dress);
+}
+
+.label-line {
+  display: block;
+  width: 28px;
+  height: 1px;
+  background: var(--module-dress);
+  opacity: 0.5;
+}
+
+.ai-result-content {
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+  line-height: 1.75;
+}
+
+.ai-result-content :deep(h1),
+.ai-result-content :deep(h2),
+.ai-result-content :deep(h3),
+.ai-result-content :deep(h4) {
+  font-family: var(--font-serif);
+  font-weight: 400;
+  color: var(--text-primary);
+  margin: 18px 0 8px;
+}
+
+.ai-result-content :deep(strong) {
+  color: var(--module-dress);
+  font-weight: 600;
+}
+
+.ai-result-content :deep(p) { margin: 8px 0; }
+
+.ai-result-content :deep(ul),
+.ai-result-content :deep(ol) { padding-left: 20px; margin: 8px 0; }
+
+.ai-result-content :deep(li) { margin: 4px 0; }
+
+.clear-btn {
+  align-self: center;
+  font-size: 9px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--text-muted);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 6px 0;
+  transition: color var(--dur-fast) var(--ease-out);
+}
+
+.clear-btn:hover { color: var(--module-dress); }
+
+/* ── Empty state ── */
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 64px 24px;
+  background: var(--bg-overlay);
+  border: 1px dashed var(--border-subtle);
+  border-radius: var(--radius-xl);
+  gap: 10px;
+}
+
+.empty-icon {
+  width: 54px;
+  height: 54px;
+  background: var(--bg-raised);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-muted);
+  margin-bottom: 4px;
+}
+
+.empty-title {
+  font-size: 10px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.2em;
+  color: var(--text-muted);
+  margin: 0;
+}
+
+.empty-sub {
+  font-size: 11px;
+  color: var(--text-muted);
+  opacity: 0.55;
+  text-align: center;
+  margin: 0;
+}
+
+/* ── Magic Add inputs ── */
+.magic-textarea,
+.magic-input {
+  width: 100%;
+  padding: 12px 16px;
+  background: var(--bg-subtle);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-md);
+  font-family: var(--font-sans);
+  font-size: var(--text-sm);
+  color: var(--text-primary);
+  outline: none;
+  transition: border-color var(--dur-fast) var(--ease-out), box-shadow var(--dur-fast) var(--ease-out);
+  resize: none;
+  box-sizing: border-box;
+}
+
+.magic-textarea:focus,
+.magic-input:focus {
+  border-color: var(--module-dress-border);
+  box-shadow: 0 0 0 3px rgba(184, 150, 126, 0.08);
+}
+
+.magic-textarea::placeholder,
+.magic-input::placeholder {
+  color: var(--text-muted);
+  opacity: 0.5;
+}
+
+/* ── Wardrobe section ── */
+.wardrobe-section {
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+}
+
+.wardrobe-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 2px;
+}
+
+.wardrobe-count {
+  font-family: var(--font-serif);
+  font-size: var(--text-xl);
+  font-weight: 400;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.copy-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  background: var(--bg-overlay);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  font-size: 9px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all var(--dur-fast) var(--ease-out);
+}
+
+.copy-btn:hover {
+  border-color: var(--border-default);
+  color: var(--text-secondary);
+}
+
+/* ── Category groups ── */
+.category-group {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.category-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 2px;
+}
+
+.category-icon {
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.category-label {
+  font-size: 9px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.2em;
+  color: var(--text-muted);
+}
+
+.category-divider {
+  flex: 1;
+  height: 1px;
+  background: var(--border-subtle);
+}
+
+/* ── Sub-sections ── */
+.sub-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.sub-label {
+  font-size: 9px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  color: var(--text-muted);
+  opacity: 0.5;
+  padding: 0 2px;
+}
+
+.items-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* ── Item card ── */
+.item-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 16px;
+  background: var(--bg-raised);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  transition: border-color var(--dur-fast) var(--ease-out);
+}
+
+.item-card:hover { border-color: var(--module-dress-border); }
+
+.item-left {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-width: 0;
+}
+
+.item-category-icon {
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.item-info { min-width: 0; }
+
+.item-name {
+  font-size: var(--text-sm);
+  font-weight: 500;
+  color: var(--text-primary);
+  margin: 0 0 6px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 200px;
+}
+
+.item-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.tag {
+  font-size: 8px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  padding: 3px 7px;
+  border-radius: 4px;
+}
+
+.tag--qty {
+  background: var(--bg-overlay);
+  color: var(--text-primary);
+  border: 1px solid var(--border-default);
+}
+
+.tag--color {
+  background: var(--module-dress-dim);
+  color: var(--module-dress);
+  border: 1px solid var(--module-dress-border);
+}
+
+.tag--brand {
+  background: rgba(125, 173, 138, 0.10);
+  color: #7DAD8A;
+  border: 1px solid rgba(125, 173, 138, 0.18);
+}
+
+.tag--style {
+  background: var(--bg-subtle);
+  color: var(--text-muted);
+  border: 1px solid var(--border-subtle);
+}
+
+/* ── Item actions ── */
+.item-actions {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  flex-shrink: 0;
+}
+
+.action-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border-radius: var(--radius-sm);
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all var(--dur-fast) var(--ease-out);
+  text-decoration: none;
+}
+
+.action-btn--minus:hover { background: rgba(239, 68, 68, 0.10); color: #EF4444; }
+.action-btn--plus:hover  { background: rgba(125, 173, 138, 0.12); color: #7DAD8A; }
+.action-btn--link:hover  { background: var(--module-dress-dim); color: var(--module-dress); }
+
+/* ── Spinner ── */
+.spin { animation: spin 0.8s linear infinite; }
+
+@keyframes spin { to { transform: rotate(360deg); } }
 </style>

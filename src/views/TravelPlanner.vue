@@ -1,109 +1,85 @@
 <template>
-  <div class="animate-fade-in max-w-4xl mx-auto pb-24 px-4 sm:px-6 lg:px-8 select-none">
+  <div class="travel-view">
     <!-- Header -->
-    <header class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8 md:mb-12 pt-4 md:pt-6">
-      <div>
-        <h2 class="text-2xl md:text-3xl font-black text-slate-900 tracking-tight flex items-center gap-3">
-          <div class="p-2 md:p-2.5 bg-amber-500 rounded-xl md:rounded-2xl text-white shadow-lg shadow-amber-100/50">
-            <Plane :size="20" stroke-width="2.5" />
-          </div>
-          Travel Planner
-        </h2>
-        <p class="text-slate-400 font-bold text-[10px] uppercase tracking-[0.2em] mt-2 ml-1">Planifiez votre prochain voyage avec l'IA</p>
+    <header class="view-header">
+      <div class="module-title-group">
+        <div class="module-icon">
+          <Plane :size="18" stroke-width="1.75" />
+        </div>
+        <div>
+          <h1 class="view-title">Travel Planner</h1>
+          <p class="view-sub">Planifiez votre prochain voyage avec l'IA</p>
+        </div>
       </div>
 
-      <!-- Bouton retour (visible uniquement si pas à l'étape form) -->
-      <button
-        v-if="currentStep !== 'form'"
-        @click="goBack"
-        class="inline-flex items-center gap-2 px-4 py-2.5 bg-slate-50 hover:bg-slate-100 text-slate-500 hover:text-slate-700 rounded-xl text-xs font-black uppercase tracking-widest transition-all"
-      >
-        <ArrowLeft :size="14" stroke-width="3" />
+      <button v-if="currentStep !== 'form'" @click="goBack" class="back-btn">
+        <ArrowLeft :size="14" stroke-width="2" />
         Retour
       </button>
     </header>
 
     <!-- Error Banner -->
-    <div
-      v-if="errorMessage"
-      class="mb-6 flex items-start gap-3 p-4 bg-red-50 border border-red-100 rounded-2xl text-red-600"
-    >
-      <AlertCircle :size="18" class="mt-0.5 shrink-0" stroke-width="2.5" />
-      <div class="flex-1 min-w-0">
-        <p class="text-xs font-bold">Une erreur est survenue</p>
-        <p class="text-xs font-medium mt-0.5 opacity-80">{{ errorMessage }}</p>
+    <div v-if="errorMessage" class="error-banner">
+      <AlertCircle :size="16" class="error-icon" stroke-width="2" />
+      <div class="error-body">
+        <p class="error-title">Une erreur est survenue</p>
+        <p class="error-msg">{{ errorMessage }}</p>
       </div>
-      <button @click="errorMessage = null" class="text-red-300 hover:text-red-500 transition-colors">
-        <X :size="16" stroke-width="2.5" />
+      <button @click="errorMessage = null" class="error-close">
+        <X :size="14" stroke-width="2" />
       </button>
     </div>
 
-    <!-- ════════════════════════════════════════════════════ -->
-    <!-- STEP 1 : FORMULAIRE                                 -->
-    <!-- ════════════════════════════════════════════════════ -->
-    <form
-      v-if="currentStep === 'form'"
-      @submit.prevent="handleGenerate"
-      class="bg-white rounded-[2rem] md:rounded-[2.5rem] border border-slate-100 p-6 md:p-8 shadow-2xl shadow-slate-100/30 space-y-6"
-    >
-      <!-- Destination (optionnel) -->
-      <div>
-        <label for="destination" class="block text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2">
-          Destination <span class="text-slate-300 normal-case tracking-normal">(optionnel)</span>
+    <!-- ══ STEP 1 : FORMULAIRE ══ -->
+    <form v-if="currentStep === 'form'" @submit.prevent="handleGenerate" class="form-card">
+      <!-- Destination -->
+      <div class="field-group">
+        <label for="destination" class="field-label">
+          Destination <span class="field-optional">(optionnel)</span>
         </label>
-        <div class="relative">
-          <MapPin :size="18" class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 pointer-events-none" />
+        <div class="input-wrap">
+          <MapPin :size="16" class="input-icon" />
           <input
             id="destination"
             v-model="form.destination"
             type="text"
             placeholder="Ex : Japon, Road-trip Californie, Surprenez-moi…"
-            class="w-full pl-11 pr-4 py-3.5 bg-slate-50/80 border border-slate-100 rounded-2xl text-sm font-medium text-slate-900 placeholder:text-slate-300 focus:outline-none focus:ring-2 focus:ring-amber-500/30 focus:border-amber-400 transition-all"
+            class="field-input field-input--icon"
           />
         </div>
       </div>
 
-      <!-- Dates + Moments -->
-      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <div>
-          <label for="dateDepart" class="block text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2">
-            Date de départ
-          </label>
-          <div class="relative">
-            <CalendarDays :size="18" class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 pointer-events-none" />
+      <!-- Dates -->
+      <div class="dates-grid">
+        <div class="field-group">
+          <label for="dateDepart" class="field-label">Date de départ</label>
+          <div class="input-wrap">
+            <CalendarDays :size="16" class="input-icon" />
             <input
               id="dateDepart"
               v-model="form.dateDepart"
               type="date"
-              class="w-full pl-11 pr-4 py-3.5 bg-slate-50/80 border border-slate-100 rounded-2xl text-sm font-medium text-slate-900 focus:outline-none focus:ring-2 focus:ring-amber-500/30 focus:border-amber-400 transition-all"
+              class="field-input field-input--icon"
             />
           </div>
-          <select
-            v-model="departureTime"
-            class="mt-2 w-full px-4 py-2.5 bg-slate-50/80 border border-slate-100 rounded-xl text-xs font-semibold text-slate-600 focus:outline-none focus:ring-2 focus:ring-amber-500/30 focus:border-amber-400 transition-all appearance-none cursor-pointer"
-          >
+          <select v-model="departureTime" class="time-select">
             <option value="matin">☀️ Matin</option>
             <option value="apres-midi">🌤️ Après-midi</option>
             <option value="soir">🌙 Soir</option>
           </select>
         </div>
-        <div>
-          <label for="dateRetour" class="block text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2">
-            Date de retour
-          </label>
-          <div class="relative">
-            <CalendarDays :size="18" class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 pointer-events-none" />
+        <div class="field-group">
+          <label for="dateRetour" class="field-label">Date de retour</label>
+          <div class="input-wrap">
+            <CalendarDays :size="16" class="input-icon" />
             <input
               id="dateRetour"
               v-model="form.dateRetour"
               type="date"
-              class="w-full pl-11 pr-4 py-3.5 bg-slate-50/80 border border-slate-100 rounded-2xl text-sm font-medium text-slate-900 focus:outline-none focus:ring-2 focus:ring-amber-500/30 focus:border-amber-400 transition-all"
+              class="field-input field-input--icon"
             />
           </div>
-          <select
-            v-model="returnTime"
-            class="mt-2 w-full px-4 py-2.5 bg-slate-50/80 border border-slate-100 rounded-xl text-xs font-semibold text-slate-600 focus:outline-none focus:ring-2 focus:ring-amber-500/30 focus:border-amber-400 transition-all appearance-none cursor-pointer"
-          >
+          <select v-model="returnTime" class="time-select">
             <option value="matin">☀️ Matin</option>
             <option value="apres-midi">🌤️ Après-midi</option>
             <option value="soir">🌙 Soir</option>
@@ -112,12 +88,10 @@
       </div>
 
       <!-- Budget -->
-      <div>
-        <label for="budget" class="block text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2">
-          Budget total (€)
-        </label>
-        <div class="relative">
-          <Euro :size="18" class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 pointer-events-none" />
+      <div class="field-group">
+        <label for="budget" class="field-label">Budget total (€)</label>
+        <div class="input-wrap">
+          <Euro :size="16" class="input-icon" />
           <input
             id="budget"
             v-model.number="form.budget"
@@ -125,28 +99,28 @@
             min="0"
             step="50"
             placeholder="1500"
-            class="w-full pl-11 pr-4 py-3.5 bg-slate-50/80 border border-slate-100 rounded-2xl text-sm font-medium text-slate-900 placeholder:text-slate-300 focus:outline-none focus:ring-2 focus:ring-amber-500/30 focus:border-amber-400 transition-all"
+            class="field-input field-input--icon"
           />
         </div>
       </div>
 
-      <!-- Résumé rapide -->
-      <div v-if="tripSummary" class="flex flex-wrap gap-3 pt-2">
-        <span v-for="tag in tripSummary" :key="tag.label" class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-amber-50 text-amber-700 rounded-full text-xs font-bold">
-          <component :is="tag.icon" :size="12" stroke-width="2.5" />
+      <!-- Trip summary tags -->
+      <div v-if="tripSummary" class="trip-tags">
+        <span v-for="tag in tripSummary" :key="tag.label" class="trip-tag">
+          <component :is="tag.icon" :size="11" />
           {{ tag.label }}
         </span>
       </div>
 
-      <!-- Toggle Étranger / France -->
-      <div class="flex items-center justify-between p-4 bg-slate-50/80 border border-slate-100 rounded-2xl">
-        <div class="flex items-center gap-3">
-          <div class="p-2 bg-amber-50 rounded-xl">
-            <Globe :size="16" class="text-amber-600" stroke-width="2.5" />
+      <!-- Abroad toggle -->
+      <div class="toggle-row">
+        <div class="toggle-info">
+          <div class="toggle-globe">
+            <Globe :size="15" stroke-width="1.75" />
           </div>
           <div>
-            <p class="text-xs font-bold text-slate-700">{{ isAbroad ? 'Voyager à l\'étranger' : 'Voyager en France' }}</p>
-            <p class="text-[10px] text-slate-400 font-medium mt-0.5">{{ isAbroad ? 'Destinations hors de France' : 'France métropolitaine & outre-mer' }}</p>
+            <p class="toggle-label">{{ isAbroad ? "Voyager à l'étranger" : 'Voyager en France' }}</p>
+            <p class="toggle-sub">{{ isAbroad ? 'Destinations hors de France' : 'France métropolitaine & outre-mer' }}</p>
           </div>
         </div>
         <button
@@ -154,183 +128,141 @@
           role="switch"
           :aria-checked="isAbroad"
           @click="isAbroad = !isAbroad"
-          class="relative inline-flex h-7 w-12 shrink-0 cursor-pointer items-center rounded-full transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-amber-500/30 focus:ring-offset-2"
-          :class="isAbroad ? 'bg-amber-500' : 'bg-slate-200'"
+          class="toggle-switch"
+          :class="{ 'toggle-switch--on': isAbroad }"
         >
-          <span
-            class="inline-block h-5 w-5 rounded-full bg-white shadow-md transform transition-transform duration-200"
-            :class="isAbroad ? 'translate-x-6' : 'translate-x-1'"
-          />
+          <span class="toggle-thumb" :class="{ 'toggle-thumb--on': isAbroad }" />
         </button>
       </div>
 
-      <!-- CTA -->
-      <button
-        type="submit"
-        :disabled="!isFormValid || isLoading"
-        class="w-full flex items-center justify-center gap-3 py-4 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white font-black text-sm uppercase tracking-widest rounded-2xl shadow-lg shadow-amber-200/50 transition-all disabled:opacity-40 disabled:cursor-not-allowed disabled:shadow-none group"
-      >
-        <Sparkles :size="18" class="group-hover:rotate-12 transition-transform" stroke-width="2.5" />
-        <span v-if="!isLoading">Générer mon voyage</span>
-        <span v-else class="flex items-center gap-2">
-          <Loader2 :size="18" class="animate-spin" />
-          Génération en cours…
-        </span>
+      <!-- Submit -->
+      <button type="submit" :disabled="!isFormValid || isLoading" class="btn-generate">
+        <Sparkles v-if="!isLoading" :size="16" stroke-width="1.75" />
+        <Loader2 v-else class="spin" :size="16" />
+        <span>{{ isLoading ? 'Génération en cours…' : 'Générer mon voyage' }}</span>
       </button>
     </form>
 
-    <!-- ════════════════════════════════════════════════════ -->
-    <!-- STEP 2 : SUGGESTIONS DE DESTINATIONS                -->
-    <!-- ════════════════════════════════════════════════════ -->
-    <div
-      v-else-if="currentStep === 'suggestions'"
-      class="bg-white rounded-[2rem] md:rounded-[2.5rem] border border-slate-100 p-6 md:p-8 shadow-2xl shadow-slate-100/30 space-y-6"
-    >
-      <div class="text-center mb-2">
-        <p class="text-[10px] font-black text-amber-600 uppercase tracking-[0.2em]">Pas d'idée ?</p>
-        <h3 class="text-lg md:text-xl font-black text-slate-900 mt-1">Voici 3 destinations pour vous</h3>
-        <p class="text-slate-400 text-xs font-medium mt-1">Cliquez sur celle qui vous inspire le plus</p>
+    <!-- ══ STEP 2 : SUGGESTIONS ══ -->
+    <div v-else-if="currentStep === 'suggestions'" class="suggestions-card">
+      <div class="suggestions-header">
+        <p class="suggestions-eyebrow">Pas d'idée ?</p>
+        <h3 class="suggestions-title">Voici 3 destinations pour vous</h3>
+        <p class="suggestions-sub">Cliquez sur celle qui vous inspire le plus</p>
       </div>
 
-      <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <div class="suggestions-grid">
         <button
           v-for="suggestion in suggestions"
           :key="suggestion.name"
           @click="selectSuggestion(suggestion)"
           :disabled="isLoading"
-          class="group relative overflow-hidden rounded-2xl border border-slate-100 p-5 text-left transition-all hover:border-amber-200 hover:shadow-lg hover:shadow-amber-100/30 hover:-translate-y-0.5 active:scale-[0.98] disabled:opacity-60 disabled:pointer-events-none"
+          class="suggestion-btn"
         >
-          <!-- Emoji background -->
-          <span class="absolute -right-2 -top-2 text-5xl opacity-15 group-hover:opacity-25 transition-opacity">{{ suggestion.emoji }}</span>
-
-          <div class="relative z-10">
-            <span class="text-2xl mb-3 block">{{ suggestion.emoji }}</span>
-            <p class="text-sm font-black text-slate-900">{{ suggestion.name }}</p>
-            <p class="text-xs text-slate-400 font-medium mt-1 leading-relaxed">{{ suggestion.tagline }}</p>
-            <div class="flex flex-wrap gap-1.5 mt-3">
-              <span
-                v-for="tag in suggestion.tags"
-                :key="tag"
-                class="px-2 py-0.5 bg-amber-50 text-amber-600 rounded-full text-[10px] font-bold uppercase tracking-wider"
-              >
-                {{ tag }}
-              </span>
+          <span class="suggestion-emoji-bg">{{ suggestion.emoji }}</span>
+          <div class="suggestion-body">
+            <span class="suggestion-emoji">{{ suggestion.emoji }}</span>
+            <p class="suggestion-name">{{ suggestion.name }}</p>
+            <p class="suggestion-tagline">{{ suggestion.tagline }}</p>
+            <div class="suggestion-tags">
+              <span v-for="tag in suggestion.tags" :key="tag" class="suggestion-tag">{{ tag }}</span>
             </div>
-            <p v-if="suggestion.budget_estime" class="text-[10px] font-bold text-slate-300 mt-3">
+            <p v-if="suggestion.budget_estime" class="suggestion-budget">
               ~{{ suggestion.budget_estime.toLocaleString('fr-FR') }} €
             </p>
           </div>
         </button>
       </div>
 
-      <!-- Loading overlay -->
-      <div v-if="isLoading" class="flex items-center justify-center gap-3 pt-4 text-amber-600">
-        <Loader2 :size="20" class="animate-spin" />
-        <span class="text-sm font-bold">Préparation de votre itinéraire…</span>
+      <div v-if="isLoading" class="suggestions-loading">
+        <Loader2 class="spin" :size="18" />
+        <span>Préparation de votre itinéraire…</span>
       </div>
     </div>
 
-    <!-- ════════════════════════════════════════════════════ -->
-    <!-- STEP 3 : PLANNER (Budget + Itinéraire)              -->
-    <!-- ════════════════════════════════════════════════════ -->
-    <div
-      v-else-if="currentStep === 'planner'"
-      class="bg-white rounded-[2rem] md:rounded-[2.5rem] border border-slate-100 shadow-2xl shadow-slate-100/30 overflow-hidden"
-    >
-      <!-- Destination choisie -->
-      <div class="p-6 md:p-8 pb-0 md:pb-0">
-        <div class="flex items-center gap-3 mb-6">
-          <div class="p-2 bg-amber-50 rounded-xl">
-            <MapPin :size="18" class="text-amber-600" stroke-width="2.5" />
-          </div>
-          <div>
-            <p class="text-[10px] font-black text-slate-300 uppercase tracking-widest">Destination</p>
-            <p class="text-base font-black text-slate-900">{{ form.destination }}</p>
-          </div>
-          <div v-if="tripDuration" class="ml-auto flex items-center gap-1.5 px-3 py-1.5 bg-amber-50 text-amber-700 rounded-full text-xs font-bold">
-            <Clock :size="12" stroke-width="2.5" />
-            {{ tripDuration }} jour{{ tripDuration > 1 ? 's' : '' }}
-          </div>
+    <!-- ══ STEP 3 : PLANNER ══ -->
+    <div v-else-if="currentStep === 'planner'" class="planner-card">
+      <!-- Destination header -->
+      <div class="planner-header">
+        <div class="planner-dest-icon">
+          <MapPin :size="16" stroke-width="1.75" />
+        </div>
+        <div>
+          <p class="planner-dest-label">Destination</p>
+          <p class="planner-dest-name">{{ form.destination }}</p>
+        </div>
+        <div v-if="tripDuration" class="planner-duration">
+          <Clock :size="11" stroke-width="2" />
+          {{ tripDuration }} jour{{ tripDuration > 1 ? 's' : '' }}
         </div>
       </div>
 
-      <!-- Onglets -->
-      <div class="flex border-b border-slate-100">
+      <!-- Planner tabs -->
+      <div class="planner-tabs">
         <button
           v-for="tab in tabs"
           :key="tab.id"
           @click="activeTab = tab.id"
-          class="flex-1 flex items-center justify-center gap-2 py-4 text-xs font-black uppercase tracking-widest transition-all relative"
-          :class="activeTab === tab.id
-            ? 'text-amber-600 bg-amber-50/50'
-            : 'text-slate-300 hover:text-slate-500 hover:bg-slate-50/50'"
+          class="planner-tab"
+          :class="{ 'planner-tab--active': activeTab === tab.id }"
         >
-          <component :is="tab.icon" :size="16" stroke-width="2.5" />
+          <component :is="tab.icon" :size="14" stroke-width="2" />
           {{ tab.label }}
-          <div
-            v-if="activeTab === tab.id"
-            class="absolute bottom-0 left-4 right-4 h-0.5 bg-amber-500 rounded-full"
-          />
+          <div v-if="activeTab === tab.id" class="tab-indicator" />
         </button>
       </div>
 
-      <!-- Contenu des onglets -->
-      <div class="p-6 md:p-8">
-        <!-- Budget Prévisionnel -->
-        <div v-if="activeTab === 'budget'" class="space-y-4">
-          <!-- Total -->
-          <div class="flex items-baseline justify-between mb-2">
-            <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Total estimé</span>
-            <span class="text-xl font-black text-slate-900">{{ totalBudget.toLocaleString('fr-FR') }} €</span>
-          </div>
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div
-              v-for="item in budgetItems"
-              :key="item.category"
-              class="p-5 bg-slate-50/80 rounded-2xl border border-slate-100 flex items-center gap-4"
-            >
-              <div class="p-2.5 rounded-xl" :class="item.bgColor">
-                <component :is="item.icon" :size="20" :class="item.textColor" stroke-width="2.5" />
-              </div>
-              <div class="flex-1 min-w-0">
-                <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest">{{ item.category }}</p>
-                <p class="text-lg font-black text-slate-900">{{ item.amount.toLocaleString('fr-FR') }} €</p>
-              </div>
-              <span class="text-xs font-bold text-slate-300">{{ item.percent }}%</span>
+      <!-- Budget tab -->
+      <div v-if="activeTab === 'budget'" class="planner-content">
+        <div class="budget-total">
+          <span class="budget-total-label">Total estimé</span>
+          <span class="budget-total-value">{{ totalBudget.toLocaleString('fr-FR') }} €</span>
+        </div>
+        <div class="budget-grid">
+          <div v-for="item in budgetItems" :key="item.category" class="budget-item">
+            <div class="budget-icon" :style="item.iconStyle">
+              <component :is="item.icon" :size="18" stroke-width="1.75" />
             </div>
+            <div class="budget-item-body">
+              <p class="budget-cat">{{ item.category }}</p>
+              <p class="budget-amount">{{ item.amount.toLocaleString('fr-FR') }} €</p>
+            </div>
+            <span class="budget-pct">{{ item.percent }}%</span>
           </div>
         </div>
+      </div>
 
-        <!-- Itinéraire -->
-        <div v-if="activeTab === 'itinerary'" class="space-y-4">
+      <!-- Itinerary tab -->
+      <div v-if="activeTab === 'itinerary'" class="planner-content">
+        <div class="itinerary-list">
           <div
             v-for="(day, index) in itineraryDays"
             :key="index"
-            class="relative pl-8 pb-6 last:pb-0"
+            class="itinerary-day"
           >
-            <div v-if="index < itineraryDays.length - 1" class="absolute left-[11px] top-6 w-0.5 h-full bg-amber-100 rounded-full" />
-            <div class="absolute left-0 top-1 w-6 h-6 bg-amber-500 rounded-full flex items-center justify-center text-[10px] font-black text-white shadow-md shadow-amber-200/50">
-              {{ index + 1 }}
+            <div class="day-timeline">
+              <div class="day-dot">{{ index + 1 }}</div>
+              <div v-if="index < itineraryDays.length - 1" class="day-line" />
             </div>
-            <div class="bg-slate-50/80 rounded-2xl border border-slate-100 p-4 space-y-2">
-              <p class="text-[10px] font-black text-amber-600 uppercase tracking-widest">{{ formatItineraryDate(form.dateDepart, index) }}</p>
-              <p class="text-sm font-bold text-slate-900">{{ day.titre }}</p>
-              <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1.5 mt-2">
-                <div v-if="day.matin" class="flex items-start gap-2">
-                  <span class="text-[10px] font-black text-slate-300 uppercase w-12 shrink-0 pt-px">Matin</span>
-                  <p class="text-xs text-slate-500 leading-relaxed">{{ day.matin }}</p>
+            <div class="day-card">
+              <p class="day-date">{{ formatItineraryDate(form.dateDepart, index) }}</p>
+              <p class="day-title">{{ day.titre }}</p>
+              <div class="day-slots">
+                <div v-if="day.matin" class="day-slot">
+                  <span class="slot-label">Matin</span>
+                  <p class="slot-text">{{ day.matin }}</p>
                 </div>
-                <div v-if="day.midi" class="flex items-start gap-2">
-                  <span class="text-[10px] font-black text-slate-300 uppercase w-12 shrink-0 pt-px">Midi</span>
-                  <p class="text-xs text-slate-500 leading-relaxed">{{ day.midi }}</p>
+                <div v-if="day.midi" class="day-slot">
+                  <span class="slot-label">Midi</span>
+                  <p class="slot-text">{{ day.midi }}</p>
                 </div>
-                <div v-if="day.apres_midi" class="flex items-start gap-2">
-                  <span class="text-[10px] font-black text-slate-300 uppercase w-12 shrink-0 pt-px">A-midi</span>
-                  <p class="text-xs text-slate-500 leading-relaxed">{{ day.apres_midi }}</p>
+                <div v-if="day.apres_midi" class="day-slot">
+                  <span class="slot-label">A-midi</span>
+                  <p class="slot-text">{{ day.apres_midi }}</p>
                 </div>
-                <div v-if="day.soir" class="flex items-start gap-2">
-                  <span class="text-[10px] font-black text-slate-300 uppercase w-12 shrink-0 pt-px">Soir</span>
-                  <p class="text-xs text-slate-500 leading-relaxed">{{ day.soir }}</p>
+                <div v-if="day.soir" class="day-slot">
+                  <span class="slot-label">Soir</span>
+                  <p class="slot-text">{{ day.soir }}</p>
                 </div>
               </div>
             </div>
@@ -395,10 +327,10 @@ const cameFromSuggestions = ref(false)
 
 // ── Budget category → UI mapping ──
 const BUDGET_UI_MAP = {
-  transport:  { category: 'Transport',    icon: TrainFront,       bgColor: 'bg-blue-50',    textColor: 'text-blue-500' },
-  logement:   { category: 'Hébergement',  icon: BedDouble,        bgColor: 'bg-purple-50',  textColor: 'text-purple-500' },
-  nourriture: { category: 'Nourriture',   icon: UtensilsCrossed,  bgColor: 'bg-emerald-50', textColor: 'text-emerald-500' },
-  activites:  { category: 'Activités',    icon: Ticket,           bgColor: 'bg-amber-50',   textColor: 'text-amber-500' }
+  transport:  { category: 'Transport',   icon: TrainFront,      iconStyle: { background: 'rgba(122,145,184,0.12)', color: '#7A91B8' } },
+  logement:   { category: 'Hébergement', icon: BedDouble,       iconStyle: { background: 'rgba(160,139,106,0.12)', color: '#A08B6A' } },
+  nourriture: { category: 'Nourriture',  icon: UtensilsCrossed, iconStyle: { background: 'rgba(125,173,138,0.12)', color: '#7DAD8A' } },
+  activites:  { category: 'Activités',   icon: Ticket,          iconStyle: { background: 'rgba(212,151,106,0.12)', color: '#D4976A' } }
 }
 
 // ── Computed ──
@@ -460,7 +392,7 @@ async function callGenerateTravel(destination) {
     }
   })
 
-  if (error) throw new Error(error.message || 'Erreur lors de l\'appel à l\'API.')
+  if (error) throw new Error(error.message || "Erreur lors de l'appel à l'API.")
   if (data?.error) throw new Error(data.error)
 
   return data
@@ -468,7 +400,6 @@ async function callGenerateTravel(destination) {
 
 // ── Transform API response → UI data ──
 function applyPlannerData(data) {
-  // Budget breakdown
   const breakdown = data.budget_breakdown || {}
   const total = Object.values(breakdown).reduce((s, v) => s + (Number(v) || 0), 0)
 
@@ -481,7 +412,6 @@ function applyPlannerData(data) {
     }
   })
 
-  // Itinerary
   itineraryDays.value = (data.itinerary || []).map((day) => ({
     date: day.date || `Jour ${day.jour}`,
     titre: day.titre || '',
@@ -503,18 +433,16 @@ const handleGenerate = async () => {
     const data = await callGenerateTravel(form.value.destination.trim())
 
     if (data.suggestions) {
-      // Scénario A → affiche les suggestions
       suggestions.value = data.suggestions
       cameFromSuggestions.value = false
       currentStep.value = 'suggestions'
     } else if (data.budget_breakdown) {
-      // Scénario B → affiche le planner
       applyPlannerData(data)
       cameFromSuggestions.value = false
       activeTab.value = 'budget'
       currentStep.value = 'planner'
     } else {
-      throw new Error('Réponse inattendue de l\'IA. Veuillez réessayer.')
+      throw new Error("Réponse inattendue de l'IA. Veuillez réessayer.")
     }
   } catch (err) {
     errorMessage.value = err.message || 'Une erreur inattendue est survenue.'
@@ -537,7 +465,7 @@ const selectSuggestion = async (suggestion) => {
       activeTab.value = 'budget'
       currentStep.value = 'planner'
     } else {
-      throw new Error('Réponse inattendue de l\'IA. Veuillez réessayer.')
+      throw new Error("Réponse inattendue de l'IA. Veuillez réessayer.")
     }
   } catch (err) {
     errorMessage.value = err.message || 'Une erreur inattendue est survenue.'
@@ -554,7 +482,6 @@ const goBack = () => {
     itineraryDays.value = []
 
     if (cameFromSuggestions.value) {
-      // Retour vers les suggestions (les données sont toujours en mémoire)
       form.value.destination = ''
       currentStep.value = 'suggestions'
     } else {
@@ -567,3 +494,763 @@ const goBack = () => {
   }
 }
 </script>
+
+<style scoped>
+.travel-view {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 8px 0 100px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  user-select: none;
+}
+
+/* ── Header ── */
+.view-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 0 2px;
+}
+
+.module-title-group {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.module-icon {
+  width: 36px;
+  height: 36px;
+  flex-shrink: 0;
+  border-radius: var(--radius-sm);
+  background: var(--module-travel-dim);
+  border: 1px solid var(--module-travel-border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--module-travel);
+}
+
+.view-title {
+  font-family: var(--font-serif);
+  font-size: var(--text-2xl);
+  font-weight: 400;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.view-sub {
+  font-size: 9px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--text-muted);
+  margin-top: 1px;
+}
+
+.back-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  background: var(--bg-overlay);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  font-size: 10px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all var(--dur-fast) var(--ease-out);
+  flex-shrink: 0;
+}
+
+.back-btn:hover {
+  border-color: var(--border-default);
+  color: var(--text-secondary);
+}
+
+/* ── Error banner ── */
+.error-banner {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 14px 16px;
+  background: rgba(239, 68, 68, 0.08);
+  border: 1px solid rgba(239, 68, 68, 0.18);
+  border-radius: var(--radius-md);
+}
+
+.error-icon { color: #EF4444; margin-top: 1px; flex-shrink: 0; }
+
+.error-body { flex: 1; min-width: 0; }
+
+.error-title {
+  font-size: 11px;
+  font-weight: 500;
+  color: #EF4444;
+  margin: 0;
+}
+
+.error-msg {
+  font-size: 11px;
+  color: #EF4444;
+  opacity: 0.75;
+  margin: 3px 0 0;
+}
+
+.error-close {
+  color: rgba(239, 68, 68, 0.5);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 2px;
+  transition: color var(--dur-fast) var(--ease-out);
+}
+
+.error-close:hover { color: #EF4444; }
+
+/* ── Form card ── */
+.form-card {
+  background: var(--bg-raised);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-xl);
+  padding: 28px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* ── Field groups ── */
+.field-group { display: flex; flex-direction: column; gap: 8px; }
+
+.field-label {
+  font-size: 10px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--text-muted);
+}
+
+.field-optional {
+  font-size: 10px;
+  font-weight: 400;
+  text-transform: none;
+  letter-spacing: 0;
+  color: var(--text-muted);
+  opacity: 0.6;
+}
+
+.input-wrap { position: relative; }
+
+.input-icon {
+  position: absolute;
+  left: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text-muted);
+  pointer-events: none;
+}
+
+.field-input {
+  width: 100%;
+  padding: 12px 16px;
+  background: var(--bg-subtle);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-md);
+  font-family: var(--font-sans);
+  font-size: var(--text-sm);
+  color: var(--text-primary);
+  outline: none;
+  transition: border-color var(--dur-fast) var(--ease-out), box-shadow var(--dur-fast) var(--ease-out);
+  box-sizing: border-box;
+  color-scheme: dark;
+}
+
+.field-input--icon { padding-left: 40px; }
+
+.field-input:focus {
+  border-color: var(--module-travel-border);
+  box-shadow: 0 0 0 3px rgba(160, 139, 106, 0.08);
+}
+
+.field-input::placeholder { color: var(--text-muted); opacity: 0.45; }
+
+/* ── Dates grid ── */
+.dates-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+@media (max-width: 480px) {
+  .dates-grid { grid-template-columns: 1fr; }
+}
+
+.time-select {
+  margin-top: 6px;
+  width: 100%;
+  padding: 9px 14px;
+  background: var(--bg-subtle);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-sm);
+  font-family: var(--font-sans);
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  outline: none;
+  cursor: pointer;
+  appearance: none;
+  transition: border-color var(--dur-fast) var(--ease-out);
+  color-scheme: dark;
+}
+
+.time-select:focus { border-color: var(--module-travel-border); }
+
+/* ── Trip summary tags ── */
+.trip-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.trip-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 10px;
+  background: var(--module-travel-dim);
+  border: 1px solid var(--module-travel-border);
+  border-radius: var(--radius-pill);
+  font-size: 10px;
+  font-weight: 500;
+  color: var(--module-travel);
+}
+
+/* ── Abroad toggle ── */
+.toggle-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px 16px;
+  background: var(--bg-subtle);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+}
+
+.toggle-info { display: flex; align-items: center; gap: 12px; }
+
+.toggle-globe {
+  width: 32px;
+  height: 32px;
+  background: var(--module-travel-dim);
+  border: 1px solid var(--module-travel-border);
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--module-travel);
+  flex-shrink: 0;
+}
+
+.toggle-label {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.toggle-sub {
+  font-size: 10px;
+  color: var(--text-muted);
+  margin: 2px 0 0;
+}
+
+.toggle-switch {
+  position: relative;
+  width: 44px;
+  height: 24px;
+  background: var(--bg-muted);
+  border-radius: 999px;
+  flex-shrink: 0;
+  cursor: pointer;
+  border: none;
+  transition: background var(--dur-fast) var(--ease-out);
+}
+
+.toggle-switch--on { background: var(--module-travel); }
+
+.toggle-thumb {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 18px;
+  height: 18px;
+  background: var(--text-primary);
+  border-radius: 50%;
+  transition: transform var(--dur-fast) var(--ease-out);
+}
+
+.toggle-thumb--on { transform: translateX(20px); }
+
+/* ── Generate button ── */
+.btn-generate {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
+  padding: 15px 20px;
+  background: var(--module-travel);
+  border: none;
+  border-radius: var(--radius-md);
+  font-family: var(--font-sans);
+  font-size: 11px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--bg-base);
+  cursor: pointer;
+  transition: all var(--dur-fast) var(--ease-out);
+  user-select: none;
+}
+
+.btn-generate:hover:not(:disabled) { filter: brightness(1.08); }
+.btn-generate:active:not(:disabled) { transform: scale(0.98); }
+.btn-generate:disabled { opacity: 0.4; cursor: not-allowed; }
+
+/* ── Suggestions card ── */
+.suggestions-card {
+  background: var(--bg-raised);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-xl);
+  padding: 28px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.suggestions-header { text-align: center; }
+
+.suggestions-eyebrow {
+  font-size: 9px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.2em;
+  color: var(--module-travel);
+  margin: 0 0 8px;
+}
+
+.suggestions-title {
+  font-family: var(--font-serif);
+  font-size: var(--text-xl);
+  font-weight: 400;
+  color: var(--text-primary);
+  margin: 0 0 6px;
+}
+
+.suggestions-sub {
+  font-size: 11px;
+  color: var(--text-muted);
+  margin: 0;
+}
+
+.suggestions-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+}
+
+@media (max-width: 560px) {
+  .suggestions-grid { grid-template-columns: 1fr; }
+}
+
+.suggestion-btn {
+  position: relative;
+  overflow: hidden;
+  background: var(--bg-overlay);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  padding: 20px 18px;
+  text-align: left;
+  cursor: pointer;
+  transition: all var(--dur-fast) var(--ease-out);
+}
+
+.suggestion-btn:hover:not(:disabled) {
+  border-color: var(--module-travel-border);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+}
+
+.suggestion-btn:active:not(:disabled) { transform: scale(0.98); }
+.suggestion-btn:disabled { opacity: 0.5; pointer-events: none; }
+
+.suggestion-emoji-bg {
+  position: absolute;
+  right: -4px;
+  top: -4px;
+  font-size: 48px;
+  opacity: 0.10;
+  pointer-events: none;
+  transition: opacity var(--dur-fast) var(--ease-out);
+}
+
+.suggestion-btn:hover .suggestion-emoji-bg { opacity: 0.18; }
+
+.suggestion-body { position: relative; }
+
+.suggestion-emoji {
+  display: block;
+  font-size: 24px;
+  margin-bottom: 10px;
+}
+
+.suggestion-name {
+  font-size: var(--text-sm);
+  font-weight: 500;
+  color: var(--text-primary);
+  margin: 0 0 4px;
+}
+
+.suggestion-tagline {
+  font-size: 11px;
+  color: var(--text-muted);
+  line-height: 1.5;
+  margin: 0 0 10px;
+}
+
+.suggestion-tags { display: flex; flex-wrap: wrap; gap: 4px; }
+
+.suggestion-tag {
+  padding: 2px 7px;
+  background: var(--module-travel-dim);
+  border: 1px solid var(--module-travel-border);
+  border-radius: var(--radius-pill);
+  font-size: 8px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--module-travel);
+}
+
+.suggestion-budget {
+  font-size: 10px;
+  color: var(--text-muted);
+  opacity: 0.6;
+  margin: 8px 0 0;
+}
+
+.suggestions-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 8px 0;
+  font-size: 12px;
+  color: var(--module-travel);
+}
+
+/* ── Planner card ── */
+.planner-card {
+  background: var(--bg-raised);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-xl);
+  overflow: hidden;
+}
+
+.planner-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 24px 24px 0;
+}
+
+.planner-dest-icon {
+  width: 34px;
+  height: 34px;
+  flex-shrink: 0;
+  background: var(--module-travel-dim);
+  border: 1px solid var(--module-travel-border);
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--module-travel);
+}
+
+.planner-dest-label {
+  font-size: 9px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  color: var(--text-muted);
+  margin: 0 0 3px;
+}
+
+.planner-dest-name {
+  font-size: var(--text-md);
+  font-weight: 500;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.planner-duration {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 10px;
+  background: var(--module-travel-dim);
+  border: 1px solid var(--module-travel-border);
+  border-radius: var(--radius-pill);
+  font-size: 10px;
+  font-weight: 500;
+  color: var(--module-travel);
+  flex-shrink: 0;
+}
+
+/* ── Planner tabs ── */
+.planner-tabs {
+  display: flex;
+  border-top: 1px solid var(--border-subtle);
+  border-bottom: 1px solid var(--border-subtle);
+  margin-top: 20px;
+}
+
+.planner-tab {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 14px;
+  font-size: 10px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  position: relative;
+  transition: all var(--dur-fast) var(--ease-out);
+}
+
+.planner-tab--active { color: var(--module-travel); }
+
+.planner-tab:not(.planner-tab--active):hover {
+  color: var(--text-secondary);
+  background: var(--bg-overlay);
+}
+
+.tab-indicator {
+  position: absolute;
+  bottom: 0;
+  left: 20%;
+  right: 20%;
+  height: 2px;
+  background: var(--module-travel);
+  border-radius: 999px;
+}
+
+/* ── Planner content ── */
+.planner-content { padding: 24px; }
+
+/* Budget tab */
+.budget-total {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.budget-total-label {
+  font-size: 9px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  color: var(--text-muted);
+}
+
+.budget-total-value {
+  font-family: var(--font-serif);
+  font-size: var(--text-xl);
+  color: var(--text-primary);
+}
+
+.budget-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+@media (max-width: 480px) {
+  .budget-grid { grid-template-columns: 1fr; }
+}
+
+.budget-item {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 16px;
+  background: var(--bg-overlay);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+}
+
+.budget-icon {
+  width: 38px;
+  height: 38px;
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.budget-item-body { flex: 1; min-width: 0; }
+
+.budget-cat {
+  font-size: 9px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--text-muted);
+  margin: 0 0 4px;
+}
+
+.budget-amount {
+  font-family: var(--font-serif);
+  font-size: var(--text-lg);
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.budget-pct {
+  font-size: 10px;
+  font-weight: 500;
+  color: var(--text-muted);
+  opacity: 0.6;
+  flex-shrink: 0;
+}
+
+/* Itinerary tab */
+.itinerary-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.itinerary-day {
+  display: flex;
+  gap: 14px;
+  padding-bottom: 16px;
+}
+
+.itinerary-day:last-child { padding-bottom: 0; }
+
+.day-timeline {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.day-dot {
+  width: 24px;
+  height: 24px;
+  background: var(--module-travel);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 9px;
+  font-weight: 600;
+  color: var(--bg-base);
+  flex-shrink: 0;
+  box-shadow: 0 2px 8px rgba(160, 139, 106, 0.3);
+}
+
+.day-line {
+  flex: 1;
+  width: 1px;
+  background: var(--module-travel-border);
+  margin-top: 6px;
+  min-height: 20px;
+}
+
+.day-card {
+  flex: 1;
+  background: var(--bg-overlay);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+
+.day-date {
+  font-size: 9px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  color: var(--module-travel);
+  margin: 0;
+}
+
+.day-title {
+  font-size: var(--text-sm);
+  font-weight: 500;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.day-slots {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+@media (max-width: 480px) {
+  .day-slots { grid-template-columns: 1fr; }
+}
+
+.day-slot { display: flex; gap: 8px; align-items: flex-start; }
+
+.slot-label {
+  font-size: 8px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--text-muted);
+  flex-shrink: 0;
+  padding-top: 2px;
+  width: 36px;
+}
+
+.slot-text {
+  font-size: 11px;
+  color: var(--text-secondary);
+  line-height: 1.5;
+  margin: 0;
+}
+
+/* ── Spinner ── */
+.spin { animation: spin 0.8s linear infinite; }
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* Remove number input arrows */
+input::-webkit-outer-spin-button,
+input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+input[type=number] { -moz-appearance: textfield; appearance: textfield; }
+</style>
