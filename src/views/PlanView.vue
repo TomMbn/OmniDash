@@ -1,16 +1,23 @@
 <template>
-  <div>
-    <div class="mb-6">
-      <h1 class="text-2xl font-black tracking-tight text-slate-900">Plan d'entraînement</h1>
-      <p class="text-sm text-slate-500 mt-1">Programme complet · 8 semaines</p>
+  <div class="plan-view">
+    <!-- Header -->
+    <div class="plan-header">
+      <div class="module-icon">
+        <Layers :size="18" stroke-width="1.75" />
+      </div>
+      <div>
+        <h1 class="view-title">Plan d'entraînement</h1>
+        <p class="view-sub">Programme complet · 8 semaines</p>
+      </div>
     </div>
 
+    <!-- Tab bar -->
     <div class="tabs-bar">
       <button
         v-for="tab in tabs"
         :key="tab.id"
         class="tab-btn"
-        :class="{ active: activeTab === tab.id }"
+        :class="{ 'tab-btn--active': activeTab === tab.id }"
         @click="activeTab = tab.id"
       >{{ tab.label }}</button>
     </div>
@@ -59,7 +66,7 @@
           <span class="session-title">{{ session.title }}</span>
         </div>
         <div class="col-header">
-          <span class="col-label left">Exercice</span>
+          <span class="col-label col-label--left">Exercice</span>
           <span class="col-label">Séries × reps</span>
           <span class="col-label">Repos</span>
         </div>
@@ -80,25 +87,25 @@
       <div class="tip">Double progression : atteins la limite haute de la plage en reps → monte de 2,5 kg → recommence à la limite basse. Décharge toutes les 6–8 semaines.</div>
 
       <!-- SEMAINE DE DÉCHARGE -->
-      <div style="margin-top:20px;">
-        <div style="font-size:13px;font-weight:600;color:#1e293b;margin-bottom:8px;">Semaine de décharge</div>
-        <div style="font-size:12px;color:#64748b;margin-bottom:12px;">Mêmes charges · mêmes reps · −1 série par exercice · arrêter 2–3 reps avant l'échec. Durée : 1 semaine toutes les 6–8 semaines.</div>
+      <div class="decharge-section">
+        <div class="decharge-title">Semaine de décharge</div>
+        <div class="decharge-sub">Mêmes charges · mêmes reps · −1 série par exercice · arrêter 2–3 reps avant l'échec. Durée : 1 semaine toutes les 6–8 semaines.</div>
 
-        <div v-for="session in dechargeBlocs" :key="session.day" class="card" style="border-left:2px solid #e2e8f0;border-radius:0 12px 12px 0;">
+        <div v-for="session in dechargeBlocs" :key="session.day" class="card card--decharge">
           <div class="day-header">
             <span class="day-pill" :style="session.pillStyle">{{ session.day }}</span>
             <span class="session-title">{{ session.title }}</span>
-            <span style="font-size:11px;color:#94a3b8;margin-left:auto;">{{ session.totalNormal }} → {{ session.totalDecharge }} séries</span>
+            <span class="decharge-count">{{ session.totalNormal }} → {{ session.totalDecharge }} séries</span>
           </div>
           <div class="col-header">
-            <span class="col-label left">Exercice</span>
+            <span class="col-label col-label--left">Exercice</span>
             <span class="col-label">Normal</span>
             <span class="col-label">Décharge</span>
           </div>
           <div v-for="ex in session.exercises" :key="ex.name" class="ex-row">
             <span class="ex-name">{{ ex.name }}</span>
-            <span class="ex-sets" style="color:#cbd5e1;text-decoration:line-through;">{{ ex.normal }}</span>
-            <span class="ex-sets" style="color:#4f46e5;font-weight:600;">{{ ex.decharge }}</span>
+            <span class="ex-sets ex-sets--strikethrough">{{ ex.normal }}</span>
+            <span class="ex-sets ex-sets--accent">{{ ex.decharge }}</span>
           </div>
         </div>
       </div>
@@ -114,11 +121,11 @@
         </div>
         <div class="stat-card">
           <div class="stat-label">Durée cible</div>
-          <div class="stat-val" style="font-size:16px;">35–40 min</div>
+          <div class="stat-val stat-val--sm">35–40 min</div>
         </div>
         <div class="stat-card">
           <div class="stat-label">FC zone 2</div>
-          <div class="stat-val" style="font-size:16px;">120–140 bpm</div>
+          <div class="stat-val stat-val--sm">120–140 bpm</div>
         </div>
         <div class="stat-card">
           <div class="stat-label">Dépense estimée</div>
@@ -127,9 +134,9 @@
         </div>
       </div>
 
-      <div class="card" style="border-left:2px solid #185FA5;border-radius:0 12px 12px 0;">
+      <div class="card card--accent-blue">
         <div class="day-header">
-          <span class="badge" style="background:#E6F1FB;color:#0C447C;">Phase 1 — sem. 1 à 6</span>
+          <span class="badge" style="background:rgba(122,145,184,0.12);color:#7A91B8;">Phase 1 — sem. 1 à 6</span>
           <span class="session-title">2 × LISS zone 2</span>
         </div>
         <div class="ex-row single"><span class="ex-name">Vélo résistance modérée · 120–140 bpm · parler sans être essoufflé<div class="ex-note">35–40 min</div></span></div>
@@ -140,7 +147,7 @@
 
       <div class="card" style="margin-top:10px;">
         <div class="day-header">
-          <span class="badge" style="background:#FAEEDA;color:#633806;">Phase 2 — sem. 7+</span>
+          <span class="badge" style="background:rgba(212,151,106,0.12);color:#D4976A;">Phase 2 — sem. 7+</span>
           <span class="session-title">1 × LISS + 1 × Zone 3–4</span>
         </div>
         <div class="ex-row single"><span class="ex-name">LISS zone 2 — lundi · conservé comme base<div class="ex-note">35 min</div></span></div>
@@ -151,15 +158,15 @@
 
     <!-- ABDOS & POSTURE -->
     <div v-show="activeTab === 'abdos'">
-      <div style="font-size:13px;color:#64748b;margin-bottom:14px;">3x/semaine · lundi, mercredi, vendredi · ~18 min · aucun matériel. Vacuum + routine posturale quotidiens 7j/7.</div>
+      <div class="section-intro">3x/semaine · lundi, mercredi, vendredi · ~18 min · aucun matériel. Vacuum + routine posturale quotidiens 7j/7.</div>
 
       <div v-for="bloc in abdosBlocs" :key="bloc.title" class="card">
         <div class="day-header">
           <span class="day-pill" :style="bloc.pillStyle">{{ bloc.title }}</span>
-          <span v-if="bloc.sub" style="font-size:13px;color:#64748b;">{{ bloc.sub }}</span>
+          <span v-if="bloc.sub" class="bloc-sub">{{ bloc.sub }}</span>
         </div>
         <div class="col-header">
-          <span class="col-label left">Exercice</span>
+          <span class="col-label col-label--left">Exercice</span>
           <span class="col-label">{{ bloc.colLabel || 'Séries × reps' }}</span>
           <span class="col-label">Repos</span>
         </div>
@@ -194,17 +201,17 @@
       <div class="stats-row" style="margin-bottom:14px;">
         <div class="stat-card">
           <div class="stat-label">Calories cible</div>
-          <div class="stat-val" style="font-size:16px;">3 000–3 100</div>
+          <div class="stat-val stat-val--sm">3 000–3 100</div>
           <div class="stat-label">kcal/jour · maintenance</div>
         </div>
         <div class="stat-card">
           <div class="stat-label">Protéines</div>
-          <div class="stat-val" style="font-size:16px;">160–165 g</div>
+          <div class="stat-val stat-val--sm">160–165 g</div>
           <div class="stat-label">2 g/kg · priorité absolue</div>
         </div>
         <div class="stat-card">
           <div class="stat-label">Lipides min.</div>
-          <div class="stat-val" style="font-size:16px;">80–90 g</div>
+          <div class="stat-val stat-val--sm">80–90 g</div>
           <div class="stat-label">1 g/kg · hormones</div>
         </div>
         <div class="stat-card">
@@ -216,7 +223,7 @@
 
       <div class="card">
         <div class="card-title">Timing journée type (jour de salle)</div>
-        <div v-for="meal in mealtiming" :key="meal.time" class="ex-row timing">
+        <div v-for="meal in mealtiming" :key="meal.time" class="ex-row ex-row--timing">
           <span class="ex-name">{{ meal.label }}<div v-if="meal.note" class="ex-note">{{ meal.note }}</div></span>
           <span class="ex-sets">{{ meal.time }}</span>
         </div>
@@ -224,7 +231,7 @@
 
       <div class="card">
         <div class="card-title">Règles de suivi</div>
-        <div v-for="rule in nutritionRules" :key="rule.text" class="ex-row single">
+        <div v-for="rule in nutritionRules" :key="rule.text" class="ex-row ex-row--single">
           <span class="ex-name">{{ rule.text }}<div v-if="rule.note" class="ex-note">{{ rule.note }}</div></span>
         </div>
       </div>
@@ -234,6 +241,7 @@
 
 <script setup>
 import { ref } from 'vue'
+import { Layers } from 'lucide-vue-next'
 
 const activeTab = ref('semaine')
 
@@ -252,51 +260,51 @@ const weekDays = [
     title: 'LISS + Abdos',
     sub: 'Cardio zone 2 · Core & posture',
     badges: [
-      { text: 'Cardio 35 min', style: 'background:#EAF3DE;color:#27500A;' },
-      { text: 'Abdos & antéversion', style: 'background:#FAEEDA;color:#633806;' }
+      { text: 'Cardio 35 min', style: 'background:rgba(125,173,138,0.12);color:#7DAD8A;' },
+      { text: 'Abdos & antéversion', style: 'background:rgba(212,151,106,0.12);color:#D4976A;' }
     ]
   },
   {
     name: 'Mardi',
     title: 'Push',
     sub: 'Pecs · Épaules · Triceps',
-    badges: [{ text: 'Salle · ~55 min', style: 'background:#E6F1FB;color:#0C447C;' }]
+    badges: [{ text: 'Salle · ~55 min', style: 'background:rgba(122,145,184,0.12);color:#7A91B8;' }]
   },
   {
     name: 'Mercredi',
     title: 'Pull + Abdos',
     sub: 'Dos · Biceps · Core',
     badges: [
-      { text: 'Salle · ~60 min', style: 'background:#E6F1FB;color:#0C447C;' },
-      { text: 'Abdos maison soir', style: 'background:#FAEEDA;color:#633806;' }
+      { text: 'Salle · ~60 min', style: 'background:rgba(122,145,184,0.12);color:#7A91B8;' },
+      { text: 'Abdos maison soir', style: 'background:rgba(212,151,106,0.12);color:#D4976A;' }
     ]
   },
   {
     name: 'Jeudi',
     title: 'Legs',
     sub: 'Quads · Ischios · Épaules',
-    badges: [{ text: 'Salle · ~60 min', style: 'background:#FAECE7;color:#712B13;' }]
+    badges: [{ text: 'Salle · ~60 min', style: 'background:rgba(212,151,106,0.12);color:#D4976A;' }]
   },
   {
     name: 'Vendredi',
     title: 'LISS + Abdos',
     sub: 'Cardio zone 2 · Core',
     badges: [
-      { text: 'Cardio 35 min', style: 'background:#EAF3DE;color:#27500A;' },
-      { text: 'Abdos maison', style: 'background:#FAEEDA;color:#633806;' }
+      { text: 'Cardio 35 min', style: 'background:rgba(125,173,138,0.12);color:#7DAD8A;' },
+      { text: 'Abdos maison', style: 'background:rgba(212,151,106,0.12);color:#D4976A;' }
     ]
   },
   {
     name: 'Samedi',
     title: 'Upper',
     sub: 'Grand dorsal · Épaules · Bras',
-    badges: [{ text: 'Salle · ~60 min', style: 'background:#FBEAF0;color:#72243E;' }]
+    badges: [{ text: 'Salle · ~60 min', style: 'background:rgba(184,150,126,0.12);color:#B8967E;' }]
   },
   {
     name: 'Dimanche',
     title: 'Lower',
     sub: 'Ischios · Fessiers · Core',
-    badges: [{ text: 'Salle · ~55 min', style: 'background:#E1F5EE;color:#085041;' }],
+    badges: [{ text: 'Salle · ~55 min', style: 'background:rgba(125,173,138,0.12);color:#7DAD8A;' }],
     note: 'SDT roumain en 4e position'
   }
 ]
@@ -304,7 +312,7 @@ const weekDays = [
 const muscuSessions = [
   {
     day: 'Mardi',
-    pillStyle: 'background:#E6F1FB;color:#0C447C;',
+    pillStyle: 'background:rgba(122,145,184,0.12);color:#7A91B8;',
     title: 'Push — Pecs, Épaules & Triceps',
     items: [
       { sep: 'Pectoraux' },
@@ -319,7 +327,7 @@ const muscuSessions = [
   },
   {
     day: 'Mercredi',
-    pillStyle: 'background:#E6F1FB;color:#0C447C;',
+    pillStyle: 'background:rgba(122,145,184,0.12);color:#7A91B8;',
     title: 'Pull — Dos & Biceps',
     items: [
       { sep: 'Grand dorsal — largeur prioritaire' },
@@ -335,7 +343,7 @@ const muscuSessions = [
   },
   {
     day: 'Jeudi',
-    pillStyle: 'background:#FAECE7;color:#712B13;',
+    pillStyle: 'background:rgba(212,151,106,0.12);color:#D4976A;',
     title: 'Legs — Focus Quadriceps',
     items: [
       { sep: 'Quadriceps' },
@@ -352,7 +360,7 @@ const muscuSessions = [
   },
   {
     day: 'Samedi',
-    pillStyle: 'background:#FBEAF0;color:#72243E;',
+    pillStyle: 'background:rgba(184,150,126,0.12);color:#B8967E;',
     title: 'Upper — Largeur & V-Taper',
     items: [
       { name: 'Chest press machine', sets: '3 × 8-10', rest: '2 min' },
@@ -368,7 +376,7 @@ const muscuSessions = [
   },
   {
     day: 'Dimanche',
-    pillStyle: 'background:#E1F5EE;color:#085041;',
+    pillStyle: 'background:rgba(125,173,138,0.12);color:#7DAD8A;',
     title: 'Lower — Ischios, Fessiers & Abdos',
     items: [
       { sep: 'Chaîne postérieure' },
@@ -386,9 +394,9 @@ const abdosBlocs = [
   {
     title: 'Routine A — Core & V-line',
     sub: 'Lundi & vendredi · ~12 min',
-    pillStyle: 'background:#E1F5EE;color:#085041;',
+    pillStyle: 'background:rgba(125,173,138,0.12);color:#7DAD8A;',
     exercises: [
-      { name: 'Vacuum abdominal', note: 'Expire tout l\'air · nombril vers la colonne · transverse profond', sets: '3 × 30-45 s', rest: '30 s' },
+      { name: 'Vacuum abdominal', note: "Expire tout l'air · nombril vers la colonne · transverse profond", sets: '3 × 30-45 s', rest: '30 s' },
       { name: 'Dead bug', note: 'Allongé · bras vers plafond · genoux à 90° · descendre bras droit + jambe gauche en expirant · bas du dos plaqué au sol en permanence', sets: '3 × 8-10/côté', rest: '30 s' },
       { name: 'Relevés de jambes tendues', note: 'Mains sous les fessiers · descente 3 s · jambes fléchies si trop difficile', sets: '3 × 12-15', rest: '45 s' },
       { name: 'Planche latérale', note: 'Progression : ajouter dip latéral · flancs et obliques', sets: '3 × 25-35 s/côté', rest: '30 s' }
@@ -397,21 +405,21 @@ const abdosBlocs = [
   {
     title: 'Routine B — Posture & antéversion',
     sub: 'Mercredi · ~12 min',
-    pillStyle: 'background:#E6F1FB;color:#0C447C;',
+    pillStyle: 'background:rgba(122,145,184,0.12);color:#7A91B8;',
     exercises: [
-      { name: 'Vacuum abdominal', note: 'Expire tout l\'air · nombril vers la colonne', sets: '3 × 30-45 s', rest: '30 s' },
+      { name: 'Vacuum abdominal', note: "Expire tout l'air · nombril vers la colonne", sets: '3 × 30-45 s', rest: '30 s' },
       { name: 'Rétroversion active du bassin', note: 'Allongé sur le dos · aplatir le bas du dos contre le sol · contracter abdos + fessiers · tenir 5 s', sets: '3 × 15 reps', rest: '20 s' },
-      { name: 'Pont fessier (glute bridge)', note: 'Monter le bassin · contracter fessiers · tenir 2 s en haut · bas du dos ne cambre pas', sets: '3 × 15 reps', rest: '30 s' },
+      { name: 'Pont fessier (glute bridge)', note: "Monter le bassin · contracter fessiers · tenir 2 s en haut · bas du dos ne cambre pas", sets: '3 × 15 reps', rest: '30 s' },
       { name: 'Dead bug', note: 'Bas du dos plaqué au sol en permanence · mouvement lent et contrôlé', sets: '3 × 8-10/côté', rest: '30 s' }
     ]
   },
   {
     title: 'Quotidien — 7j/7',
     sub: 'Vacuum matin + Étirements soir · ~6 min',
-    pillStyle: 'background:#F1EFE8;color:#444441;',
+    pillStyle: 'background:rgba(240,235,227,0.07);color:var(--text-muted);',
     colLabel: 'Séries × durée',
     exercises: [
-      { name: 'Vacuum abdominal debout', badge: 'Matin à jeun', note: 'Pieds dans l\'axe des épaules · légèrement penché en avant · expiration maximale · nombril vers la colonne', sets: '3 × 30 s', rest: '20 s' },
+      { name: 'Vacuum abdominal debout', badge: 'Matin à jeun', note: "Pieds dans l'axe des épaules · légèrement penché en avant · expiration maximale · nombril vers la colonne", sets: '3 × 30 s', rest: '20 s' },
       { name: 'Étirement psoas en fente basse', badge: 'Soir', note: 'Genou arrière au sol · rétroversion du bassin pendant l\'étirement · dos droit', sets: '45–60 s/côté', rest: '—' },
       { name: 'Étirement droit fémoral', badge: 'Soir', note: 'Allongé sur le ventre ou debout · talon vers fessier · contracter légèrement le fessier', sets: '45 s/côté', rest: '—' },
       { name: 'Position enfant — lombaires', badge: 'Soir', note: 'Assis sur les talons · bras tendus devant · front au sol', sets: '60 s', rest: '—' }
@@ -422,48 +430,48 @@ const abdosBlocs = [
 const phases = [
   {
     weeks: 'Semaines 1–2',
-    pillStyle: 'background:#E6F1FB;color:#0C447C;',
+    pillStyle: 'background:rgba(122,145,184,0.12);color:#7A91B8;',
     title: 'Mise en place',
     rows: [
-      { color: '#378ADD', text: 'Musculation : apprendre les nouveaux exercices (lat pulldown, hip thrust, SDT roumain) · technique prioritaire · charges légères' },
-      { color: '#E24B4A', text: 'Jambes : surveiller attentivement les adducteurs sur la presse · stopper à la moindre gêne · noter les charges' },
-      { color: '#EF9F27', text: 'Élévations latérales : rester à 9 kg · ajouter excentrique 4 s · compter les reps exactes à chaque série' },
-      { color: '#1D9E75', text: 'Cardio : 2 × récupération active · FC 110–130 bpm · résistance 2–3 · piloter par la FC' },
-      { color: '#888780', text: 'Posture : vacuum à jeun dès jour 1 · étirements psoas chaque soir · routine B mercredi' }
+      { color: '#7A91B8', text: 'Musculation : apprendre les nouveaux exercices (lat pulldown, hip thrust, SDT roumain) · technique prioritaire · charges légères' },
+      { color: '#D4976A', text: 'Jambes : surveiller attentivement les adducteurs sur la presse · stopper à la moindre gêne · noter les charges' },
+      { color: '#C9A04C', text: 'Élévations latérales : rester à 9 kg · ajouter excentrique 4 s · compter les reps exactes à chaque série' },
+      { color: '#7DAD8A', text: 'Cardio : 2 × récupération active · FC 110–130 bpm · résistance 2–3 · piloter par la FC' },
+      { color: 'var(--text-muted)', text: 'Posture : vacuum à jeun dès jour 1 · étirements psoas chaque soir · routine B mercredi' }
     ]
   },
   {
     weeks: 'Semaines 3–4',
-    pillStyle: 'background:#E1F5EE;color:#085041;',
+    pillStyle: 'background:rgba(125,173,138,0.12);color:#7DAD8A;',
     title: 'Montée en charge',
     rows: [
-      { color: '#378ADD', text: 'Musculation : charger progressivement · noter chaque série · double progression active' },
-      { color: '#E24B4A', text: 'Jambes : si aucune gêne adducteurs → retrouver les charges habituelles progressivement' },
-      { color: '#EF9F27', text: 'Élévations latérales : ajouter rest-pause sur la dernière série · viser +2 reps par série vs sem. 1–2' },
-      { color: '#1D9E75', text: 'Cardio : vérifier que les jambes récupèrent mieux grâce aux séances actives · ajuster résistance si FC trop basse' },
-      { color: '#888780', text: 'Posture : évaluer si l\'antéversion commence à se réduire · planche avec rétroversion active' }
+      { color: '#7A91B8', text: 'Musculation : charger progressivement · noter chaque série · double progression active' },
+      { color: '#D4976A', text: 'Jambes : si aucune gêne adducteurs → retrouver les charges habituelles progressivement' },
+      { color: '#C9A04C', text: 'Élévations latérales : ajouter rest-pause sur la dernière série · viser +2 reps par série vs sem. 1–2' },
+      { color: '#7DAD8A', text: "Cardio : vérifier que les jambes récupèrent mieux grâce aux séances actives · ajuster résistance si FC trop basse" },
+      { color: 'var(--text-muted)', text: "Posture : évaluer si l'antéversion commence à se réduire · planche avec rétroversion active" }
     ]
   },
   {
     weeks: 'Semaines 5–6',
-    pillStyle: 'background:#FAEEDA;color:#633806;',
+    pillStyle: 'background:rgba(212,151,106,0.12);color:#D4976A;',
     title: 'Intensification',
     rows: [
-      { color: '#378ADD', text: 'Musculation : double progression sur tous les exercices · lat pulldown en progression (charge croissante vers tractions libres)' },
-      { color: '#EF9F27', text: 'Élévations latérales : tester les 1,5 reps sur 2 séries Upper · drop set systématique sur dernière série Jeudi' },
-      { color: '#1D9E75', text: 'Cardio : si FC stable sous 125 bpm en récupération → envisager introduction zone 3–4 vendredi' },
-      { color: '#888780', text: 'Abdos : progresser sur dead bug (amplitude plus grande) · ajouter lest sur rotations russes si pratiquées' }
+      { color: '#7A91B8', text: 'Musculation : double progression sur tous les exercices · lat pulldown en progression (charge croissante vers tractions libres)' },
+      { color: '#C9A04C', text: 'Élévations latérales : tester les 1,5 reps sur 2 séries Upper · drop set systématique sur dernière série Jeudi' },
+      { color: '#7DAD8A', text: 'Cardio : si FC stable sous 125 bpm en récupération → envisager introduction zone 3–4 vendredi' },
+      { color: 'var(--text-muted)', text: 'Abdos : progresser sur dead bug (amplitude plus grande) · ajouter lest sur rotations russes si pratiquées' }
     ]
   },
   {
     weeks: 'Semaines 7–8',
-    pillStyle: 'background:#FAECE7;color:#712B13;',
+    pillStyle: 'background:rgba(212,151,106,0.15);color:#D4976A;',
     title: 'Zone 3–4 + Décharge muscu',
     rows: [
-      { color: '#378ADD', text: 'Musculation : décharge semaine 7 — voir tableau Décharge dans l\'onglet Musculation · −1 série/exercice · mêmes charges · reprise full semaine 8' },
-      { color: '#1D9E75', text: 'Cardio : zone 3–4 le vendredi (FC 155–170 bpm · 25 min) · récupération active conservée le lundi' },
-      { color: '#EF9F27', text: 'Élévations latérales : bilan · si 4×15 tenus proprement en excentrique → tester charge supérieure' },
-      { color: '#888780', text: 'Bilan : peser à jeun · ajuster calories si hors 80–84 kg · évaluer antéversion visuellement · définir objectifs bloc suivant' }
+      { color: '#7A91B8', text: "Musculation : décharge semaine 7 — voir tableau Décharge dans l'onglet Musculation · −1 série/exercice · mêmes charges · reprise full semaine 8" },
+      { color: '#7DAD8A', text: 'Cardio : zone 3–4 le vendredi (FC 155–170 bpm · 25 min) · récupération active conservée le lundi' },
+      { color: '#C9A04C', text: 'Élévations latérales : bilan · si 4×15 tenus proprement en excentrique → tester charge supérieure' },
+      { color: 'var(--text-muted)', text: "Bilan : peser à jeun · ajuster calories si hors 80–84 kg · évaluer antéversion visuellement · définir objectifs bloc suivant" }
     ]
   }
 ]
@@ -471,84 +479,84 @@ const phases = [
 const dechargeBlocs = [
   {
     day: 'Mardi',
-    pillStyle: 'background:#E6F1FB;color:#0C447C;',
+    pillStyle: 'background:rgba(122,145,184,0.12);color:#7A91B8;',
     title: 'Push',
     totalNormal: '16',
     totalDecharge: '11',
     exercises: [
-      { name: 'Chest press incliné machine',  normal: '3 × 8-10',  decharge: '2 × 8-10' },
-      { name: 'Chest fly machine',            normal: '3 × 12-15', decharge: '2 × 12-15' },
-      { name: 'Extension triceps poulie basse', normal: '3 × 12-15', decharge: '2 × 12-15' },
-      { name: 'Extension triceps poulie haute', normal: '3 × 12-15', decharge: '2 × 12-15' },
-      { name: 'Élévations latérales haltères', normal: '4 × 15',   decharge: '3 × 15' },
+      { name: 'Chest press incliné machine',    normal: '3 × 8-10',   decharge: '2 × 8-10' },
+      { name: 'Chest fly machine',              normal: '3 × 12-15',  decharge: '2 × 12-15' },
+      { name: 'Extension triceps poulie basse', normal: '3 × 12-15',  decharge: '2 × 12-15' },
+      { name: 'Extension triceps poulie haute', normal: '3 × 12-15',  decharge: '2 × 12-15' },
+      { name: 'Élévations latérales haltères',  normal: '4 × 15',     decharge: '3 × 15' }
     ]
   },
   {
     day: 'Mercredi',
-    pillStyle: 'background:#E6F1FB;color:#0C447C;',
+    pillStyle: 'background:rgba(122,145,184,0.12);color:#7A91B8;',
     title: 'Pull',
     totalNormal: '19',
     totalDecharge: '13',
     exercises: [
-      { name: 'Lat pulldown',                normal: '4 × 8-10',  decharge: '3 × 8-10' },
-      { name: 'Mid row machine',             normal: '3 × 8-10',  decharge: '2 × 8-10' },
-      { name: 'Tirage horizontal V-grip',    normal: '3 × 10-12', decharge: '2 × 10-12' },
-      { name: 'Face pulls / oiseau poulie',  normal: '3 × 15',    decharge: '2 × 15' },
-      { name: 'Curl pupitre haltères',       normal: '3 × 10-12', decharge: '2 × 10-12' },
-      { name: 'Curl marteau haltères',       normal: '3 × 12',    decharge: '2 × 12' },
+      { name: 'Lat pulldown',               normal: '4 × 8-10',   decharge: '3 × 8-10' },
+      { name: 'Mid row machine',            normal: '3 × 8-10',   decharge: '2 × 8-10' },
+      { name: 'Tirage horizontal V-grip',   normal: '3 × 10-12',  decharge: '2 × 10-12' },
+      { name: 'Face pulls / oiseau poulie', normal: '3 × 15',     decharge: '2 × 15' },
+      { name: 'Curl pupitre haltères',      normal: '3 × 10-12',  decharge: '2 × 10-12' },
+      { name: 'Curl marteau haltères',      normal: '3 × 12',     decharge: '2 × 12' }
     ]
   },
   {
     day: 'Jeudi',
-    pillStyle: 'background:#FAECE7;color:#712B13;',
+    pillStyle: 'background:rgba(212,151,106,0.12);color:#D4976A;',
     title: 'Legs',
     totalNormal: '24',
     totalDecharge: '17',
     exercises: [
-      { name: 'Presse pieds bas',              normal: '3 × 10-12', decharge: '2 × 10-12' },
-      { name: 'Presse unilatérale',            normal: '3 × 10-12', decharge: '2 × 10-12' },
-      { name: 'Leg extension',                 normal: '3 × 15',    decharge: '2 × 15' },
+      { name: 'Presse pieds bas',              normal: '3 × 10-12',  decharge: '2 × 10-12' },
+      { name: 'Presse unilatérale',            normal: '3 × 10-12',  decharge: '2 × 10-12' },
+      { name: 'Leg extension',                 normal: '3 × 15',     decharge: '2 × 15' },
       { name: 'Leg curl allongé',              normal: '4–5 × 12-15', decharge: '3 × 12-15' },
-      { name: 'Mollets debout',                normal: '4 × 15',    decharge: '3 × 15' },
-      { name: 'Élévations latérales haltères', normal: '4 × 15',    decharge: '3 × 15' },
-      { name: 'Face pulls / oiseau poulie',    normal: '4 × 15',    decharge: '3 × 15' },
+      { name: 'Mollets debout',                normal: '4 × 15',     decharge: '3 × 15' },
+      { name: 'Élévations latérales haltères', normal: '4 × 15',     decharge: '3 × 15' },
+      { name: 'Face pulls / oiseau poulie',    normal: '4 × 15',     decharge: '3 × 15' }
     ]
   },
   {
     day: 'Samedi',
-    pillStyle: 'background:#FBEAF0;color:#72243E;',
+    pillStyle: 'background:rgba(184,150,126,0.12);color:#B8967E;',
     title: 'Upper',
     totalNormal: '22',
     totalDecharge: '15',
     exercises: [
-      { name: 'Chest press machine',                     normal: '3 × 8-10',  decharge: '2 × 8-10' },
-      { name: 'Tirage vertical unilatéral poulie haute', normal: '3 × 10-12', decharge: '2 × 10-12' },
-      { name: 'Machine fly pec deck',                    normal: '3 × 12',    decharge: '2 × 12' },
-      { name: 'Pull-over poulie haute',                  normal: '3 × 12-15', decharge: '2 × 12-15' },
-      { name: 'Élévations latérales poulie',             normal: '4 × 15',    decharge: '3 × 15' },
-      { name: 'Superset curl + extension triceps',       normal: '3 × 12',    decharge: '2 × 12' },
-      { name: 'Face pulls / oiseau poulie',              normal: '3 × 15',    decharge: '2 × 15' },
+      { name: 'Chest press machine',                     normal: '3 × 8-10',   decharge: '2 × 8-10' },
+      { name: 'Tirage vertical unilatéral poulie haute', normal: '3 × 10-12',  decharge: '2 × 10-12' },
+      { name: 'Machine fly pec deck',                    normal: '3 × 12',     decharge: '2 × 12' },
+      { name: 'Pull-over poulie haute',                  normal: '3 × 12-15',  decharge: '2 × 12-15' },
+      { name: 'Élévations latérales poulie',             normal: '4 × 15',     decharge: '3 × 15' },
+      { name: 'Superset curl + extension triceps',       normal: '3 × 12',     decharge: '2 × 12' },
+      { name: 'Face pulls / oiseau poulie',              normal: '3 × 15',     decharge: '2 × 15' }
     ]
   },
   {
     day: 'Dimanche',
-    pillStyle: 'background:#E1F5EE;color:#085041;',
+    pillStyle: 'background:rgba(125,173,138,0.12);color:#7DAD8A;',
     title: 'Lower',
     totalNormal: '15',
     totalDecharge: '10',
     exercises: [
-      { name: 'Leg curl allongé machine',   normal: '3 × 12-15', decharge: '2 × 12-15' },
-      { name: 'Hip thrust machine',         normal: '3 × 12',    decharge: '2 × 12' },
-      { name: 'SDT roumain haltères',       normal: '3 × 10-12', decharge: '2 × 10-12' },
-      { name: 'Presse pieds bas',           normal: '3 × 10-12', decharge: '2 × 10-12' },
-      { name: 'Relevés de jambes suspendu', normal: '3 × 15',    decharge: '2 × 15' },
+      { name: 'Leg curl allongé machine',   normal: '3 × 12-15',  decharge: '2 × 12-15' },
+      { name: 'Hip thrust machine',         normal: '3 × 12',     decharge: '2 × 12' },
+      { name: 'SDT roumain haltères',       normal: '3 × 10-12',  decharge: '2 × 10-12' },
+      { name: 'Presse pieds bas',           normal: '3 × 10-12',  decharge: '2 × 10-12' },
+      { name: 'Relevés de jambes suspendu', normal: '3 × 15',     decharge: '2 × 15' }
     ]
   }
 ]
 
 const mealtiming = [
-  { time: '7h00', label: 'Réveil · vacuum à jeun', note: '3 × 30 s avant tout repas' },
-  { time: '7h30', label: 'Petit-déjeuner glucides + protéines', note: 'Flocons d\'avoine · fromage blanc · œufs · pain complet' },
+  { time: '7h00',  label: 'Réveil · vacuum à jeun', note: '3 × 30 s avant tout repas' },
+  { time: '7h30',  label: 'Petit-déjeuner glucides + protéines', note: "Flocons d'avoine · fromage blanc · œufs · pain complet" },
   { time: '12h30', label: 'Déjeuner complet', note: 'Riz ou patates · viande ou poisson · légumes' },
   { time: '17h00', label: 'Pré-workout (60–90 min avant)', note: 'Glucides + protéines · riz + thon · pain + jambon' },
   { time: '18h30', label: 'Séance salle' },
@@ -565,195 +573,283 @@ const nutritionRules = [
 </script>
 
 <style scoped>
+.plan-view {
+  max-width: 860px;
+  margin: 0 auto;
+  padding: 8px 0 100px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* ── Header ── */
+.plan-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 0 2px;
+}
+
+.module-icon {
+  width: 36px;
+  height: 36px;
+  flex-shrink: 0;
+  border-radius: var(--radius-sm);
+  background: rgba(212, 151, 106, 0.10);
+  border: 1px solid rgba(212, 151, 106, 0.20);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--accent);
+}
+
+.view-title {
+  font-family: var(--font-serif);
+  font-size: var(--text-2xl);
+  font-weight: 400;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.view-sub {
+  font-size: 9px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--text-muted);
+  margin-top: 1px;
+}
+
+/* ── Tab bar ── */
 .tabs-bar {
   display: flex;
   gap: 5px;
-  margin-bottom: 20px;
   flex-wrap: wrap;
 }
 
 .tab-btn {
   padding: 7px 13px;
-  border-radius: 8px;
-  font-size: 13px;
-  cursor: pointer;
-  border: 0.5px solid #cbd5e1;
-  background: transparent;
-  color: #64748b;
-  transition: all 0.15s;
-}
-
-.tab-btn.active {
-  background: #eff6ff;
-  color: #4f46e5;
-  border-color: transparent;
+  border-radius: var(--radius-sm);
+  font-size: 12px;
   font-weight: 500;
+  cursor: pointer;
+  border: 1px solid var(--border-subtle);
+  background: transparent;
+  color: var(--text-muted);
+  font-family: var(--font-sans);
+  transition: all var(--dur-fast) var(--ease-out);
 }
 
+.tab-btn:hover { color: var(--text-secondary); border-color: var(--border-default); }
+
+.tab-btn--active {
+  background: rgba(212, 151, 106, 0.10);
+  color: var(--accent);
+  border-color: rgba(212, 151, 106, 0.25);
+}
+
+/* ── Card ── */
 .card {
-  background: white;
-  border: 0.5px solid #f1f5f9;
-  border-radius: 12px;
-  padding: 1rem 1.25rem;
+  background: var(--bg-raised);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  padding: 16px 20px;
   margin-bottom: 10px;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.04);
 }
 
+.card--decharge {
+  border-left: 2px solid rgba(212, 151, 106, 0.30);
+  border-radius: 0 var(--radius-md) var(--radius-md) 0;
+}
+
+.card--accent-blue {
+  border-left: 2px solid #7A91B8;
+  border-radius: 0 var(--radius-md) var(--radius-md) 0;
+}
+
+/* ── Badge ── */
 .badge {
   display: inline-block;
   padding: 2px 8px;
-  border-radius: 10px;
-  font-size: 11px;
+  border-radius: 8px;
+  font-size: 10px;
   font-weight: 500;
   margin-right: 4px;
+  margin-bottom: 4px;
 }
 
 .new-b {
-  background: #E1F5EE;
-  color: #085041;
+  background: rgba(125, 173, 138, 0.10);
+  color: #7DAD8A;
 }
 
+/* ── Ex row ── */
 .ex-row {
   display: grid;
   grid-template-columns: 1fr 100px 80px;
   align-items: start;
   gap: 8px;
   padding: 8px 0;
-  border-bottom: 0.5px solid #f1f5f9;
+  border-bottom: 1px solid var(--border-subtle);
   font-size: 13px;
 }
 
-.ex-row:last-child {
-  border-bottom: none;
-}
+.ex-row:last-child { border-bottom: none; }
 
-.ex-row.single {
-  grid-template-columns: 1fr;
-}
-
-.ex-row.timing {
-  grid-template-columns: 1fr 60px;
-}
+.ex-row--single { grid-template-columns: 1fr; }
+.ex-row--timing { grid-template-columns: 1fr 60px; }
 
 .ex-name {
-  color: #1e293b;
+  color: var(--text-primary);
   line-height: 1.4;
 }
 
 .ex-note {
   font-size: 11px;
-  color: #64748b;
-  margin-top: 2px;
+  color: var(--text-muted);
+  margin-top: 3px;
+  line-height: 1.4;
 }
 
 .ex-sets {
   text-align: right;
   font-size: 12px;
-  color: #64748b;
+  color: var(--text-muted);
   padding-top: 1px;
+}
+
+.ex-sets--strikethrough {
+  opacity: 0.35;
+  text-decoration: line-through;
+}
+
+.ex-sets--accent {
+  color: var(--accent);
+  font-weight: 600;
 }
 
 .ex-rest {
   text-align: right;
   font-size: 12px;
-  color: #64748b;
+  color: var(--text-muted);
   padding-top: 1px;
 }
 
+/* ── Col header ── */
 .col-header {
   display: grid;
   grid-template-columns: 1fr 100px 80px;
   gap: 8px;
-  padding: 0 0 5px;
-  border-bottom: 0.5px solid #e2e8f0;
+  padding: 0 0 6px;
+  border-bottom: 1px solid var(--border-subtle);
   margin-bottom: 2px;
 }
 
 .col-label {
-  font-size: 11px;
-  color: #94a3b8;
+  font-size: 10px;
+  color: var(--text-muted);
   text-align: right;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
 }
 
-.col-label.left {
-  text-align: left;
-}
+.col-label--left { text-align: left; }
 
+/* ── Day header ── */
 .day-header {
   display: flex;
   align-items: center;
   gap: 10px;
-  margin-bottom: 10px;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
 }
 
 .day-pill {
-  padding: 4px 12px;
-  border-radius: 10px;
-  font-size: 12px;
+  padding: 4px 11px;
+  border-radius: 8px;
+  font-size: 11px;
   font-weight: 500;
+  flex-shrink: 0;
 }
 
 .session-title {
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 500;
-  color: #1e293b;
+  color: var(--text-primary);
 }
 
+/* ── Tip ── */
 .tip {
-  background: #f8fafc;
-  border-radius: 8px;
+  background: var(--bg-overlay);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
   padding: 8px 12px;
-  font-size: 12px;
-  color: #64748b;
+  font-size: 11px;
+  color: var(--text-muted);
   margin-top: 8px;
+  line-height: 1.5;
 }
 
+/* ── Stat cards ── */
 .stat-card {
-  background: #f8fafc;
-  border-radius: 8px;
-  padding: 10px;
+  background: var(--bg-overlay);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  padding: 12px;
   text-align: center;
 }
 
 .stat-label {
-  font-size: 11px;
-  color: #64748b;
+  font-size: 10px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  line-height: 1.4;
 }
 
 .stat-val {
-  font-size: 20px;
-  font-weight: 500;
-  color: #1e293b;
+  font-family: var(--font-serif);
+  font-size: 22px;
+  font-weight: 400;
+  color: var(--accent);
+  margin: 4px 0 2px;
+  line-height: 1;
 }
 
+.stat-val--sm { font-size: 16px; }
+
+/* ── Phase row ── */
 .phase-row {
   display: flex;
-  gap: 8px;
-  margin-bottom: 6px;
+  gap: 10px;
+  margin-bottom: 8px;
   align-items: flex-start;
-  font-size: 13px;
-  color: #334155;
+  font-size: 12px;
+  color: var(--text-secondary);
+  line-height: 1.5;
 }
 
 .phase-dot {
-  width: 10px;
-  height: 10px;
+  width: 8px;
+  height: 8px;
   border-radius: 50%;
   flex-shrink: 0;
   margin-top: 4px;
 }
 
+/* ── Sep ── */
 .sep {
-  font-size: 11px;
-  font-weight: 600;
-  color: #94a3b8;
+  font-size: 10px;
+  font-weight: 500;
+  color: var(--text-muted);
   text-transform: uppercase;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.08em;
   padding: 10px 0 4px;
-  border-bottom: 0.5px solid #f1f5f9;
+  border-bottom: 1px solid var(--border-subtle);
   margin-bottom: 2px;
 }
 
+/* ── Week grid ── */
 .week-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(128px, 1fr));
@@ -762,8 +858,10 @@ const nutritionRules = [
 }
 
 .day-label {
-  font-size: 11px;
-  color: #64748b;
+  font-size: 10px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
   margin-bottom: 5px;
 }
 
@@ -771,21 +869,23 @@ const nutritionRules = [
   font-size: 13px;
   font-weight: 500;
   margin-bottom: 4px;
-  color: #1e293b;
+  color: var(--text-primary);
 }
 
 .day-sub {
   font-size: 11px;
-  color: #64748b;
+  color: var(--text-muted);
   margin-bottom: 8px;
+  line-height: 1.4;
 }
 
 .day-note {
   margin-top: 6px;
   font-size: 11px;
-  color: #64748b;
+  color: var(--text-muted);
 }
 
+/* ── Stats row ── */
 .stats-row {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
@@ -793,10 +893,48 @@ const nutritionRules = [
   margin-bottom: 12px;
 }
 
+/* ── Card title ── */
 .card-title {
   font-size: 13px;
   font-weight: 500;
+  color: var(--text-primary);
   margin-bottom: 10px;
-  color: #1e293b;
+}
+
+/* ── Decharge section ── */
+.decharge-section { margin-top: 20px; }
+
+.decharge-title {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-primary);
+  margin-bottom: 6px;
+}
+
+.decharge-sub {
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-bottom: 12px;
+  line-height: 1.5;
+}
+
+.decharge-count {
+  font-size: 10px;
+  color: var(--text-muted);
+  margin-left: auto;
+}
+
+/* ── Section intro ── */
+.section-intro {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-bottom: 14px;
+  line-height: 1.5;
+}
+
+/* ── Bloc sub ── */
+.bloc-sub {
+  font-size: 12px;
+  color: var(--text-muted);
 }
 </style>
