@@ -227,8 +227,11 @@ const handleLogout = async () => {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 24px;
-  height: 60px;
+  padding-left: 24px;
+  padding-right: 24px;
+  padding-top: env(safe-area-inset-top, 0px);
+  padding-bottom: 0;
+  height: calc(60px + env(safe-area-inset-top, 0px));
   flex-shrink: 0;
   background: color-mix(in srgb, var(--bg-base) 80%, transparent);
   backdrop-filter: blur(20px);
