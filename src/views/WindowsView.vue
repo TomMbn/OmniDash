@@ -92,11 +92,17 @@
         <div class="result-metrics">
           <div class="result-metric">
             <span class="result-metric-label">Intérieur</span>
-            <span class="result-metric-value">{{ Math.round(checkResult.indoorTemp) }}°C · humidex {{ Math.round(checkResult.indoorHumidex) }}</span>
+            <span class="result-metric-value">
+              {{ Math.round(checkResult.indoorTemp) }}°C · humidex {{ Math.round(checkResult.indoorHumidex) }}
+              <span class="comfort-badge" :style="{ color: comfortLevel(checkResult.indoorHumidex).color }">{{ comfortLevel(checkResult.indoorHumidex).label }}</span>
+            </span>
           </div>
           <div class="result-metric">
             <span class="result-metric-label">Extérieur</span>
-            <span class="result-metric-value">{{ Math.round(checkResult.outdoorTemp) }}°C · humidex {{ Math.round(checkResult.outdoorHumidex) }}</span>
+            <span class="result-metric-value">
+              {{ Math.round(checkResult.outdoorTemp) }}°C · humidex {{ Math.round(checkResult.outdoorHumidex) }}
+              <span class="comfort-badge" :style="{ color: comfortLevel(checkResult.outdoorHumidex).color }">{{ comfortLevel(checkResult.outdoorHumidex).label }}</span>
+            </span>
           </div>
           <div v-if="checkResult.precipitation > 0" class="result-metric">
             <span class="result-metric-label">Pluie</span>
@@ -248,6 +254,13 @@ const onToggleNotifications = async () => {
 const computeHumidex = (tempC, relativeHumidity) => {
   const e = (relativeHumidity / 100) * 6.112 * Math.pow(10, (7.5 * tempC) / (237.7 + tempC))
   return tempC + (5 / 9) * (e - 10)
+}
+
+const comfortLevel = (humidex) => {
+  if (humidex < 20) return { label: 'Confortable', color: 'var(--status-success)' }
+  if (humidex < 30) return { label: 'Léger inconfort', color: 'var(--status-warning)' }
+  if (humidex < 40) return { label: 'Inconfort marqué', color: 'var(--status-error)' }
+  return { label: 'Dangereux', color: 'var(--status-error)' }
 }
 
 const checkNow = async () => {
@@ -556,11 +569,25 @@ const resultIcon = computed(() => {
 
 .result-metric {
   display: flex;
-  align-items: center;
+  align-items: baseline;
   justify-content: space-between;
+  gap: 12px;
   font-size: var(--text-sm);
 }
 
-.result-metric-label { color: var(--text-muted); }
-.result-metric-value { color: var(--text-primary); font-variant-numeric: tabular-nums; }
+.result-metric-label { color: var(--text-muted); flex-shrink: 0; }
+.result-metric-value {
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+.comfort-badge {
+  display: inline-block;
+  margin-left: 6px;
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
 </style>
