@@ -66,9 +66,14 @@ serve(async (req) => {
 
       let recommendation: 'open' | 'close' | null = null
 
-      if (outdoorHumidex < indoorHumidex && precipitation === 0) {
+      // Ouvrir n'a de sens que si l'air extérieur va réellement refroidir la pièce
+      // (température plus basse) ET améliorer le confort (humidex plus bas).
+      if (outdoorTemp < station.indoorTemp && outdoorHumidex < indoorHumidex && precipitation === 0) {
         recommendation = 'open'
-      } else if (state?.last_recommendation === 'open' && (precipitation > 0 || outdoorHumidex >= indoorHumidex)) {
+      } else if (
+        state?.last_recommendation === 'open' &&
+        (precipitation > 0 || outdoorTemp >= station.indoorTemp || outdoorHumidex >= indoorHumidex)
+      ) {
         recommendation = 'close'
       }
 

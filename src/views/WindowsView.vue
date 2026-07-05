@@ -54,7 +54,7 @@
       </div>
 
       <p class="sync-desc">
-        Reçois une notif pour ouvrir les fenêtres dès que l'humidex extérieur passe sous l'humidex intérieur (Netatmo vs Open-Meteo), et pour les refermer quand ça s'inverse.
+        Reçois une notif pour ouvrir les fenêtres dès qu'il fait à la fois plus frais et plus confortable dehors (température ET humidex plus bas, Netatmo vs Open-Meteo), et pour les refermer quand ça s'inverse.
       </p>
 
       <div v-if="pushError" class="sync-error">
@@ -274,9 +274,9 @@ const checkNow = async () => {
     const outdoorHumidex = computeHumidex(outdoorTemp, outdoorHumidity)
 
     let recommendation = 'none'
-    if (outdoorHumidex < indoorHumidex && precipitation === 0) {
+    if (outdoorTemp < netatmoData.value.indoor_temp && outdoorHumidex < indoorHumidex && precipitation === 0) {
       recommendation = 'open'
-    } else if (precipitation > 0 || outdoorHumidex >= indoorHumidex) {
+    } else if (precipitation > 0 || outdoorTemp >= netatmoData.value.indoor_temp || outdoorHumidex >= indoorHumidex) {
       recommendation = 'close'
     }
 
