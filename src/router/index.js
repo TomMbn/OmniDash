@@ -49,6 +49,12 @@ const routes = [
         name: 'Plan',
         component: () => import('@/views/PlanView.vue'),
         meta: { requiresAuth: true }
+    },
+    {
+        path: '/fenetres',
+        name: 'Windows',
+        component: () => import('@/views/WindowsView.vue'),
+        meta: { requiresAuth: true }
     }
 ]
 

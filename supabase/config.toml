@@ -9,3 +9,21 @@ entrypoint = "./functions/withings-sync/index.ts"
 # Specifies static files to be bundled with the function. Supports glob patterns.
 # For example, if you want to serve static HTML pages in your function:
 # static_files = [ "./functions/withings-sync/*.html" ]
+
+[functions.netatmo-sync]
+enabled = true
+verify_jwt = true
+import_map = "./functions/netatmo-sync/deno.json"
+entrypoint = "./functions/netatmo-sync/index.ts"
+
+[functions.save-push-subscription]
+enabled = true
+verify_jwt = true
+import_map = "./functions/save-push-subscription/deno.json"
+entrypoint = "./functions/save-push-subscription/index.ts"
+
+[functions.check-windows]
+enabled = true
+verify_jwt = false
+import_map = "./functions/check-windows/deno.json"
+entrypoint = "./functions/check-windows/index.ts"

@@ -71,7 +71,7 @@ import { ref, computed } from 'vue'
 import { useRoute } from 'vue-router'
 import {
   LayoutDashboard, Dumbbell, Utensils, Moon,
-  Plane, Shirt, ClipboardList, MoreHorizontal
+  Plane, Shirt, ClipboardList, MoreHorizontal, Wind
 } from 'lucide-vue-next'
 
 const route = useRoute()
@@ -89,6 +89,7 @@ const secondaryLinks = [
   { to: '/travel',   label: 'Travel',   icon: Plane,         color: 'var(--module-travel)' },
   { to: '/dressing', label: 'Dressing', icon: Shirt,         color: 'var(--module-dress)' },
   { to: '/plan',     label: 'Plan',     icon: ClipboardList, color: 'var(--accent)' },
+  { to: '/fenetres', label: 'Fenêtres', icon: Wind,          color: 'var(--text-secondary)' },
 ]
 
 const secondaryPaths = secondaryLinks.map(l => l.to)
