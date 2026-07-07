@@ -1,9 +1,16 @@
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import webpush from 'https://esm.sh/web-push@3.6.7'
-import { getNetatmoAccessToken, fetchStationData, computeHumidex } from '../_shared/netatmo.ts'
+import { getNetatmoAccessToken, fetchStationData } from '../_shared/netatmo.ts'
+import { simulateWindowPlan } from '../_shared/forecast.ts'
+import type { WallType } from '../_shared/forecast.ts'
 
-const COOLDOWN_MS = 2 * 60 * 60 * 1000
+// Une fenêtre "différente" de celle déjà stockée si son heure d'ouverture prévue
+// dérive de plus d'1h (nouvelle occurrence détectée par une prévision plus fraîche).
+const WINDOW_DRIFT_MS = 60 * 60 * 1000
+
+const formatTime = (iso: string) =>
+  new Intl.DateTimeFormat('fr-FR', { hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Paris' }).format(new Date(iso))
 
 serve(async (req) => {
   const cronSecret = Deno.env.get('CRON_SECRET')
@@ -27,7 +34,7 @@ serve(async (req) => {
 
   const { data: settingsRows } = await supabase
     .from('user_settings')
-    .select('user_id, windows_notifications_enabled, home_lat, home_lon')
+    .select('user_id, windows_notifications_enabled, home_lat, home_lon, wall_type')
     .eq('windows_notifications_enabled', true)
 
   const results: any[] = []
@@ -45,54 +52,62 @@ serve(async (req) => {
       if (needsAuth || !accessToken) continue
 
       const station = await fetchStationData(accessToken)
-      const indoorHumidex = computeHumidex(station.indoorTemp, station.indoorHumidity)
 
       const weatherResponse = await fetch(
-        `https://api.open-meteo.com/v1/forecast?latitude=${settings.home_lat}&longitude=${settings.home_lon}&current=temperature_2m,relative_humidity_2m,precipitation`
+        `https://api.open-meteo.com/v1/forecast?latitude=${settings.home_lat}&longitude=${settings.home_lon}&hourly=temperature_2m,relative_humidity_2m,precipitation_probability&forecast_days=2`
       )
       const weather = await weatherResponse.json()
-      const outdoorTemp = weather.current?.temperature_2m
-      const outdoorHumidity = weather.current?.relative_humidity_2m
-      const precipitation = weather.current?.precipitation ?? 0
-      if (outdoorTemp == null || outdoorHumidity == null) continue
+      const hourly = weather.hourly
+      if (!hourly?.time?.length) continue
 
-      const outdoorHumidex = computeHumidex(outdoorTemp, outdoorHumidity)
+      const wallType = (settings.wall_type as WallType) || 'medium'
+      const plan = simulateWindowPlan(hourly, station.indoorTemp, station.indoorHumidity, wallType)
 
       const { data: state } = await supabase
-        .from('window_notification_state')
+        .from('window_forecast')
         .select('*')
         .eq('user_id', settings.user_id)
         .single()
 
-      let recommendation: 'open' | 'close' | null = null
+      const openDrifted = !state?.predicted_open_at || !plan.openAt ||
+        Math.abs(new Date(plan.openAt).getTime() - new Date(state.predicted_open_at).getTime()) > WINDOW_DRIFT_MS
 
-      // Ouvrir n'a de sens que si l'air extérieur va réellement refroidir la pièce
-      // (température plus basse) ET améliorer le confort (humidex plus bas).
-      if (outdoorTemp < station.indoorTemp && outdoorHumidex < indoorHumidex && precipitation === 0) {
-        recommendation = 'open'
-      } else if (
-        state?.last_recommendation === 'open' &&
-        (precipitation > 0 || outdoorTemp >= station.indoorTemp || outdoorHumidex >= indoorHumidex)
-      ) {
-        recommendation = 'close'
+      const openNotified = openDrifted ? false : !!state?.open_notified
+      const closeNotified = openDrifted ? false : !!state?.close_notified
+
+      await supabase.from('window_forecast').upsert({
+        user_id: settings.user_id,
+        predicted_open_at: plan.openAt,
+        predicted_close_at: plan.closeAt,
+        open_notified: openNotified,
+        close_notified: closeNotified,
+        computed_at: new Date().toISOString()
+      })
+
+      if (!plan.openAt) continue
+
+      const now = Date.now()
+      const openAt = new Date(plan.openAt).getTime()
+      const closeAt = plan.closeAt ? new Date(plan.closeAt).getTime() : null
+
+      let notify: 'open' | 'close' | null = null
+      if (now >= openAt && (closeAt === null || now < closeAt) && !openNotified) {
+        notify = 'open'
+      } else if (closeAt !== null && now >= closeAt && openNotified && !closeNotified) {
+        notify = 'close'
       }
 
-      if (!recommendation) continue
-
-      const changed = state?.last_recommendation !== recommendation
-      const cooldownElapsed = !state?.last_sent_at || (Date.now() - new Date(state.last_sent_at).getTime()) > COOLDOWN_MS
-      if (!changed && !cooldownElapsed) continue
+      if (!notify) continue
 
       const { data: subscriptions } = await supabase
         .from('push_subscriptions')
         .select('*')
         .eq('user_id', settings.user_id)
 
-      const title = recommendation === 'open' ? 'Ouvre les fenêtres 🌬️' : 'Ferme les fenêtres 🪟'
-      const body =
-        recommendation === 'open'
-          ? `Intérieur ${Math.round(station.indoorTemp)}°C / humidex ${Math.round(indoorHumidex)}, il fait plus frais dehors (${Math.round(outdoorTemp)}°C).`
-          : `L'extérieur devient moins favorable (${Math.round(outdoorTemp)}°C), pense à refermer.`
+      const title = notify === 'open' ? 'Ouvre les fenêtres 🌬️' : 'Ferme les fenêtres 🪟'
+      const body = notify === 'open'
+        ? (plan.closeAt ? `Favorable jusqu'à ${formatTime(plan.closeAt)}.` : 'Favorable pour un moment.')
+        : "Le créneau favorable est terminé."
 
       for (const sub of subscriptions || []) {
         try {
@@ -108,10 +123,11 @@ serve(async (req) => {
       }
 
       await supabase
-        .from('window_notification_state')
-        .upsert({ user_id: settings.user_id, last_recommendation: recommendation, last_sent_at: new Date().toISOString() })
+        .from('window_forecast')
+        .update(notify === 'open' ? { open_notified: true } : { close_notified: true })
+        .eq('user_id', settings.user_id)
 
-      results.push({ user_id: settings.user_id, recommendation })
+      results.push({ user_id: settings.user_id, notify, openAt: plan.openAt, closeAt: plan.closeAt })
     } catch (err: any) {
       results.push({ user_id: settings.user_id, error: err.message || String(err) })
     }
