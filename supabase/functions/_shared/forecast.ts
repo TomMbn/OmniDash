@@ -71,11 +71,12 @@ export function simulateWindowPlan(
   const n = hourly.time.length
   const tauClosed = TAU_CLOSED_HOURS[wallType] ?? TAU_CLOSED_HOURS.medium
 
-  // Passe 1 : trajectoire "toujours fermé" pour repérer le premier créneau candidat
+  // Passe 1 : trajectoire "toujours fermé" pour repérer le premier créneau candidat.
+  // Le premier point est la lecture Netatmo actuelle telle quelle (pas encore simulée).
   const baseline: number[] = []
   let t = currentIndoorTemp
   for (let i = 0; i < n; i++) {
-    t = stepTemperature(t, hourly.temperature_2m[i], tauClosed)
+    if (i > 0) t = stepTemperature(t, hourly.temperature_2m[i - 1], tauClosed)
     baseline.push(t)
   }
 
@@ -105,8 +106,10 @@ export function simulateWindowPlan(
   t = currentIndoorTemp
   for (let i = 0; i < n; i++) {
     if (i === openIdx) windowOpen = true
-    const tau = windowOpen ? TAU_OPEN_HOURS : tauClosed
-    t = stepTemperature(t, hourly.temperature_2m[i], tau)
+    if (i > 0) {
+      const tau = windowOpen ? TAU_OPEN_HOURS : tauClosed
+      t = stepTemperature(t, hourly.temperature_2m[i - 1], tau)
+    }
     real.push(t)
 
     if (windowOpen && closeIdx === -1) {

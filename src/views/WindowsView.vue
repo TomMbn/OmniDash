@@ -384,7 +384,7 @@ const simulateWindowPlan = (hourlyRaw, currentIndoorTemp, currentIndoorHumidity,
   const baseline = []
   let t = currentIndoorTemp
   for (let i = 0; i < n; i++) {
-    t = stepTemperature(t, hourly.temperature_2m[i], tauClosed)
+    if (i > 0) t = stepTemperature(t, hourly.temperature_2m[i - 1], tauClosed)
     baseline.push(t)
   }
 
@@ -412,8 +412,10 @@ const simulateWindowPlan = (hourlyRaw, currentIndoorTemp, currentIndoorHumidity,
   t = currentIndoorTemp
   for (let i = 0; i < n; i++) {
     if (i === openIdx) windowOpen = true
-    const tau = windowOpen ? TAU_OPEN_HOURS : tauClosed
-    t = stepTemperature(t, hourly.temperature_2m[i], tau)
+    if (i > 0) {
+      const tau = windowOpen ? TAU_OPEN_HOURS : tauClosed
+      t = stepTemperature(t, hourly.temperature_2m[i - 1], tau)
+    }
     real.push(t)
 
     if (windowOpen && closeIdx === -1) {
