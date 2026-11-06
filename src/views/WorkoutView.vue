@@ -2017,8 +2017,9 @@ const removeSet = async (block, sIndex) => {
 
   .live-list .card-title { padding: var(--space-1) var(--space-3) var(--space-2); }
 
-  .orb--a { top: -50px; right: 8%; width: 220px; height: 220px; }
-  .orb--b { top: 60px; right: -10px; width: 120px; height: 120px; }
+  .orb--a { top: auto; right: -50px; bottom: -50px; width: 240px; height: 240px; }
+  .orb--b { top: auto; right: 20px; bottom: 200px; width: 90px; height: 90px; }
+  .orb--c { right: 240px; bottom: 150px; }
   .banner-text { max-width: 60%; }
   .stepper-input { font-size: var(--text-geant); }
 }
