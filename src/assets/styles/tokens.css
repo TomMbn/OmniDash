@@ -89,6 +89,7 @@
   --orb-peche: radial-gradient(circle at 45% 45%, #FFFFFF 0%, #FFE9DA 40%, #FFC8A6 75%, #FBA97E 100%);
   --orb-opacity: 1;
   --avatar:    linear-gradient(120deg, #CFC3FA 0%, #F6B6D6 100%);
+  --scrim:     rgba(21, 21, 26, 0.45);
 
   /* ── Typographie ── */
   --font-sans:  'Onest', system-ui, sans-serif;

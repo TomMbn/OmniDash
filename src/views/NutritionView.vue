@@ -210,7 +210,7 @@
               <div class="modal-icon"><Archive :size="16" stroke-width="1.75" /></div>
               <h3 class="modal-title">Mon meal prep</h3>
             </div>
-            <button @click="showLibrary = false" class="modal-close"><X :size="18" stroke-width="1.75" /></button>
+            <button @click="showLibrary = false" class="modal-close" aria-label="Fermer"><X :size="18" stroke-width="1.75" /></button>
           </div>
 
           <div class="modal-body">
@@ -234,7 +234,7 @@
                   </div>
                   <div class="saved-meal-actions">
                     <button @click="openPlanModal(meal)" class="btn-sm-accent">Planifier</button>
-                    <button @click="deleteSavedMeal(meal.id)" class="meal-action-btn meal-action-btn--danger">
+                    <button @click="deleteSavedMeal(meal.id)" class="meal-action-btn meal-action-btn--danger" aria-label="Supprimer ce repas enregistré">
                       <Trash2 :size="14" stroke-width="1.75" />
                     </button>
                   </div>
@@ -261,7 +261,7 @@
               <div class="modal-icon"><Calendar :size="16" stroke-width="1.75" /></div>
               <h3 class="modal-title">Planification</h3>
             </div>
-            <button @click="showPlanningModal = false" class="modal-close"><X :size="18" stroke-width="1.75" /></button>
+            <button @click="showPlanningModal = false" class="modal-close" aria-label="Fermer"><X :size="18" stroke-width="1.75" /></button>
           </div>
 
           <div class="modal-body">
@@ -305,7 +305,7 @@
               <div class="modal-icon"><Settings :size="16" stroke-width="1.75" /></div>
               <h3 class="modal-title">Configuration</h3>
             </div>
-            <button @click="showSettings = false" class="modal-close"><X :size="18" stroke-width="1.75" /></button>
+            <button @click="showSettings = false" class="modal-close" aria-label="Fermer"><X :size="18" stroke-width="1.75" /></button>
           </div>
 
           <div class="modal-body">
@@ -410,7 +410,7 @@
               <div class="modal-icon"><Repeat :size="16" stroke-width="1.75" /></div>
               <h3 class="modal-title">Mes habitudes</h3>
             </div>
-            <button @click="showHabits = false" class="modal-close"><X :size="18" stroke-width="1.75" /></button>
+            <button @click="showHabits = false" class="modal-close" aria-label="Fermer"><X :size="18" stroke-width="1.75" /></button>
           </div>
 
           <div class="modal-body">
@@ -432,7 +432,7 @@
                       <span>L {{ habit.fats }}g</span>
                     </div>
                   </div>
-                  <button @click="deleteHabit(habit.id)" class="meal-action-btn meal-action-btn--danger">
+                  <button @click="deleteHabit(habit.id)" class="meal-action-btn meal-action-btn--danger" aria-label="Supprimer cette habitude">
                     <Trash2 :size="14" stroke-width="1.75" />
                   </button>
                 </div>
@@ -480,7 +480,7 @@
               <div class="modal-icon"><Pencil :size="16" stroke-width="1.75" /></div>
               <h3 class="modal-title">Modifier</h3>
             </div>
-            <button @click="showEditModal = false" class="modal-close"><X :size="18" stroke-width="1.75" /></button>
+            <button @click="showEditModal = false" class="modal-close" aria-label="Fermer"><X :size="18" stroke-width="1.75" /></button>
           </div>
           <div class="modal-body">
             <div class="field-group" style="margin-bottom:16px">
@@ -520,6 +520,7 @@
 import { ref, computed, onMounted, watch } from 'vue'
 import { supabase } from '@/supabase'
 import { useAuth } from '@/composables/useAuth'
+import { useConfirm } from '@/composables/useConfirm'
 import { calorieState } from '@/composables/useCalorieStatus'
 import {
   ArrowUp, Calendar, Check, CheckCircle2, ChevronLeft, ChevronRight, Circle,
@@ -528,6 +529,7 @@ import {
 import HydrationWidget from '@/components/HydrationWidget.vue'
 
 const { user } = useAuth()
+const { askConfirm } = useConfirm()
 
 const touchStart = ref(0)
 const handleTouchStart = (e) => { touchStart.value = e.touches[0].clientX }
@@ -757,7 +759,7 @@ const addHabit = async () => {
 }
 
 const deleteHabit = async (id) => {
-  if (!confirm('Supprimer cette habitude ?')) return
+  if (!await askConfirm({ title: 'Supprimer cette habitude ?', detail: 'Cette action est définitive.' })) return
   const { error } = await supabase.from('recurring_meals').delete().eq('id', id)
   if (!error) recurringMeals.value = recurringMeals.value.filter(h => h.id !== id)
 }
@@ -805,7 +807,7 @@ const saveAnalyzedMeal = async () => {
 }
 
 const deleteMeal = async (id) => {
-  if (!confirm('Supprimer ce repas ?')) return
+  if (!await askConfirm({ title: 'Supprimer ce repas ?', detail: 'Cette action est définitive.' })) return
   const { error } = await supabase.from('nutrition_logs').delete().eq('id', id)
   if (!error) todaysMeals.value = todaysMeals.value.filter(m => m.id !== id)
 }
@@ -854,7 +856,7 @@ const dispatchPlannedMeals = async () => {
 }
 
 const deleteSavedMeal = async (id) => {
-  if (!confirm('Supprimer ?')) return
+  if (!await askConfirm({ title: 'Supprimer ce repas enregistré ?', detail: 'Cette action est définitive.' })) return
   const { error } = await supabase.from('saved_meals').delete().eq('id', id)
   if (!error) savedMeals.value = savedMeals.value.filter(m => m.id !== id)
 }
@@ -900,6 +902,7 @@ watch(isAnyModalOpen, (open) => { document.body.style.overflow = open ? 'hidden'
 }
 
 .view-title {
+  min-width: 0;
   font-size: var(--text-xl);
   font-weight: 600;
   letter-spacing: -0.02em;
@@ -909,7 +912,6 @@ watch(isAnyModalOpen, (open) => { document.body.style.overflow = open ? 'hidden'
 .view-title-soft {
   font-size: var(--text-lg);
   color: var(--text-secondary);
-  white-space: nowrap;
 }
 
 .head-actions {
@@ -1399,8 +1401,7 @@ watch(isAnyModalOpen, (open) => { document.body.style.overflow = open ? 'hidden'
     line-height: 1.1;
   }
 
-  .pill-btn { padding: 0 18px; }
-  .pill-text { display: inline; }
+  .card { padding: 20px; }
   .date-nav { align-self: flex-start; gap: var(--space-3); }
   .banner { padding: var(--space-6) 28px; }
 
@@ -1415,6 +1416,9 @@ watch(isAnyModalOpen, (open) => { document.body.style.overflow = open ? 'hidden'
 /* ── Desktop ── */
 @media (min-width: 1100px) {
   .nutrition-view { gap: var(--space-4); }
+
+  .pill-btn { padding: 0 18px; }
+  .pill-text { display: inline; }
 
   .layout {
     grid-template-columns: minmax(0, 1fr) 400px;
@@ -1452,7 +1456,7 @@ watch(isAnyModalOpen, (open) => { document.body.style.overflow = open ? 'hidden'
   display: flex;
   align-items: flex-end;
   justify-content: center;
-  background: rgba(15, 16, 20, 0.45);
+  background: var(--scrim);
 }
 
 .modal-sheet,

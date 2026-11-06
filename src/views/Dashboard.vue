@@ -585,7 +585,7 @@ onMounted(async () => {
   justify-content: center;
   width: 44px;
   height: 44px;
-  border-radius: 14px;
+  border-radius: var(--radius-md);
   background: var(--avatar);
   color: var(--on-rail-active-text);
   font-size: var(--text-sm);
@@ -710,7 +710,7 @@ onMounted(async () => {
   display: flex;
   flex-direction: column;
   min-width: 0;
-  padding: 14px;
+  padding: var(--space-4);
   border-radius: var(--radius-lg);
   background: var(--bg-raised);
   color: inherit;
@@ -955,6 +955,7 @@ a.card:active { transform: scale(0.985); }
 
 /* ── Tablette ── */
 @media (min-width: 768px) {
+  .card { padding: 20px; }
   .dash-break { display: none; }
   .dash-head .dash-add { display: inline-flex; }
   .dash-avatar { display: none; }
@@ -998,7 +999,6 @@ a.card:active { transform: scale(0.985); }
   .orb--b { top: 96px; right: 24px; width: 180px; height: 180px; }
   .orb--c { top: 176px; right: 346px; bottom: auto; width: 84px; height: 84px; }
 
-  .card { padding: 20px; }
 
   .card--nutri {
     flex-direction: row;

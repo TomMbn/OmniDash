@@ -39,11 +39,14 @@
 
     <!-- Mobile Bottom Nav -->
     <MobileNav v-if="user" />
+
+    <ConfirmDialog />
   </div>
 </template>
 
 <script setup>
 import MobileNav from '@/components/MobileNav.vue'
+import ConfirmDialog from '@/components/ConfirmDialog.vue'
 import { onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuth } from '@/composables/useAuth'
@@ -118,9 +121,9 @@ const handleLogout = async () => {
   justify-content: center;
   width: 40px;
   height: 40px;
-  border-radius: 14px;
-  background: linear-gradient(120deg, #CFC3FA 0%, #F6B6D6 60%, #A9D6FA 100%);
-  color: #15151A;
+  border-radius: var(--radius-md);
+  background: var(--avatar);
+  color: var(--on-rail-active-text);
   font-size: var(--text-lg);
   font-weight: 600;
   text-decoration: none;
@@ -215,16 +218,14 @@ const handleLogout = async () => {
 /* ── Desktop ── */
 @media (min-width: 768px) {
   .app-shell--auth {
-    gap: var(--space-5);
+    gap: calc(var(--space-5) - 4px);
     padding: var(--space-5);
   }
 
   .rail { display: flex; }
 
-  .app-content {
-    padding: 0;
-    border-radius: var(--radius-lg);
-  }
+  /* La zone défilante coupe ce qui dépasse à gauche : 4 px pour la marge optique des titres */
+  .app-content { padding: 0 0 0 4px; }
 }
 
 /* ── Page transition ── */

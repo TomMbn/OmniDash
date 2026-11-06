@@ -1,273 +1,195 @@
 <template>
   <div class="travel-view">
-    <!-- Header -->
-    <header class="view-header">
-      <div class="module-title-group">
-        <div class="module-icon">
-          <Plane :size="18" stroke-width="1.75" />
-        </div>
-        <div>
-          <h1 class="view-title">Travel Planner</h1>
-          <p class="view-sub">Planifiez votre prochain voyage avec l'IA</p>
-        </div>
-      </div>
 
-      <button v-if="currentStep !== 'form'" @click="goBack" class="back-btn">
-        <ArrowLeft :size="14" stroke-width="2" />
+    <!-- ── En-tête ── -->
+    <header class="view-head">
+      <h1 class="view-title">
+        Travel,{{ ' ' }}<br class="view-break" />
+        <span class="view-title-soft">{{ headSubtitle }}</span>
+      </h1>
+      <button v-if="currentStep !== 'form'" class="btn btn--light" @click="goBack">
+        <ArrowLeft :size="16" stroke-width="2" />
         Retour
       </button>
     </header>
 
-    <!-- Error Banner -->
-    <div v-if="errorMessage" class="error-banner">
-      <AlertCircle :size="16" class="error-icon" stroke-width="2" />
-      <div class="error-body">
-        <p class="error-title">Une erreur est survenue</p>
-        <p class="error-msg">{{ errorMessage }}</p>
-      </div>
-      <button @click="errorMessage = null" class="error-close">
-        <X :size="14" stroke-width="2" />
+    <!-- ── Erreur ── -->
+    <div v-if="errorMessage" class="error error--close" role="alert">
+      <p>{{ errorMessage }}</p>
+      <button class="error-close" aria-label="Fermer" @click="errorMessage = null">
+        <X :size="16" stroke-width="2" />
       </button>
     </div>
 
-    <!-- ══ STEP 1 : FORMULAIRE ══ -->
-    <form v-if="currentStep === 'form'" @submit.prevent="handleGenerate" class="form-card">
-      <!-- Destination -->
-      <div class="field-group">
-        <label for="destination" class="field-label">
-          Destination <span class="field-optional">(optionnel)</span>
-        </label>
-        <div class="input-wrap">
-          <MapPin :size="16" class="input-icon" />
+    <!-- ══ Formulaire ══ -->
+    <div v-if="currentStep === 'form'" class="form-layout">
+      <section class="banner" aria-label="Nouveau voyage">
+        <span class="orb orb--a" aria-hidden="true" />
+        <span class="orb orb--b" aria-hidden="true" />
+        <span class="orb orb--c" aria-hidden="true" />
+        <h2 class="banner-title">
+          Où veux-tu partir ?<br />
+          <span class="banner-title-soft">L'IA prépare le voyage</span>
+        </h2>
+      </section>
+
+      <form class="card form" @submit.prevent="handleGenerate">
+        <div class="field-group">
+          <label for="destination" class="field-label">Destination (optionnel)</label>
           <input
             id="destination"
             v-model="form.destination"
             type="text"
-            placeholder="Ex : Japon, Road-trip Californie, Surprenez-moi…"
-            class="field-input field-input--icon"
+            class="field-input"
+            placeholder="Japon, road-trip en Californie"
           />
         </div>
-      </div>
 
-      <!-- Dates -->
-      <div class="dates-grid">
-        <div class="field-group">
-          <label for="dateDepart" class="field-label">Date de départ</label>
-          <div class="input-wrap">
-            <CalendarDays :size="16" class="input-icon" />
-            <input
-              id="dateDepart"
-              v-model="form.dateDepart"
-              type="date"
-              class="field-input field-input--icon"
-            />
+        <div class="dates">
+          <div class="field-group">
+            <label for="dateDepart" class="field-label">Départ</label>
+            <input id="dateDepart" v-model="form.dateDepart" type="date" class="field-input" />
+            <select v-model="departureTime" class="field-input" aria-label="Moment du départ">
+              <option v-for="moment in MOMENTS" :key="moment.value" :value="moment.value">{{ moment.label }}</option>
+            </select>
           </div>
-          <select v-model="departureTime" class="time-select">
-            <option value="matin">☀️ Matin</option>
-            <option value="apres-midi">🌤️ Après-midi</option>
-            <option value="soir">🌙 Soir</option>
-          </select>
-        </div>
-        <div class="field-group">
-          <label for="dateRetour" class="field-label">Date de retour</label>
-          <div class="input-wrap">
-            <CalendarDays :size="16" class="input-icon" />
-            <input
-              id="dateRetour"
-              v-model="form.dateRetour"
-              type="date"
-              class="field-input field-input--icon"
-            />
+          <div class="field-group">
+            <label for="dateRetour" class="field-label">Retour</label>
+            <input id="dateRetour" v-model="form.dateRetour" type="date" class="field-input" />
+            <select v-model="returnTime" class="field-input" aria-label="Moment du retour">
+              <option v-for="moment in MOMENTS" :key="moment.value" :value="moment.value">{{ moment.label }}</option>
+            </select>
           </div>
-          <select v-model="returnTime" class="time-select">
-            <option value="matin">☀️ Matin</option>
-            <option value="apres-midi">🌤️ Après-midi</option>
-            <option value="soir">🌙 Soir</option>
-          </select>
         </div>
-      </div>
 
-      <!-- Budget -->
-      <div class="field-group">
-        <label for="budget" class="field-label">Budget total (€)</label>
-        <div class="input-wrap">
-          <Euro :size="16" class="input-icon" />
+        <div class="field-group">
+          <label for="budget" class="field-label">Budget total (€)</label>
           <input
             id="budget"
             v-model.number="form.budget"
             type="number"
+            inputmode="numeric"
             min="0"
             step="50"
+            class="field-input"
             placeholder="1500"
-            class="field-input field-input--icon"
           />
         </div>
-      </div>
 
-      <!-- Trip summary tags -->
-      <div v-if="tripSummary" class="trip-tags">
-        <span v-for="tag in tripSummary" :key="tag.label" class="trip-tag">
-          <component :is="tag.icon" :size="11" />
-          {{ tag.label }}
-        </span>
-      </div>
-
-      <!-- Abroad toggle -->
-      <div class="toggle-row">
-        <div class="toggle-info">
-          <div class="toggle-globe">
-            <Globe :size="15" stroke-width="1.75" />
-          </div>
+        <div class="abroad">
           <div>
-            <p class="toggle-label">{{ isAbroad ? "Voyager à l'étranger" : 'Voyager en France' }}</p>
-            <p class="toggle-sub">{{ isAbroad ? 'Destinations hors de France' : 'France métropolitaine & outre-mer' }}</p>
+            <p class="abroad-title">{{ isAbroad ? "Voyager à l'étranger" : 'Voyager en France' }}</p>
+            <p class="card-sub">{{ isAbroad ? 'Destinations hors de France' : 'Métropole et outre-mer' }}</p>
           </div>
+          <button
+            type="button"
+            role="switch"
+            :aria-checked="isAbroad"
+            aria-label="Voyager à l'étranger"
+            class="switch"
+            :class="{ 'switch--on': isAbroad }"
+            @click="isAbroad = !isAbroad"
+          >
+            <span class="switch-thumb" />
+          </button>
         </div>
-        <button
-          type="button"
-          role="switch"
-          :aria-checked="isAbroad"
-          @click="isAbroad = !isAbroad"
-          class="toggle-switch"
-          :class="{ 'toggle-switch--on': isAbroad }"
-        >
-          <span class="toggle-thumb" :class="{ 'toggle-thumb--on': isAbroad }" />
+
+        <button type="submit" class="btn btn--dark btn--wide btn--tall" :disabled="!isFormValid || isLoading">
+          <Loader2 v-if="isLoading" class="spin" :size="18" />
+          {{ isLoading ? 'Génération en cours…' : 'Générer mon voyage' }}
         </button>
-      </div>
+      </form>
+    </div>
 
-      <!-- Submit -->
-      <button type="submit" :disabled="!isFormValid || isLoading" class="btn-generate">
-        <Sparkles v-if="!isLoading" :size="16" stroke-width="1.75" />
-        <Loader2 v-else class="spin" :size="16" />
-        <span>{{ isLoading ? 'Génération en cours…' : 'Générer mon voyage' }}</span>
-      </button>
-    </form>
-
-    <!-- ══ STEP 2 : SUGGESTIONS ══ -->
-    <div v-else-if="currentStep === 'suggestions'" class="suggestions-card">
-      <div class="suggestions-header">
-        <p class="suggestions-eyebrow">Pas d'idée ?</p>
-        <h3 class="suggestions-title">Voici 3 destinations pour vous</h3>
-        <p class="suggestions-sub">Cliquez sur celle qui vous inspire le plus</p>
-      </div>
-
+    <!-- ══ Suggestions ══ -->
+    <section v-else-if="currentStep === 'suggestions'" class="suggestions" aria-label="Destinations proposées">
       <div class="suggestions-grid">
         <button
           v-for="suggestion in suggestions"
           :key="suggestion.name"
-          @click="selectSuggestion(suggestion)"
+          class="card suggestion"
           :disabled="isLoading"
-          class="suggestion-btn"
+          @click="selectSuggestion(suggestion)"
         >
-          <span class="suggestion-emoji-bg">{{ suggestion.emoji }}</span>
-          <div class="suggestion-body">
-            <span class="suggestion-emoji">{{ suggestion.emoji }}</span>
-            <p class="suggestion-name">{{ suggestion.name }}</p>
-            <p class="suggestion-tagline">{{ suggestion.tagline }}</p>
-            <div class="suggestion-tags">
-              <span v-for="tag in suggestion.tags" :key="tag" class="suggestion-tag">{{ tag }}</span>
-            </div>
-            <p v-if="suggestion.budget_estime" class="suggestion-budget">
-              ~{{ suggestion.budget_estime.toLocaleString('fr-FR') }} €
-            </p>
-          </div>
+          <span class="suggestion-name">{{ suggestion.name }}</span>
+          <span class="suggestion-tagline">{{ suggestion.tagline }}</span>
+          <span class="suggestion-tags">
+            <span v-for="tag in suggestion.tags" :key="tag" class="tag">{{ tag }}</span>
+          </span>
+          <span v-if="suggestion.budget_estime" class="suggestion-budget">
+            Environ {{ suggestion.budget_estime.toLocaleString('fr-FR') }} €
+          </span>
         </button>
       </div>
-
-      <div v-if="isLoading" class="suggestions-loading">
+      <p v-if="isLoading" class="loading">
         <Loader2 class="spin" :size="18" />
-        <span>Préparation de votre itinéraire…</span>
-      </div>
-    </div>
+        Préparation de ton itinéraire…
+      </p>
+    </section>
 
-    <!-- ══ STEP 3 : PLANNER ══ -->
-    <div v-else-if="currentStep === 'planner'" class="planner-card">
-      <!-- Destination header -->
-      <div class="planner-header">
-        <div class="planner-dest-icon">
-          <MapPin :size="16" stroke-width="1.75" />
-        </div>
-        <div>
-          <p class="planner-dest-label">Destination</p>
-          <p class="planner-dest-name">{{ form.destination }}</p>
-        </div>
-        <div v-if="tripDuration" class="planner-duration">
-          <Clock :size="11" stroke-width="2" />
-          {{ tripDuration }} jour{{ tripDuration > 1 ? 's' : '' }}
-        </div>
-      </div>
+    <!-- ══ Voyage ══ -->
+    <div v-else-if="currentStep === 'planner'" class="planner">
+      <section class="banner banner--planner" aria-label="Destination">
+        <span class="orb orb--a" aria-hidden="true" />
+        <span class="orb orb--b" aria-hidden="true" />
+        <span class="orb orb--c" aria-hidden="true" />
+        <h2 class="banner-title">
+          {{ form.destination }},<br />
+          <span class="banner-title-soft">{{ dateRange }}</span>
+        </h2>
+        <p class="banner-meta">
+          <template v-if="tripDuration">{{ tripDuration }} jour{{ tripDuration > 1 ? 's' : '' }}, </template>{{ totalBudget.toLocaleString('fr-FR') }} € estimés
+        </p>
+      </section>
 
-      <!-- Planner tabs -->
-      <div class="planner-tabs">
+      <div class="segmented planner-tabs" role="tablist" aria-label="Sections du voyage">
         <button
           v-for="tab in tabs"
           :key="tab.id"
+          role="tab"
+          :aria-selected="activeTab === tab.id"
+          class="segmented-btn"
+          :class="{ 'segmented-btn--active': activeTab === tab.id }"
           @click="activeTab = tab.id"
-          class="planner-tab"
-          :class="{ 'planner-tab--active': activeTab === tab.id }"
-        >
-          <component :is="tab.icon" :size="14" stroke-width="2" />
-          {{ tab.label }}
-          <div v-if="activeTab === tab.id" class="tab-indicator" />
-        </button>
+        >{{ tab.label }}</button>
       </div>
 
-      <!-- Budget tab -->
-      <div v-if="activeTab === 'budget'" class="planner-content">
-        <div class="budget-total">
-          <span class="budget-total-label">Total estimé</span>
-          <span class="budget-total-value">{{ totalBudget.toLocaleString('fr-FR') }} €</span>
+      <section class="card budget" :class="{ 'pane--hidden': activeTab !== 'budget' }" aria-label="Budget">
+        <svg class="budget-ring" viewBox="0 0 36 36" aria-hidden="true">
+          <circle cx="18" cy="18" r="15.9" class="ring-track" pathLength="100" />
+          <circle
+            v-for="seg in budgetSegments"
+            :key="seg.category"
+            cx="18"
+            cy="18"
+            r="15.9"
+            class="ring-seg"
+            pathLength="100"
+            :stroke="seg.color"
+            :stroke-dasharray="`${seg.percent} 100`"
+            :stroke-dashoffset="-seg.offset"
+          />
+        </svg>
+        <div class="budget-body">
+          <p class="budget-total">{{ totalBudget.toLocaleString('fr-FR') }} €</p>
+          <ul class="budget-list">
+            <li v-for="item in budgetItems" :key="item.category">
+              <span :style="{ color: item.color }">{{ item.category }}</span>
+              <span>{{ item.amount.toLocaleString('fr-FR') }} €</span>
+            </li>
+          </ul>
         </div>
-        <div class="budget-grid">
-          <div v-for="item in budgetItems" :key="item.category" class="budget-item">
-            <div class="budget-icon" :style="item.iconStyle">
-              <component :is="item.icon" :size="18" stroke-width="1.75" />
-            </div>
-            <div class="budget-item-body">
-              <p class="budget-cat">{{ item.category }}</p>
-              <p class="budget-amount">{{ item.amount.toLocaleString('fr-FR') }} €</p>
-            </div>
-            <span class="budget-pct">{{ item.percent }}%</span>
-          </div>
-        </div>
-      </div>
+      </section>
 
-      <!-- Itinerary tab -->
-      <div v-if="activeTab === 'itinerary'" class="planner-content">
-        <div class="itinerary-list">
-          <div
-            v-for="(day, index) in itineraryDays"
-            :key="index"
-            class="itinerary-day"
-          >
-            <div class="day-timeline">
-              <div class="day-dot">{{ index + 1 }}</div>
-              <div v-if="index < itineraryDays.length - 1" class="day-line" />
-            </div>
-            <div class="day-card">
-              <p class="day-date">{{ formatItineraryDate(form.dateDepart, index) }}</p>
-              <p class="day-title">{{ day.titre }}</p>
-              <div class="day-slots">
-                <div v-if="day.matin" class="day-slot">
-                  <span class="slot-label">Matin</span>
-                  <p class="slot-text">{{ day.matin }}</p>
-                </div>
-                <div v-if="day.midi" class="day-slot">
-                  <span class="slot-label">Midi</span>
-                  <p class="slot-text">{{ day.midi }}</p>
-                </div>
-                <div v-if="day.apres_midi" class="day-slot">
-                  <span class="slot-label">A-midi</span>
-                  <p class="slot-text">{{ day.apres_midi }}</p>
-                </div>
-                <div v-if="day.soir" class="day-slot">
-                  <span class="slot-label">Soir</span>
-                  <p class="slot-text">{{ day.soir }}</p>
-                </div>
-              </div>
-            </div>
+      <div class="days" :class="{ 'pane--hidden': activeTab !== 'itinerary' }">
+        <section v-for="(day, index) in itineraryDays" :key="index" class="card day">
+          <p class="card-sub">{{ formatItineraryDate(form.dateDepart, index) }}</p>
+          <h3 class="day-title">{{ day.titre || `Jour ${index + 1}` }}</h3>
+          <div v-for="slot in daySlots(day)" :key="slot.label" class="slot">
+            <span class="slot-label">{{ slot.label }}</span>
+            <p class="slot-text">{{ slot.text }}</p>
           </div>
-        </div>
+        </section>
       </div>
     </div>
   </div>
@@ -276,30 +198,12 @@
 <script setup>
 import { ref, computed } from 'vue'
 import { supabase } from '@/supabase'
-import {
-  Plane,
-  MapPin,
-  CalendarDays,
-  Euro,
-  Sparkles,
-  Loader2,
-  Route,
-  Wallet,
-  Clock,
-  ArrowLeft,
-  TrainFront,
-  BedDouble,
-  UtensilsCrossed,
-  Ticket,
-  AlertCircle,
-  X,
-  Globe
-} from 'lucide-vue-next'
+import { ArrowLeft, Loader2, X } from 'lucide-vue-next'
 
 // ── Step State ──
 const currentStep = ref('form') // 'form' | 'suggestions' | 'planner'
 const isLoading = ref(false)
-const activeTab = ref('budget')
+const activeTab = ref('itinerary')
 const isAbroad = ref(true)
 const departureTime = ref('matin')
 const returnTime = ref('matin')
@@ -315,8 +219,14 @@ const form = ref({
 
 // ── Tabs Config ──
 const tabs = [
-  { id: 'budget', label: 'Budget', icon: Wallet },
-  { id: 'itinerary', label: 'Itinéraire', icon: Route }
+  { id: 'itinerary', label: 'Itinéraire' },
+  { id: 'budget', label: 'Budget' }
+]
+
+const MOMENTS = [
+  { value: 'matin', label: 'Matin' },
+  { value: 'apres-midi', label: 'Après-midi' },
+  { value: 'soir', label: 'Soir' }
 ]
 
 // ── Data from API ──
@@ -327,10 +237,10 @@ const cameFromSuggestions = ref(false)
 
 // ── Budget category → UI mapping ──
 const BUDGET_UI_MAP = {
-  transport:  { category: 'Transport',   icon: TrainFront,      iconStyle: { background: 'rgba(122,145,184,0.12)', color: '#7A91B8' } },
-  logement:   { category: 'Hébergement', icon: BedDouble,       iconStyle: { background: 'rgba(160,139,106,0.12)', color: '#A08B6A' } },
-  nourriture: { category: 'Nourriture',  icon: UtensilsCrossed, iconStyle: { background: 'rgba(125,173,138,0.12)', color: '#7DAD8A' } },
-  activites:  { category: 'Activités',   icon: Ticket,          iconStyle: { background: 'rgba(212,151,106,0.12)', color: '#D4976A' } }
+  transport:  { category: 'Transport',   color: 'var(--module-sleep)' },
+  logement:   { category: 'Hébergement', color: 'var(--accent)' },
+  nourriture: { category: 'Nourriture',  color: 'var(--module-windows)' },
+  activites:  { category: 'Activités',   color: 'var(--module-dress)' }
 }
 
 // ── Computed ──
@@ -351,19 +261,40 @@ const tripDuration = computed(() => {
   return diff > 0 ? diff : null
 })
 
-const tripSummary = computed(() => {
-  const tags = []
-  if (form.value.destination.trim()) {
-    tags.push({ label: form.value.destination, icon: MapPin })
-  }
-  if (tripDuration.value) {
-    tags.push({ label: `${tripDuration.value} jour${tripDuration.value > 1 ? 's' : ''}`, icon: Clock })
-  }
-  if (form.value.budget > 0) {
-    tags.push({ label: `${form.value.budget.toLocaleString('fr-FR')} €`, icon: Euro })
-  }
-  return tags.length > 0 ? tags : null
+const formatDayMonth = (date) =>
+  new Intl.DateTimeFormat('fr-FR', { day: 'numeric', month: 'long' }).format(new Date(date))
+
+const dateRange = computed(() => {
+  const start = new Date(form.value.dateDepart)
+  const end = new Date(form.value.dateRetour)
+  const sameMonth = start.getMonth() === end.getMonth() && start.getFullYear() === end.getFullYear()
+  return sameMonth
+    ? `${start.getDate()} au ${formatDayMonth(end)}`
+    : `${formatDayMonth(start)} au ${formatDayMonth(end)}`
 })
+
+const headSubtitle = computed(() => {
+  if (currentStep.value === 'suggestions') return 'trois idées pour toi'
+  if (currentStep.value === 'planner') return 'ton itinéraire'
+  return 'nouveau voyage'
+})
+
+const budgetSegments = computed(() => {
+  let offset = 0
+  return budgetItems.value.map(item => {
+    const segment = { ...item, offset }
+    offset += item.percent
+    return segment
+  })
+})
+
+const daySlots = (day) =>
+  [
+    { label: 'Matin', text: day.matin },
+    { label: 'Midi', text: day.midi },
+    { label: 'Après-midi', text: day.apres_midi },
+    { label: 'Soir', text: day.soir }
+  ].filter(slot => slot.text)
 
 const totalBudget = computed(() => budgetItems.value.reduce((sum, item) => sum + item.amount, 0))
 
@@ -372,10 +303,10 @@ function formatItineraryDate(startDate, index) {
   const date = new Date(startDate)
   date.setDate(date.getDate() + index)
   return new Intl.DateTimeFormat('fr-FR', {
-    weekday: 'short',
-    day: '2-digit',
-    month: 'short'
-  }).format(date).toUpperCase()
+    weekday: 'long',
+    day: 'numeric',
+    month: 'long'
+  }).format(date)
 }
 
 // ── API Call ──
@@ -439,10 +370,10 @@ const handleGenerate = async () => {
     } else if (data.budget_breakdown) {
       applyPlannerData(data)
       cameFromSuggestions.value = false
-      activeTab.value = 'budget'
+      activeTab.value = 'itinerary'
       currentStep.value = 'planner'
     } else {
-      throw new Error("Réponse inattendue de l'IA. Veuillez réessayer.")
+      throw new Error("Réponse inattendue de l'IA, réessaie.")
     }
   } catch (err) {
     errorMessage.value = err.message || 'Une erreur inattendue est survenue.'
@@ -462,10 +393,10 @@ const selectSuggestion = async (suggestion) => {
     if (data.budget_breakdown) {
       applyPlannerData(data)
       cameFromSuggestions.value = true
-      activeTab.value = 'budget'
+      activeTab.value = 'itinerary'
       currentStep.value = 'planner'
     } else {
-      throw new Error("Réponse inattendue de l'IA. Veuillez réessayer.")
+      throw new Error("Réponse inattendue de l'IA, réessaie.")
     }
   } catch (err) {
     errorMessage.value = err.message || 'Une erreur inattendue est survenue.'
@@ -496,759 +427,513 @@ const goBack = () => {
 </script>
 
 <style scoped>
-.travel-view {
-  max-width: 720px;
-  margin: 0 auto;
-  padding: 8px 0 100px;
+/* ── En-tête ── */
+.view-head {
   display: flex;
   flex-direction: column;
-  gap: 24px;
-  user-select: none;
-}
-
-/* ── Header ── */
-.view-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  padding: 0 2px;
-}
-
-.module-title-group {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.module-icon {
-  width: 36px;
-  height: 36px;
-  flex-shrink: 0;
-  border-radius: var(--radius-sm);
-  background: var(--module-travel-dim);
-  border: 1px solid var(--module-travel-border);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--module-travel);
+  gap: var(--space-3);
+  align-items: flex-start;
 }
 
 .view-title {
-  font-family: var(--font-serif);
-  font-size: var(--text-2xl);
-  font-weight: 400;
-  color: var(--text-primary);
-  margin: 0;
+  font-size: var(--text-xl);
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  line-height: 1.22;
 }
 
-.view-sub {
-  font-size: 9px;
-  font-weight: 500;
-  text-transform: uppercase;
-  letter-spacing: 0.12em;
-  color: var(--text-muted);
-  margin-top: 1px;
-}
+.view-title-soft { color: var(--text-secondary); }
 
-.back-btn {
+/* ── Boutons ── */
+.btn {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  padding: 8px 14px;
-  background: var(--bg-overlay);
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-sm);
-  font-size: 10px;
-  font-weight: 500;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  color: var(--text-muted);
+  justify-content: center;
+  gap: var(--space-2);
+  min-height: 44px;
+  padding: 0 18px;
+  border: none;
+  border-radius: var(--radius-pill);
+  font-family: var(--font-sans);
+  font-size: var(--text-xs);
+  font-weight: 600;
+  white-space: nowrap;
   cursor: pointer;
-  transition: all var(--dur-fast) var(--ease-out);
-  flex-shrink: 0;
+  transition: opacity var(--dur-fast) var(--ease-out), transform var(--dur-fast) var(--ease-out);
 }
 
-.back-btn:hover {
-  border-color: var(--border-default);
+.btn:hover { opacity: 0.88; }
+.btn:active { transform: scale(0.97); }
+.btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.btn--dark  { background: var(--action); color: var(--on-action); }
+.btn--soft  { background: var(--bg-overlay); color: var(--text-primary); }
+.btn--light { background: var(--bg-raised); color: var(--text-primary); }
+.btn--wide  { width: 100%; }
+
+.spin { animation: spin 0.8s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.error {
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-md);
+  background: var(--status-error-dim);
+  font-size: var(--text-xs);
+  font-weight: 500;
+  color: var(--status-error);
+}
+
+/* ── Bandeau ── */
+.banner {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  gap: var(--space-2);
+  min-height: 160px;
+  padding: 18px;
+  overflow: hidden;
+  border-radius: var(--radius-lg);
+}
+
+.banner > :not(.orb) {
+  position: relative;
+  z-index: var(--z-raised);
+}
+
+.banner-title {
+  max-width: 72%;
+  font-size: var(--text-xl);
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  line-height: 1.22;
+}
+
+.banner-title-soft { color: var(--text-secondary); }
+
+.chip {
+  display: inline-flex;
+  padding: 5px 10px;
+  border-radius: var(--radius-pill);
+  background: var(--bg-raised);
+  font-size: var(--text-2xs);
+  font-weight: 500;
+  color: var(--status-success);
+}
+
+.orb {
+  position: absolute;
+  border-radius: 50%;
+  opacity: var(--orb-opacity);
+  pointer-events: none;
+}
+
+/* ── Cartes ── */
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  min-width: 0;
+  padding: var(--space-4);
+  border-radius: var(--radius-lg);
+  background: var(--bg-raised);
+}
+
+.card-title {
+  font-size: var(--text-lg);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.card-label,
+.card-sub {
+  font-size: var(--text-2xs);
+  font-weight: 500;
   color: var(--text-secondary);
 }
 
-/* ── Error banner ── */
-.error-banner {
+/* ── Sélecteur ── */
+.segmented {
   display: flex;
-  align-items: flex-start;
-  gap: 12px;
-  padding: 14px 16px;
-  background: rgba(239, 68, 68, 0.08);
-  border: 1px solid rgba(239, 68, 68, 0.18);
-  border-radius: var(--radius-md);
+  gap: 2px;
+  padding: var(--space-1);
+  border-radius: var(--radius-pill);
+  background: var(--bg-overlay);
 }
 
-.error-icon { color: var(--status-error); margin-top: 1px; flex-shrink: 0; }
-
-.error-body { flex: 1; min-width: 0; }
-
-.error-title {
-  font-size: 11px;
-  font-weight: 500;
-  color: var(--status-error);
-  margin: 0;
+.segmented-btn {
+  flex: 1;
+  min-height: 44px;
+  padding: 0 14px;
+  border: none;
+  border-radius: var(--radius-pill);
+  background: none;
+  font-family: var(--font-sans);
+  font-size: var(--text-xs);
+  font-weight: 600;
+  color: var(--text-secondary);
+  white-space: nowrap;
+  cursor: pointer;
 }
 
-.error-msg {
-  font-size: 11px;
-  color: var(--status-error);
-  opacity: 0.75;
-  margin: 3px 0 0;
+.segmented-btn--active {
+  background: var(--action);
+  color: var(--on-action);
+}
+
+.travel-view {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  max-width: 1480px;
+  margin: 0 auto;
+}
+
+.btn--tall { min-height: 56px; font-size: var(--text-sm); }
+
+.error--close {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
 }
 
 .error-close {
-  color: rgba(239, 68, 68, 0.5);
-  background: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  flex-shrink: 0;
   border: none;
+  background: none;
+  color: inherit;
   cursor: pointer;
-  padding: 2px;
-  transition: color var(--dur-fast) var(--ease-out);
 }
 
-.error-close:hover { color: var(--status-error); }
+.banner {
+  background: var(--aurore-travel);
+}
 
-/* ── Form card ── */
-.form-card {
-  background: var(--bg-raised);
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-xl);
-  padding: 28px 24px;
+.orb--a { top: -46px; right: -30px; width: 130px; height: 130px; background: var(--orb-ciel); }
+.orb--b { top: 56px; right: -26px; width: 70px; height: 70px; background: var(--orb-peche); }
+.orb--c { display: none; }
+
+.banner-meta {
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+}
+
+/* ── Formulaire ── */
+.form-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-3);
+}
+
+.form { gap: var(--space-3); }
+
+.field-group {
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 6px;
+  min-width: 0;
 }
-
-/* ── Field groups ── */
-.field-group { display: flex; flex-direction: column; gap: 8px; }
 
 .field-label {
-  font-size: 10px;
+  font-size: var(--text-2xs);
   font-weight: 500;
-  text-transform: uppercase;
-  letter-spacing: 0.12em;
-  color: var(--text-muted);
-}
-
-.field-optional {
-  font-size: 10px;
-  font-weight: 400;
-  text-transform: none;
-  letter-spacing: 0;
-  color: var(--text-muted);
-  opacity: 0.6;
-}
-
-.input-wrap { position: relative; }
-
-.input-icon {
-  position: absolute;
-  left: 14px;
-  top: 50%;
-  transform: translateY(-50%);
-  color: var(--text-muted);
-  pointer-events: none;
+  color: var(--text-secondary);
 }
 
 .field-input {
   width: 100%;
-  padding: 12px 16px;
-  background: var(--bg-subtle);
-  border: 1px solid var(--border-default);
+  min-width: 0;
+  min-height: 48px;
+  padding: 0 var(--space-3);
+  border: 1px solid var(--border-subtle);
   border-radius: var(--radius-md);
+  background: var(--bg-overlay);
   font-family: var(--font-sans);
-  font-size: var(--text-sm);
+  font-size: var(--text-md);
   color: var(--text-primary);
   outline: none;
-  transition: border-color var(--dur-fast) var(--ease-out), box-shadow var(--dur-fast) var(--ease-out);
-  box-sizing: border-box;
 }
 
-.field-input--icon { padding-left: 40px; }
+.field-input:focus { border-color: var(--accent); }
+.field-input::placeholder { color: var(--text-secondary); }
 
-.field-input:focus {
-  border-color: var(--module-travel-border);
-  box-shadow: 0 0 0 3px rgba(160, 139, 106, 0.08);
-}
-
-.field-input::placeholder { color: var(--text-muted); opacity: 0.45; }
-
-/* ── Dates grid ── */
-.dates-grid {
+.dates {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 16px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-2);
 }
 
-@media (max-width: 480px) {
-  .dates-grid { grid-template-columns: 1fr; }
-}
-
-.time-select {
-  margin-top: 6px;
-  width: 100%;
-  padding: 9px 14px;
-  background: var(--bg-subtle);
-  border: 1px solid var(--border-default);
-  border-radius: var(--radius-sm);
-  font-family: var(--font-sans);
-  font-size: 11px;
-  font-weight: 500;
-  color: var(--text-secondary);
-  outline: none;
-  cursor: pointer;
-  appearance: none;
-  transition: border-color var(--dur-fast) var(--ease-out);
-}
-
-.time-select:focus { border-color: var(--module-travel-border); }
-
-/* ── Trip summary tags ── */
-.trip-tags {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-
-.trip-tag {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  padding: 5px 10px;
-  background: var(--module-travel-dim);
-  border: 1px solid var(--module-travel-border);
-  border-radius: var(--radius-pill);
-  font-size: 10px;
-  font-weight: 500;
-  color: var(--module-travel);
-}
-
-/* ── Abroad toggle ── */
-.toggle-row {
+.abroad {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 16px;
-  padding: 14px 16px;
-  background: var(--bg-subtle);
-  border: 1px solid var(--border-subtle);
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
   border-radius: var(--radius-md);
+  background: var(--bg-overlay);
 }
 
-.toggle-info { display: flex; align-items: center; gap: 12px; }
+.abroad-title { font-size: var(--text-sm); font-weight: 500; }
 
-.toggle-globe {
-  width: 32px;
-  height: 32px;
-  background: var(--module-travel-dim);
-  border: 1px solid var(--module-travel-border);
-  border-radius: var(--radius-sm);
+.switch {
   display: flex;
   align-items: center;
-  justify-content: center;
-  color: var(--module-travel);
+  width: 52px;
+  height: 32px;
   flex-shrink: 0;
-}
-
-.toggle-label {
-  font-size: 12px;
-  font-weight: 500;
-  color: var(--text-primary);
-  margin: 0;
-}
-
-.toggle-sub {
-  font-size: 10px;
-  color: var(--text-muted);
-  margin: 2px 0 0;
-}
-
-.toggle-switch {
-  position: relative;
-  width: 44px;
-  height: 24px;
-  background: var(--bg-muted);
-  border-radius: 999px;
-  flex-shrink: 0;
-  cursor: pointer;
+  padding: 0 4px;
   border: none;
+  border-radius: var(--radius-pill);
+  position: relative;
+  background: var(--bg-muted);
+  cursor: pointer;
   transition: background var(--dur-fast) var(--ease-out);
 }
 
-.toggle-switch--on { background: var(--module-travel); }
-
-.toggle-thumb {
+.switch::after {
+  content: '';
   position: absolute;
-  top: 3px;
-  left: 3px;
-  width: 18px;
-  height: 18px;
-  background: var(--text-primary);
+  inset: -6px 0;
+}
+
+.switch-thumb {
+  width: 24px;
+  height: 24px;
   border-radius: 50%;
+  background: var(--on-rail);
+  box-shadow: var(--shadow-sm);
   transition: transform var(--dur-fast) var(--ease-out);
 }
 
-.toggle-thumb--on { transform: translateX(20px); }
+.switch--on { background: var(--accent); }
+.switch--on .switch-thumb { transform: translateX(20px); }
 
-/* ── Generate button ── */
-.btn-generate {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 10px;
-  width: 100%;
-  padding: 15px 20px;
-  background: var(--module-travel);
-  border: none;
-  border-radius: var(--radius-md);
-  font-family: var(--font-sans);
-  font-size: 11px;
-  font-weight: 500;
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-  color: var(--bg-base);
-  cursor: pointer;
-  transition: all var(--dur-fast) var(--ease-out);
-  user-select: none;
-}
-
-.btn-generate:hover:not(:disabled) { filter: brightness(1.08); }
-.btn-generate:active:not(:disabled) { transform: scale(0.98); }
-.btn-generate:disabled { opacity: 0.4; cursor: not-allowed; }
-
-/* ── Suggestions card ── */
-.suggestions-card {
-  background: var(--bg-raised);
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-xl);
-  padding: 28px 24px;
+/* ── Suggestions ── */
+.suggestions {
   display: flex;
   flex-direction: column;
-  gap: 24px;
-}
-
-.suggestions-header { text-align: center; }
-
-.suggestions-eyebrow {
-  font-size: 9px;
-  font-weight: 500;
-  text-transform: uppercase;
-  letter-spacing: 0.2em;
-  color: var(--module-travel);
-  margin: 0 0 8px;
-}
-
-.suggestions-title {
-  font-family: var(--font-serif);
-  font-size: var(--text-xl);
-  font-weight: 400;
-  color: var(--text-primary);
-  margin: 0 0 6px;
-}
-
-.suggestions-sub {
-  font-size: 11px;
-  color: var(--text-muted);
-  margin: 0;
+  gap: var(--space-3);
 }
 
 .suggestions-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 12px;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-3);
 }
 
-@media (max-width: 560px) {
-  .suggestions-grid { grid-template-columns: 1fr; }
-}
-
-.suggestion-btn {
-  position: relative;
-  overflow: hidden;
-  background: var(--bg-overlay);
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-lg);
-  padding: 20px 18px;
+.suggestion {
+  align-items: flex-start;
+  border: none;
+  font-family: var(--font-sans);
+  color: var(--text-primary);
   text-align: left;
   cursor: pointer;
-  transition: all var(--dur-fast) var(--ease-out);
+  transition: transform var(--dur-fast) var(--ease-out);
 }
 
-.suggestion-btn:hover:not(:disabled) {
-  border-color: var(--module-travel-border);
-  transform: translateY(-2px);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
-}
-
-.suggestion-btn:active:not(:disabled) { transform: scale(0.98); }
-.suggestion-btn:disabled { opacity: 0.5; pointer-events: none; }
-
-.suggestion-emoji-bg {
-  position: absolute;
-  right: -4px;
-  top: -4px;
-  font-size: 48px;
-  opacity: 0.10;
-  pointer-events: none;
-  transition: opacity var(--dur-fast) var(--ease-out);
-}
-
-.suggestion-btn:hover .suggestion-emoji-bg { opacity: 0.18; }
-
-.suggestion-body { position: relative; }
-
-.suggestion-emoji {
-  display: block;
-  font-size: 24px;
-  margin-bottom: 10px;
-}
+.suggestion:active { transform: scale(0.985); }
+.suggestion:disabled { opacity: 0.6; cursor: not-allowed; }
 
 .suggestion-name {
-  font-size: var(--text-sm);
-  font-weight: 500;
-  color: var(--text-primary);
-  margin: 0 0 4px;
+  font-size: var(--text-xl);
+  font-weight: 600;
+  letter-spacing: -0.02em;
 }
 
 .suggestion-tagline {
-  font-size: 11px;
-  color: var(--text-muted);
-  line-height: 1.5;
-  margin: 0 0 10px;
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
 }
 
-.suggestion-tags { display: flex; flex-wrap: wrap; gap: 4px; }
+.suggestion-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+}
 
-.suggestion-tag {
-  padding: 2px 7px;
-  background: var(--module-travel-dim);
-  border: 1px solid var(--module-travel-border);
+.tag {
+  padding: 3px 10px;
   border-radius: var(--radius-pill);
-  font-size: 8px;
+  background: var(--module-travel-dim);
+  font-size: var(--text-2xs);
   font-weight: 500;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
   color: var(--module-travel);
 }
 
 .suggestion-budget {
-  font-size: 10px;
-  color: var(--text-muted);
-  opacity: 0.6;
-  margin: 8px 0 0;
-}
-
-.suggestions-loading {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 10px;
-  padding: 8px 0;
-  font-size: 12px;
-  color: var(--module-travel);
-}
-
-/* ── Planner card ── */
-.planner-card {
-  background: var(--bg-raised);
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-xl);
-  overflow: hidden;
-}
-
-.planner-header {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 24px 24px 0;
-}
-
-.planner-dest-icon {
-  width: 34px;
-  height: 34px;
-  flex-shrink: 0;
-  background: var(--module-travel-dim);
-  border: 1px solid var(--module-travel-border);
-  border-radius: var(--radius-sm);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--module-travel);
-}
-
-.planner-dest-label {
-  font-size: 9px;
-  font-weight: 500;
-  text-transform: uppercase;
-  letter-spacing: 0.15em;
-  color: var(--text-muted);
-  margin: 0 0 3px;
-}
-
-.planner-dest-name {
-  font-size: var(--text-md);
-  font-weight: 500;
-  color: var(--text-primary);
-  margin: 0;
-}
-
-.planner-duration {
-  margin-left: auto;
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  padding: 5px 10px;
-  background: var(--module-travel-dim);
-  border: 1px solid var(--module-travel-border);
-  border-radius: var(--radius-pill);
-  font-size: 10px;
-  font-weight: 500;
-  color: var(--module-travel);
-  flex-shrink: 0;
-}
-
-/* ── Planner tabs ── */
-.planner-tabs {
-  display: flex;
-  border-top: 1px solid var(--border-subtle);
-  border-bottom: 1px solid var(--border-subtle);
-  margin-top: 20px;
-}
-
-.planner-tab {
-  flex: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 7px;
-  padding: 14px;
-  font-size: 10px;
-  font-weight: 500;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  color: var(--text-muted);
-  background: transparent;
-  border: none;
-  cursor: pointer;
-  position: relative;
-  transition: all var(--dur-fast) var(--ease-out);
-}
-
-.planner-tab--active { color: var(--module-travel); }
-
-.planner-tab:not(.planner-tab--active):hover {
-  color: var(--text-secondary);
-  background: var(--bg-overlay);
-}
-
-.tab-indicator {
-  position: absolute;
-  bottom: 0;
-  left: 20%;
-  right: 20%;
-  height: 2px;
-  background: var(--module-travel);
-  border-radius: 999px;
-}
-
-/* ── Planner content ── */
-.planner-content { padding: 24px; }
-
-/* Budget tab */
-.budget-total {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  margin-bottom: 16px;
-}
-
-.budget-total-label {
-  font-size: 9px;
-  font-weight: 500;
-  text-transform: uppercase;
-  letter-spacing: 0.15em;
-  color: var(--text-muted);
-}
-
-.budget-total-value {
-  font-family: var(--font-serif);
-  font-size: var(--text-xl);
-  color: var(--text-primary);
-}
-
-.budget-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 10px;
-}
-
-@media (max-width: 480px) {
-  .budget-grid { grid-template-columns: 1fr; }
-}
-
-.budget-item {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  padding: 16px;
-  background: var(--bg-overlay);
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-md);
-}
-
-.budget-icon {
-  width: 38px;
-  height: 38px;
-  border-radius: var(--radius-sm);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-}
-
-.budget-item-body { flex: 1; min-width: 0; }
-
-.budget-cat {
-  font-size: 9px;
-  font-weight: 500;
-  text-transform: uppercase;
-  letter-spacing: 0.12em;
-  color: var(--text-muted);
-  margin: 0 0 4px;
-}
-
-.budget-amount {
-  font-family: var(--font-serif);
-  font-size: var(--text-lg);
-  color: var(--text-primary);
-  margin: 0;
-}
-
-.budget-pct {
-  font-size: 10px;
-  font-weight: 500;
-  color: var(--text-muted);
-  opacity: 0.6;
-  flex-shrink: 0;
-}
-
-/* Itinerary tab */
-.itinerary-list {
-  display: flex;
-  flex-direction: column;
-  gap: 0;
-}
-
-.itinerary-day {
-  display: flex;
-  gap: 14px;
-  padding-bottom: 16px;
-}
-
-.itinerary-day:last-child { padding-bottom: 0; }
-
-.day-timeline {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  flex-shrink: 0;
-  margin-top: 2px;
-}
-
-.day-dot {
-  width: 24px;
-  height: 24px;
-  background: var(--module-travel);
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 9px;
+  font-size: var(--text-xs);
   font-weight: 600;
-  color: var(--bg-base);
+}
+
+.loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  font-size: var(--text-xs);
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+
+/* ── Voyage ── */
+.planner {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-3);
+}
+
+.pane--hidden { display: none; }
+
+.budget {
+  flex-direction: row;
+  align-items: center;
+  gap: var(--space-4);
+}
+
+.budget-ring {
+  display: block;
+  width: 110px;
+  height: 110px;
   flex-shrink: 0;
-  box-shadow: 0 2px 8px rgba(160, 139, 106, 0.3);
+  transform: rotate(-90deg);
 }
 
-.day-line {
-  flex: 1;
-  width: 1px;
-  background: var(--module-travel-border);
-  margin-top: 6px;
-  min-height: 20px;
+.ring-track,
+.ring-seg {
+  fill: none;
+  stroke-width: 3.2;
 }
 
-.day-card {
+.ring-track { stroke: var(--bg-overlay); }
+
+.budget-body {
   flex: 1;
-  background: var(--bg-overlay);
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-md);
-  padding: 14px 16px;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: var(--space-1);
   min-width: 0;
 }
 
-.day-date {
-  font-size: 9px;
-  font-weight: 500;
-  text-transform: uppercase;
-  letter-spacing: 0.15em;
-  color: var(--module-travel);
-  margin: 0;
+.budget-total {
+  font-size: var(--text-2xl);
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  line-height: 1.15;
+  font-variant-numeric: tabular-nums;
 }
+
+.budget-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 0;
+  list-style: none;
+  font-size: var(--text-2xs);
+  font-weight: 500;
+}
+
+.budget-list li {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-2);
+  font-variant-numeric: tabular-nums;
+}
+
+.days {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-3);
+}
+
+.day { gap: var(--space-1); }
+.day .card-sub::first-letter { text-transform: uppercase; }
 
 .day-title {
-  font-size: var(--text-sm);
-  font-weight: 500;
-  color: var(--text-primary);
-  margin: 0;
+  font-size: var(--text-lg);
+  font-weight: 600;
+  letter-spacing: -0.01em;
 }
 
-.day-slots {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 8px;
+.slot {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  padding: var(--space-2) 0;
+  border-top: 1px solid var(--border-subtle);
 }
-
-@media (max-width: 480px) {
-  .day-slots { grid-template-columns: 1fr; }
-}
-
-.day-slot { display: flex; gap: 8px; align-items: flex-start; }
 
 .slot-label {
-  font-size: 8px;
+  padding: 2px 10px;
+  border-radius: var(--radius-pill);
+  background: var(--module-travel-dim);
+  font-size: var(--text-2xs);
   font-weight: 500;
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-  color: var(--text-muted);
-  flex-shrink: 0;
-  padding-top: 2px;
-  width: 36px;
+  color: var(--module-travel);
 }
 
 .slot-text {
-  font-size: 11px;
-  color: var(--text-secondary);
-  line-height: 1.5;
-  margin: 0;
+  font-size: var(--text-sm);
+  line-height: 1.45;
 }
 
-/* ── Spinner ── */
-.spin { animation: spin 0.8s linear infinite; }
+@media (min-width: 768px) {
+  .view-head {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+  }
 
-@keyframes spin { to { transform: rotate(360deg); } }
+  .view-break { display: none; }
 
-/* Remove number input arrows */
-input::-webkit-outer-spin-button,
-input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
-input[type=number] { -moz-appearance: textfield; appearance: textfield; }
+  .view-title {
+    font-size: var(--text-3xl);
+    font-weight: 700;
+    letter-spacing: -0.03em;
+    line-height: 1.1;
+  }
+
+  .banner { padding: var(--space-6) 28px; }
+  .card { padding: 20px; }
+  .suggestions-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .days { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+@media (min-width: 1100px) {
+  .travel-view { gap: var(--space-4); }
+
+  .form-layout {
+    grid-template-columns: minmax(0, 1fr) 520px;
+    gap: var(--space-4);
+  }
+
+  .form-layout .banner { align-self: stretch; min-height: 560px; justify-content: flex-start; }
+  .form-layout .orb--a { top: auto; right: -40px; bottom: -60px; width: 340px; height: 340px; }
+  .form-layout .orb--b { top: auto; right: 280px; bottom: 60px; width: 150px; height: 150px; }
+  .form-layout .orb--c { display: block; right: 60px; bottom: 300px; width: 80px; height: 80px; background: var(--orb-rose); }
+
+  .planner {
+    grid-template-columns: minmax(0, 1fr) 430px;
+    gap: var(--space-4);
+  }
+
+  .planner-tabs { display: none; }
+  .pane--hidden { display: flex; }
+  .days.pane--hidden { display: grid; }
+  .days { grid-column: 1 / -1; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: var(--space-4); }
+
+  .banner--planner { min-height: 240px; }
+  .banner--planner .banner-title { font-size: var(--text-3xl); font-weight: 700; letter-spacing: -0.03em; line-height: 1.1; }
+  .banner--planner .orb--a { top: -60px; right: 110px; width: 240px; height: 240px; }
+  .banner--planner .orb--b { top: 90px; right: 20px; width: 130px; height: 130px; }
+  .banner--planner .orb--c { display: block; top: 160px; right: 320px; width: 60px; height: 60px; background: var(--orb-rose); }
+
+  .budget-ring { width: 150px; height: 150px; }
+}
 </style>

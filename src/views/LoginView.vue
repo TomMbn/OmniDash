@@ -1,73 +1,57 @@
 <template>
-  <div class="h-full flex items-center justify-center -mt-8 md:mt-0 px-4">
-    <div class="bg-white p-8 rounded-2xl shadow-sm border border-gray-100 max-w-sm w-full">
-      <div class="text-center mb-8">
-        <div class="flex justify-center mb-4">
-          <img src="/pwa-192x192.png" alt="Logo" class="w-16 h-16 rounded-2xl shadow-lg border-4 border-white object-contain" />
-        </div>
-        <h1 class="text-3xl font-bold text-indigo-600 mb-2">OmniDash</h1>
-        <p class="text-sm text-gray-500">{{ isLogin ? 'Bon retour parmi nous 👋' : 'Créez votre compte 🚀' }}</p>
+  <div class="login">
+    <span class="orb orb--a" aria-hidden="true" />
+    <span class="orb orb--b" aria-hidden="true" />
+    <span class="orb orb--c" aria-hidden="true" />
+
+    <section class="login-card">
+      <div class="login-head">
+        <img src="/pwa-192x192.png" alt="" class="login-logo" />
+        <h1 class="login-title">OmniDash</h1>
+        <p class="login-sub">{{ isLogin ? 'Content de te revoir.' : 'Crée ton compte.' }}</p>
       </div>
 
-      <form @submit.prevent="handleSubmit" class="space-y-5">
-        <div>
-          <label class="block text-sm font-medium text-gray-700 mb-1" for="email">Email</label>
-          <input 
-            v-model="email" 
-            id="email" 
-            type="email" 
-            required 
-            class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
-            placeholder="vous@email.com"
+      <form class="login-form" @submit.prevent="handleSubmit">
+        <div class="field-group">
+          <label class="field-label" for="email">Email</label>
+          <input
+            id="email"
+            v-model="email"
+            type="email"
+            autocomplete="email"
+            required
+            class="field-input"
+            placeholder="toi@email.com"
           />
         </div>
 
-        <div>
-          <label class="block text-sm font-medium text-gray-700 mb-1" for="password">Mot de passe</label>
-          <input 
-            v-model="password" 
-            id="password" 
-            type="password" 
-            required 
+        <div class="field-group">
+          <label class="field-label" for="password">Mot de passe</label>
+          <input
+            id="password"
+            v-model="password"
+            type="password"
+            :autocomplete="isLogin ? 'current-password' : 'new-password'"
+            required
             minlength="6"
-            class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
-            placeholder="••••••••"
+            class="field-input"
+            placeholder="6 caractères minimum"
           />
         </div>
 
-        <div v-if="errorMsg" class="p-3 bg-red-50 border border-red-100 text-red-600 text-sm rounded-lg flex items-start">
-          <span class="mr-2">⚠️</span>
-          {{ errorMsg }}
-        </div>
-        
-        <div v-if="successMsg" class="p-3 bg-green-50 border border-green-100 text-green-700 text-sm rounded-lg flex items-start">
-          <span class="mr-2">✅</span>
-          {{ successMsg }}
-        </div>
+        <p v-if="errorMsg" class="message message--error" role="alert">{{ errorMsg }}</p>
+        <p v-if="successMsg" class="message message--success" role="status">{{ successMsg }}</p>
 
-        <button 
-          type="submit" 
-          :disabled="loading"
-          class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2.5 rounded-lg transition-colors flex justify-center items-center disabled:opacity-70 disabled:cursor-not-allowed"
-        >
-          <svg v-if="loading" class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-          </svg>
-          {{ loading ? 'Chargement...' : (isLogin ? 'Se connecter' : "S'inscrire") }}
+        <button type="submit" class="submit" :disabled="loading">
+          <span v-if="loading" class="spinner" />
+          {{ loading ? 'Chargement…' : (isLogin ? 'Se connecter' : "S'inscrire") }}
         </button>
       </form>
 
-      <div class="mt-6 text-center">
-        <button 
-          @click="toggleMode" 
-          type="button"
-          class="text-sm text-indigo-600 hover:text-indigo-800 font-medium transition-colors cursor-pointer focus:outline-none"
-        >
-          {{ isLogin ? "Pas encore de compte ? S'inscrire" : 'Déjà un compte ? Se connecter' }}
-        </button>
-      </div>
-    </div>
+      <button type="button" class="switch-mode" @click="toggleMode">
+        {{ isLogin ? "Pas encore de compte ? S'inscrire" : 'Déjà un compte ? Se connecter' }}
+      </button>
+    </section>
   </div>
 </template>
 
@@ -103,7 +87,7 @@ const handleSubmit = async () => {
       router.push('/')
     } else {
       await signup(email.value, password.value)
-      successMsg.value = 'Compte créé avec succès ! Vérifiez votre boîte mail si nécessaire.'
+      successMsg.value = 'Compte créé. Vérifie ta boîte mail si besoin.'
       setTimeout(() => {
         isLogin.value = true
         successMsg.value = ''
@@ -122,3 +106,161 @@ const handleSubmit = async () => {
   }
 }
 </script>
+
+<style scoped>
+.login {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: calc(100dvh - 140px);
+  overflow: hidden;
+}
+
+.orb {
+  position: absolute;
+  border-radius: 50%;
+  opacity: var(--orb-opacity);
+  pointer-events: none;
+}
+
+.orb--a { top: 4%; right: -60px; width: 220px; height: 220px; background: var(--orb-lilas); }
+.orb--b { bottom: 8%; left: -50px; width: 170px; height: 170px; background: var(--orb-rose); }
+.orb--c { top: 12%; left: 8%; width: 70px; height: 70px; background: var(--orb-ciel); }
+
+.login-card {
+  position: relative;
+  z-index: var(--z-raised);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+  width: 100%;
+  max-width: 400px;
+  padding: var(--space-6);
+  border-radius: var(--radius-lg);
+  background: var(--bg-raised);
+  box-shadow: var(--shadow-md);
+}
+
+.login-head {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-1);
+  text-align: center;
+}
+
+.login-logo {
+  width: 56px;
+  height: 56px;
+  margin-bottom: var(--space-2);
+  border-radius: var(--radius-md);
+  object-fit: contain;
+}
+
+.login-title {
+  font-size: var(--text-xl);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.login-sub {
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+}
+
+.login-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.field-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.field-label {
+  font-size: var(--text-2xs);
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+
+.field-input {
+  width: 100%;
+  min-height: 48px;
+  padding: 0 var(--space-4);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  background: var(--bg-overlay);
+  font-family: var(--font-sans);
+  font-size: var(--text-md);
+  color: var(--text-primary);
+  outline: none;
+}
+
+.field-input:focus { border-color: var(--accent); }
+.field-input::placeholder { color: var(--text-secondary); }
+
+.message {
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-md);
+  font-size: var(--text-xs);
+  font-weight: 500;
+}
+
+.message--error   { background: var(--status-error-dim);   color: var(--status-error); }
+.message--success { background: var(--status-success-dim); color: var(--status-success); }
+
+.submit {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  min-height: 52px;
+  border: none;
+  border-radius: var(--radius-pill);
+  background: var(--action);
+  font-family: var(--font-sans);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--on-action);
+  cursor: pointer;
+  transition: opacity var(--dur-fast) var(--ease-out), transform var(--dur-fast) var(--ease-out);
+}
+
+.submit:hover { opacity: 0.88; }
+.submit:active { transform: scale(0.98); }
+.submit:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid color-mix(in srgb, currentColor 30%, transparent);
+  border-top-color: currentColor;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.switch-mode {
+  min-height: 44px;
+  border: none;
+  background: none;
+  font-family: var(--font-sans);
+  font-size: var(--text-xs);
+  font-weight: 600;
+  color: var(--text-primary);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+
+@media (min-width: 768px) {
+  .login { min-height: calc(100dvh - 80px); }
+  .orb--a { right: 12%; width: 320px; height: 320px; }
+  .orb--b { left: 12%; width: 240px; height: 240px; }
+}
+</style>

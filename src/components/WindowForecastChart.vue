@@ -79,7 +79,7 @@ const chartData = computed(() => {
         data: bandTop,
         borderWidth: 0,
         pointRadius: 0,
-        backgroundColor: 'rgba(106, 170, 126, 0.15)',
+        backgroundColor: cssVar('--status-success-dim'),
         fill: '+1'
       },
       {
@@ -125,7 +125,7 @@ const chartOptions = {
 <style scoped>
 .chart-wrap {
   position: relative;
-  height: 220px;
+  height: clamp(220px, 42vh, 420px);
   width: 100%;
 }
 </style>

@@ -470,7 +470,7 @@ const scoreState = (score) => {
   flex-direction: column;
   gap: var(--space-2);
   min-width: 0;
-  padding: 14px;
+  padding: var(--space-4);
   border-radius: var(--radius-lg);
   background: var(--bg-raised);
 }
@@ -535,7 +535,8 @@ const scoreState = (score) => {
 }
 
 .segmented-btn {
-  min-height: 36px;
+  min-width: 44px;
+  min-height: 44px;
   padding: 0 12px;
   border: none;
   border-radius: var(--radius-pill);
@@ -722,7 +723,6 @@ const scoreState = (score) => {
   .orb--a { top: -50px; right: -10px; width: 230px; height: 230px; }
   .orb--b { right: -30px; bottom: 16px; width: 130px; height: 130px; }
 
-  .card { padding: 22px; }
   .metric-ring { width: 96px; height: 96px; }
   .card-title { font-size: var(--text-xl); }
   .trend { padding: var(--space-6); }

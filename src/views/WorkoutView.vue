@@ -1044,7 +1044,7 @@ const removeSet = async (block, sIndex) => {
   display: flex;
   flex-direction: column;
   gap: var(--space-3);
-  max-width: 1280px;
+  max-width: 1480px;
   margin: 0 auto;
 }
 
@@ -1074,7 +1074,7 @@ const removeSet = async (block, sIndex) => {
 
 .segmented-btn {
   flex: 1;
-  min-height: 40px;
+  min-height: 44px;
   padding: 0 var(--space-5);
   border: none;
   border-radius: var(--radius-pill);
@@ -1960,6 +1960,8 @@ const removeSet = async (block, sIndex) => {
 .view-head--focus { display: none; }
 
 @media (min-width: 768px) {
+  .card { padding: 20px; }
+
   .view-head,
   .view-head--focus {
     display: flex;
@@ -1999,7 +2001,6 @@ const removeSet = async (block, sIndex) => {
     min-height: 420px;
   }
 
-  .card { padding: var(--space-6); }
   .sets { padding: var(--space-3); }
 
   .live-layout {

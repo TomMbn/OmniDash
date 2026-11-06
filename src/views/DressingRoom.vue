@@ -226,6 +226,7 @@
 import { ref, reactive, onMounted, computed, watch } from 'vue'
 import { supabase } from '@/supabase'
 import { useAuth } from '@/composables/useAuth'
+import { useConfirm } from '@/composables/useConfirm'
 import { marked } from 'marked'
 import { createLucideIcon } from 'lucide-vue-next'
 import { trousers, wardrobe as wardrobeNode } from '@lucide/lab'
@@ -248,6 +249,7 @@ const TrousersIcon = createLucideIcon('Trousers', trousers)
 const WardrobeIcon = createLucideIcon('Wardrobe', wardrobeNode)
 
 const { user } = useAuth()
+const { askConfirm } = useConfirm()
 
 // Tabs
 const activeTab = ref('generator')
@@ -478,7 +480,7 @@ const fetchWardrobe = async () => {
 const updateQuantity = async (item, delta) => {
   const newQuantity = (item.quantity || 1) + delta
   if (newQuantity < 1) {
-    if (confirm(`Voulez-vous supprimer "${item.name}" du placard ?`)) {
+    if (await askConfirm({ title: `Supprimer « ${item.name} » du placard ?`, detail: 'Cette action est définitive.' })) {
       await deleteItem(item.id)
     }
     return
@@ -586,7 +588,7 @@ onMounted(async () => {
 
 .segmented-btn {
   flex: 1;
-  min-height: 40px;
+  min-height: 44px;
   padding: 0 var(--space-5);
   border: none;
   border-radius: var(--radius-pill);

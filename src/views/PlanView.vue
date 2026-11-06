@@ -1,21 +1,29 @@
 <template>
   <div class="plan-view">
-    <!-- Header -->
-    <div class="plan-header">
-      <div class="module-icon">
-        <Layers :size="18" stroke-width="1.75" />
-      </div>
-      <div>
-        <h1 class="view-title">Plan d'entraînement</h1>
-        <p class="view-sub">Programme complet · 8 semaines</p>
-      </div>
-    </div>
+    <!-- ── En-tête ── -->
+    <header class="view-head">
+      <h1 class="view-title">
+        Plan,{{ ' ' }}<br class="view-break" />
+        <span class="view-title-soft">programme 8 semaines</span>
+      </h1>
+    </header>
 
-    <!-- Tab bar -->
-    <div class="tabs-bar">
+    <section class="banner" aria-label="Semaine type">
+      <span class="orb orb--a" aria-hidden="true" />
+      <span class="orb orb--b" aria-hidden="true" />
+      <h2 class="banner-title">
+        Semaine type,<br />
+        <span class="banner-title-soft">5 séances, 2 cardio</span>
+      </h2>
+    </section>
+
+    <!-- ── Onglets ── -->
+    <div class="tabs-bar" role="tablist" aria-label="Sections du plan">
       <button
         v-for="tab in tabs"
         :key="tab.id"
+        role="tab"
+        :aria-selected="activeTab === tab.id"
         class="tab-btn"
         :class="{ 'tab-btn--active': activeTab === tab.id }"
         @click="activeTab = tab.id"
@@ -23,13 +31,20 @@
     </div>
 
     <!-- PLAN SEMAINE -->
-    <div v-show="activeTab === 'semaine'">
+    <div v-show="activeTab === 'semaine'" class="tab-panel">
       <div class="week-grid">
-        <div v-for="day in weekDays" :key="day.name" class="card">
+        <div
+          v-for="day in weekDays"
+          :key="day.name"
+          class="card day-card"
+          :class="{ 'day-card--today': day.name === todayName }"
+        >
           <div class="day-label">{{ day.name }}</div>
           <div class="day-title">{{ day.title }}</div>
           <div class="day-sub">{{ day.sub }}</div>
-          <span v-for="badge in day.badges" :key="badge.text" class="badge" :style="badge.style">{{ badge.text }}</span>
+          <div class="badges">
+            <span v-for="badge in day.badges" :key="badge.text" class="badge" :style="badge.style">{{ badge.text }}</span>
+          </div>
           <div v-if="day.note" class="day-note">{{ day.note }}</div>
         </div>
       </div>
@@ -57,8 +72,8 @@
     </div>
 
     <!-- MUSCULATION -->
-    <div v-show="activeTab === 'muscu'">
-      <div class="tip" style="margin-bottom:12px;">Repos : 2–3 min sur poly-articulaires lourds · 90 s sur isolation standard · 60 s sur élévations latérales · 45 s sur face pulls · 30 s entre les drop sets et rest-pause.</div>
+    <div v-show="activeTab === 'muscu'" class="tab-panel">
+      <div class="tip">Repos : 2–3 min sur poly-articulaires lourds · 90 s sur isolation standard · 60 s sur élévations latérales · 45 s sur face pulls · 30 s entre les drop sets et rest-pause.</div>
 
       <div v-for="session in muscuSessions" :key="session.day" class="card">
         <div class="day-header">
@@ -112,8 +127,8 @@
     </div>
 
     <!-- CARDIO -->
-    <div v-show="activeTab === 'cardio'">
-      <div class="stats-row" style="margin-bottom:14px;">
+    <div v-show="activeTab === 'cardio'" class="tab-panel">
+      <div class="stats-row">
         <div class="stat-card">
           <div class="stat-label">Séances/semaine</div>
           <div class="stat-val">2</div>
@@ -136,7 +151,7 @@
 
       <div class="card card--accent-blue">
         <div class="day-header">
-          <span class="badge" style="background:rgba(122,145,184,0.12);color:#7A91B8;">Phase 1 — sem. 1 à 6</span>
+          <span class="badge" style="background:var(--module-sleep-dim);color:var(--module-sleep);">Phase 1 — sem. 1 à 6</span>
           <span class="session-title">2 × LISS zone 2</span>
         </div>
         <div class="ex-row single"><span class="ex-name">Vélo résistance modérée · 120–140 bpm · parler sans être essoufflé<div class="ex-note">35–40 min</div></span></div>
@@ -145,9 +160,9 @@
         <div class="tip">Semaine 6 : même FC à intensité plus élevée = base aérobie qui progresse → passer en phase 2.</div>
       </div>
 
-      <div class="card" style="margin-top:10px;">
+      <div class="card">
         <div class="day-header">
-          <span class="badge" style="background:rgba(212,151,106,0.12);color:#D4976A;">Phase 2 — sem. 7+</span>
+          <span class="badge" style="background:var(--accent-dim);color:var(--accent);">Phase 2 — sem. 7+</span>
           <span class="session-title">1 × LISS + 1 × Zone 3–4</span>
         </div>
         <div class="ex-row single"><span class="ex-name">LISS zone 2 — lundi · conservé comme base<div class="ex-note">35 min</div></span></div>
@@ -157,7 +172,7 @@
     </div>
 
     <!-- ABDOS & POSTURE -->
-    <div v-show="activeTab === 'abdos'">
+    <div v-show="activeTab === 'abdos'" class="tab-panel">
       <div class="section-intro">3x/semaine · lundi, mercredi, vendredi · ~18 min · aucun matériel. Vacuum + routine posturale quotidiens 7j/7.</div>
 
       <div v-for="bloc in abdosBlocs" :key="bloc.title" class="card">
@@ -183,7 +198,7 @@
     </div>
 
     <!-- PHASES -->
-    <div v-show="activeTab === 'phases'">
+    <div v-show="activeTab === 'phases'" class="tab-panel">
       <div v-for="phase in phases" :key="phase.weeks" class="card">
         <div class="day-header">
           <span class="day-pill" :style="phase.pillStyle">{{ phase.weeks }}</span>
@@ -197,8 +212,8 @@
     </div>
 
     <!-- NUTRITION -->
-    <div v-show="activeTab === 'nutri'">
-      <div class="stats-row" style="margin-bottom:14px;">
+    <div v-show="activeTab === 'nutri'" class="tab-panel">
+      <div class="stats-row">
         <div class="stat-card">
           <div class="stat-label">Calories cible</div>
           <div class="stat-val stat-val--sm">3 000–3 100</div>
@@ -241,7 +256,10 @@
 
 <script setup>
 import { ref } from 'vue'
-import { Layers } from 'lucide-vue-next'
+
+const todayName = new Intl.DateTimeFormat('fr-FR', { weekday: 'long' })
+  .format(new Date())
+  .replace(/^./, letter => letter.toUpperCase())
 
 const activeTab = ref('semaine')
 
@@ -260,51 +278,51 @@ const weekDays = [
     title: 'LISS + Abdos',
     sub: 'Cardio zone 2 · Core & posture',
     badges: [
-      { text: 'Cardio 35 min', style: 'background:rgba(125,173,138,0.12);color:#7DAD8A;' },
-      { text: 'Abdos & antéversion', style: 'background:rgba(212,151,106,0.12);color:#D4976A;' }
+      { text: 'Cardio 35 min', style: 'background:var(--module-nutri-dim);color:var(--module-nutri);' },
+      { text: 'Abdos & antéversion', style: 'background:var(--accent-dim);color:var(--accent);' }
     ]
   },
   {
     name: 'Mardi',
     title: 'Push',
     sub: 'Pecs · Épaules · Triceps',
-    badges: [{ text: 'Salle · ~55 min', style: 'background:rgba(122,145,184,0.12);color:#7A91B8;' }]
+    badges: [{ text: 'Salle · ~55 min', style: 'background:var(--module-sleep-dim);color:var(--module-sleep);' }]
   },
   {
     name: 'Mercredi',
     title: 'Pull + Abdos',
     sub: 'Dos · Biceps · Core',
     badges: [
-      { text: 'Salle · ~60 min', style: 'background:rgba(122,145,184,0.12);color:#7A91B8;' },
-      { text: 'Abdos maison soir', style: 'background:rgba(212,151,106,0.12);color:#D4976A;' }
+      { text: 'Salle · ~60 min', style: 'background:var(--module-sleep-dim);color:var(--module-sleep);' },
+      { text: 'Abdos maison soir', style: 'background:var(--accent-dim);color:var(--accent);' }
     ]
   },
   {
     name: 'Jeudi',
     title: 'Legs',
     sub: 'Quads · Ischios · Épaules',
-    badges: [{ text: 'Salle · ~60 min', style: 'background:rgba(212,151,106,0.12);color:#D4976A;' }]
+    badges: [{ text: 'Salle · ~60 min', style: 'background:var(--accent-dim);color:var(--accent);' }]
   },
   {
     name: 'Vendredi',
     title: 'LISS + Abdos',
     sub: 'Cardio zone 2 · Core',
     badges: [
-      { text: 'Cardio 35 min', style: 'background:rgba(125,173,138,0.12);color:#7DAD8A;' },
-      { text: 'Abdos maison', style: 'background:rgba(212,151,106,0.12);color:#D4976A;' }
+      { text: 'Cardio 35 min', style: 'background:var(--module-nutri-dim);color:var(--module-nutri);' },
+      { text: 'Abdos maison', style: 'background:var(--accent-dim);color:var(--accent);' }
     ]
   },
   {
     name: 'Samedi',
     title: 'Upper',
     sub: 'Grand dorsal · Épaules · Bras',
-    badges: [{ text: 'Salle · ~60 min', style: 'background:rgba(184,150,126,0.12);color:#B8967E;' }]
+    badges: [{ text: 'Salle · ~60 min', style: 'background:var(--module-dress-dim);color:var(--module-dress);' }]
   },
   {
     name: 'Dimanche',
     title: 'Lower',
     sub: 'Ischios · Fessiers · Core',
-    badges: [{ text: 'Salle · ~55 min', style: 'background:rgba(125,173,138,0.12);color:#7DAD8A;' }],
+    badges: [{ text: 'Salle · ~55 min', style: 'background:var(--module-nutri-dim);color:var(--module-nutri);' }],
     note: 'SDT roumain en 4e position'
   }
 ]
@@ -312,7 +330,7 @@ const weekDays = [
 const muscuSessions = [
   {
     day: 'Mardi',
-    pillStyle: 'background:rgba(122,145,184,0.12);color:#7A91B8;',
+    pillStyle: 'background:var(--module-sleep-dim);color:var(--module-sleep);',
     title: 'Push — Pecs, Épaules & Triceps',
     items: [
       { sep: 'Pectoraux' },
@@ -327,7 +345,7 @@ const muscuSessions = [
   },
   {
     day: 'Mercredi',
-    pillStyle: 'background:rgba(122,145,184,0.12);color:#7A91B8;',
+    pillStyle: 'background:var(--module-sleep-dim);color:var(--module-sleep);',
     title: 'Pull — Dos & Biceps',
     items: [
       { sep: 'Grand dorsal — largeur prioritaire' },
@@ -343,7 +361,7 @@ const muscuSessions = [
   },
   {
     day: 'Jeudi',
-    pillStyle: 'background:rgba(212,151,106,0.12);color:#D4976A;',
+    pillStyle: 'background:var(--accent-dim);color:var(--accent);',
     title: 'Legs — Focus Quadriceps',
     items: [
       { sep: 'Quadriceps' },
@@ -360,7 +378,7 @@ const muscuSessions = [
   },
   {
     day: 'Samedi',
-    pillStyle: 'background:rgba(184,150,126,0.12);color:#B8967E;',
+    pillStyle: 'background:var(--module-dress-dim);color:var(--module-dress);',
     title: 'Upper — Largeur & V-Taper',
     items: [
       { name: 'Chest press machine', sets: '3 × 8-10', rest: '2 min' },
@@ -376,7 +394,7 @@ const muscuSessions = [
   },
   {
     day: 'Dimanche',
-    pillStyle: 'background:rgba(125,173,138,0.12);color:#7DAD8A;',
+    pillStyle: 'background:var(--module-nutri-dim);color:var(--module-nutri);',
     title: 'Lower — Ischios, Fessiers & Abdos',
     items: [
       { sep: 'Chaîne postérieure' },
@@ -394,7 +412,7 @@ const abdosBlocs = [
   {
     title: 'Routine A — Core & V-line',
     sub: 'Lundi & vendredi · ~12 min',
-    pillStyle: 'background:rgba(125,173,138,0.12);color:#7DAD8A;',
+    pillStyle: 'background:var(--module-nutri-dim);color:var(--module-nutri);',
     exercises: [
       { name: 'Vacuum abdominal', note: "Expire tout l'air · nombril vers la colonne · transverse profond", sets: '3 × 30-45 s', rest: '30 s' },
       { name: 'Dead bug', note: 'Allongé · bras vers plafond · genoux à 90° · descendre bras droit + jambe gauche en expirant · bas du dos plaqué au sol en permanence', sets: '3 × 8-10/côté', rest: '30 s' },
@@ -405,7 +423,7 @@ const abdosBlocs = [
   {
     title: 'Routine B — Posture & antéversion',
     sub: 'Mercredi · ~12 min',
-    pillStyle: 'background:rgba(122,145,184,0.12);color:#7A91B8;',
+    pillStyle: 'background:var(--module-sleep-dim);color:var(--module-sleep);',
     exercises: [
       { name: 'Vacuum abdominal', note: "Expire tout l'air · nombril vers la colonne", sets: '3 × 30-45 s', rest: '30 s' },
       { name: 'Rétroversion active du bassin', note: 'Allongé sur le dos · aplatir le bas du dos contre le sol · contracter abdos + fessiers · tenir 5 s', sets: '3 × 15 reps', rest: '20 s' },
@@ -416,7 +434,7 @@ const abdosBlocs = [
   {
     title: 'Quotidien — 7j/7',
     sub: 'Vacuum matin + Étirements soir · ~6 min',
-    pillStyle: 'background:rgba(240,235,227,0.07);color:var(--text-muted);',
+    pillStyle: 'background:var(--bg-overlay);color:var(--text-secondary);',
     colLabel: 'Séries × durée',
     exercises: [
       { name: 'Vacuum abdominal debout', badge: 'Matin à jeun', note: "Pieds dans l'axe des épaules · légèrement penché en avant · expiration maximale · nombril vers la colonne", sets: '3 × 30 s', rest: '20 s' },
@@ -430,48 +448,48 @@ const abdosBlocs = [
 const phases = [
   {
     weeks: 'Semaines 1–2',
-    pillStyle: 'background:rgba(122,145,184,0.12);color:#7A91B8;',
+    pillStyle: 'background:var(--module-sleep-dim);color:var(--module-sleep);',
     title: 'Mise en place',
     rows: [
-      { color: '#7A91B8', text: 'Musculation : apprendre les nouveaux exercices (lat pulldown, hip thrust, SDT roumain) · technique prioritaire · charges légères' },
-      { color: '#D4976A', text: 'Jambes : surveiller attentivement les adducteurs sur la presse · stopper à la moindre gêne · noter les charges' },
-      { color: '#C9A04C', text: 'Élévations latérales : rester à 9 kg · ajouter excentrique 4 s · compter les reps exactes à chaque série' },
-      { color: '#7DAD8A', text: 'Cardio : 2 × récupération active · FC 110–130 bpm · résistance 2–3 · piloter par la FC' },
-      { color: 'var(--text-muted)', text: 'Posture : vacuum à jeun dès jour 1 · étirements psoas chaque soir · routine B mercredi' }
+      { color: 'var(--module-sleep)', text: 'Musculation : apprendre les nouveaux exercices (lat pulldown, hip thrust, SDT roumain) · technique prioritaire · charges légères' },
+      { color: 'var(--accent)', text: 'Jambes : surveiller attentivement les adducteurs sur la presse · stopper à la moindre gêne · noter les charges' },
+      { color: 'var(--status-warning)', text: 'Élévations latérales : rester à 9 kg · ajouter excentrique 4 s · compter les reps exactes à chaque série' },
+      { color: 'var(--module-nutri)', text: 'Cardio : 2 × récupération active · FC 110–130 bpm · résistance 2–3 · piloter par la FC' },
+      { color: 'var(--text-secondary)', text: 'Posture : vacuum à jeun dès jour 1 · étirements psoas chaque soir · routine B mercredi' }
     ]
   },
   {
     weeks: 'Semaines 3–4',
-    pillStyle: 'background:rgba(125,173,138,0.12);color:#7DAD8A;',
+    pillStyle: 'background:var(--module-nutri-dim);color:var(--module-nutri);',
     title: 'Montée en charge',
     rows: [
-      { color: '#7A91B8', text: 'Musculation : charger progressivement · noter chaque série · double progression active' },
-      { color: '#D4976A', text: 'Jambes : si aucune gêne adducteurs → retrouver les charges habituelles progressivement' },
-      { color: '#C9A04C', text: 'Élévations latérales : ajouter rest-pause sur la dernière série · viser +2 reps par série vs sem. 1–2' },
-      { color: '#7DAD8A', text: "Cardio : vérifier que les jambes récupèrent mieux grâce aux séances actives · ajuster résistance si FC trop basse" },
-      { color: 'var(--text-muted)', text: "Posture : évaluer si l'antéversion commence à se réduire · planche avec rétroversion active" }
+      { color: 'var(--module-sleep)', text: 'Musculation : charger progressivement · noter chaque série · double progression active' },
+      { color: 'var(--accent)', text: 'Jambes : si aucune gêne adducteurs → retrouver les charges habituelles progressivement' },
+      { color: 'var(--status-warning)', text: 'Élévations latérales : ajouter rest-pause sur la dernière série · viser +2 reps par série vs sem. 1–2' },
+      { color: 'var(--module-nutri)', text: "Cardio : vérifier que les jambes récupèrent mieux grâce aux séances actives · ajuster résistance si FC trop basse" },
+      { color: 'var(--text-secondary)', text: "Posture : évaluer si l'antéversion commence à se réduire · planche avec rétroversion active" }
     ]
   },
   {
     weeks: 'Semaines 5–6',
-    pillStyle: 'background:rgba(212,151,106,0.12);color:#D4976A;',
+    pillStyle: 'background:var(--accent-dim);color:var(--accent);',
     title: 'Intensification',
     rows: [
-      { color: '#7A91B8', text: 'Musculation : double progression sur tous les exercices · lat pulldown en progression (charge croissante vers tractions libres)' },
-      { color: '#C9A04C', text: 'Élévations latérales : tester les 1,5 reps sur 2 séries Upper · drop set systématique sur dernière série Jeudi' },
-      { color: '#7DAD8A', text: 'Cardio : si FC stable sous 125 bpm en récupération → envisager introduction zone 3–4 vendredi' },
-      { color: 'var(--text-muted)', text: 'Abdos : progresser sur dead bug (amplitude plus grande) · ajouter lest sur rotations russes si pratiquées' }
+      { color: 'var(--module-sleep)', text: 'Musculation : double progression sur tous les exercices · lat pulldown en progression (charge croissante vers tractions libres)' },
+      { color: 'var(--status-warning)', text: 'Élévations latérales : tester les 1,5 reps sur 2 séries Upper · drop set systématique sur dernière série Jeudi' },
+      { color: 'var(--module-nutri)', text: 'Cardio : si FC stable sous 125 bpm en récupération → envisager introduction zone 3–4 vendredi' },
+      { color: 'var(--text-secondary)', text: 'Abdos : progresser sur dead bug (amplitude plus grande) · ajouter lest sur rotations russes si pratiquées' }
     ]
   },
   {
     weeks: 'Semaines 7–8',
-    pillStyle: 'background:rgba(212,151,106,0.15);color:#D4976A;',
+    pillStyle: 'background:var(--accent-dim);color:var(--accent);',
     title: 'Zone 3–4 + Décharge muscu',
     rows: [
-      { color: '#7A91B8', text: "Musculation : décharge semaine 7 — voir tableau Décharge dans l'onglet Musculation · −1 série/exercice · mêmes charges · reprise full semaine 8" },
-      { color: '#7DAD8A', text: 'Cardio : zone 3–4 le vendredi (FC 155–170 bpm · 25 min) · récupération active conservée le lundi' },
-      { color: '#C9A04C', text: 'Élévations latérales : bilan · si 4×15 tenus proprement en excentrique → tester charge supérieure' },
-      { color: 'var(--text-muted)', text: "Bilan : peser à jeun · ajuster calories si hors 80–84 kg · évaluer antéversion visuellement · définir objectifs bloc suivant" }
+      { color: 'var(--module-sleep)', text: "Musculation : décharge semaine 7 — voir tableau Décharge dans l'onglet Musculation · −1 série/exercice · mêmes charges · reprise full semaine 8" },
+      { color: 'var(--module-nutri)', text: 'Cardio : zone 3–4 le vendredi (FC 155–170 bpm · 25 min) · récupération active conservée le lundi' },
+      { color: 'var(--status-warning)', text: 'Élévations latérales : bilan · si 4×15 tenus proprement en excentrique → tester charge supérieure' },
+      { color: 'var(--text-secondary)', text: "Bilan : peser à jeun · ajuster calories si hors 80–84 kg · évaluer antéversion visuellement · définir objectifs bloc suivant" }
     ]
   }
 ]
@@ -479,7 +497,7 @@ const phases = [
 const dechargeBlocs = [
   {
     day: 'Mardi',
-    pillStyle: 'background:rgba(122,145,184,0.12);color:#7A91B8;',
+    pillStyle: 'background:var(--module-sleep-dim);color:var(--module-sleep);',
     title: 'Push',
     totalNormal: '16',
     totalDecharge: '11',
@@ -493,7 +511,7 @@ const dechargeBlocs = [
   },
   {
     day: 'Mercredi',
-    pillStyle: 'background:rgba(122,145,184,0.12);color:#7A91B8;',
+    pillStyle: 'background:var(--module-sleep-dim);color:var(--module-sleep);',
     title: 'Pull',
     totalNormal: '19',
     totalDecharge: '13',
@@ -508,7 +526,7 @@ const dechargeBlocs = [
   },
   {
     day: 'Jeudi',
-    pillStyle: 'background:rgba(212,151,106,0.12);color:#D4976A;',
+    pillStyle: 'background:var(--accent-dim);color:var(--accent);',
     title: 'Legs',
     totalNormal: '24',
     totalDecharge: '17',
@@ -524,7 +542,7 @@ const dechargeBlocs = [
   },
   {
     day: 'Samedi',
-    pillStyle: 'background:rgba(184,150,126,0.12);color:#B8967E;',
+    pillStyle: 'background:var(--module-dress-dim);color:var(--module-dress);',
     title: 'Upper',
     totalNormal: '22',
     totalDecharge: '15',
@@ -540,7 +558,7 @@ const dechargeBlocs = [
   },
   {
     day: 'Dimanche',
-    pillStyle: 'background:rgba(125,173,138,0.12);color:#7DAD8A;',
+    pillStyle: 'background:var(--module-nutri-dim);color:var(--module-nutri);',
     title: 'Lower',
     totalNormal: '15',
     totalDecharge: '10',
@@ -573,368 +591,490 @@ const nutritionRules = [
 </script>
 
 <style scoped>
-.plan-view {
-  max-width: 860px;
-  margin: 0 auto;
-  padding: 8px 0 100px;
+/* ── En-tête ── */
+.view-head {
   display: flex;
   flex-direction: column;
-  gap: 20px;
-}
-
-/* ── Header ── */
-.plan-header {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 0 2px;
-}
-
-.module-icon {
-  width: 36px;
-  height: 36px;
-  flex-shrink: 0;
-  border-radius: var(--radius-sm);
-  background: rgba(212, 151, 106, 0.10);
-  border: 1px solid rgba(212, 151, 106, 0.20);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--accent);
+  gap: var(--space-3);
+  align-items: flex-start;
 }
 
 .view-title {
-  font-family: var(--font-serif);
-  font-size: var(--text-2xl);
-  font-weight: 400;
-  color: var(--text-primary);
-  margin: 0;
+  font-size: var(--text-xl);
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  line-height: 1.22;
 }
 
-.view-sub {
-  font-size: 9px;
+.view-title-soft { color: var(--text-secondary); }
+
+/* ── Boutons ── */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  min-height: 44px;
+  padding: 0 18px;
+  border: none;
+  border-radius: var(--radius-pill);
+  font-family: var(--font-sans);
+  font-size: var(--text-xs);
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: opacity var(--dur-fast) var(--ease-out), transform var(--dur-fast) var(--ease-out);
+}
+
+.btn:hover { opacity: 0.88; }
+.btn:active { transform: scale(0.97); }
+.btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.btn--dark  { background: var(--action); color: var(--on-action); }
+.btn--soft  { background: var(--bg-overlay); color: var(--text-primary); }
+.btn--light { background: var(--bg-raised); color: var(--text-primary); }
+.btn--wide  { width: 100%; }
+
+.spin { animation: spin 0.8s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.error {
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-md);
+  background: var(--status-error-dim);
+  font-size: var(--text-xs);
   font-weight: 500;
-  text-transform: uppercase;
-  letter-spacing: 0.12em;
-  color: var(--text-muted);
-  margin-top: 1px;
+  color: var(--status-error);
 }
 
-/* ── Tab bar ── */
+/* ── Bandeau ── */
+.banner {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  gap: var(--space-2);
+  min-height: 160px;
+  padding: 18px;
+  overflow: hidden;
+  border-radius: var(--radius-lg);
+}
+
+.banner > :not(.orb) {
+  position: relative;
+  z-index: var(--z-raised);
+}
+
+.banner-title {
+  max-width: 72%;
+  font-size: var(--text-xl);
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  line-height: 1.22;
+}
+
+.banner-title-soft { color: var(--text-secondary); }
+
+.chip {
+  display: inline-flex;
+  padding: 5px 10px;
+  border-radius: var(--radius-pill);
+  background: var(--bg-raised);
+  font-size: var(--text-2xs);
+  font-weight: 500;
+  color: var(--status-success);
+}
+
+.orb {
+  position: absolute;
+  border-radius: 50%;
+  opacity: var(--orb-opacity);
+  pointer-events: none;
+}
+
+/* ── Cartes ── */
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  min-width: 0;
+  padding: var(--space-4);
+  border-radius: var(--radius-lg);
+  background: var(--bg-raised);
+}
+
+.card-title {
+  font-size: var(--text-lg);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.card-label,
+.card-sub {
+  font-size: var(--text-2xs);
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+
+/* ── Sélecteur ── */
+.segmented {
+  display: flex;
+  gap: 2px;
+  padding: var(--space-1);
+  border-radius: var(--radius-pill);
+  background: var(--bg-overlay);
+}
+
+.segmented-btn {
+  flex: 1;
+  min-height: 44px;
+  padding: 0 14px;
+  border: none;
+  border-radius: var(--radius-pill);
+  background: none;
+  font-family: var(--font-sans);
+  font-size: var(--text-xs);
+  font-weight: 600;
+  color: var(--text-secondary);
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.segmented-btn--active {
+  background: var(--action);
+  color: var(--on-action);
+}
+
+.plan-view {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  max-width: 1480px;
+  margin: 0 auto;
+}
+
+.banner {
+  background: var(--aurore-plan);
+  min-height: 130px;
+}
+
+.orb--a { top: -42px; right: -30px; width: 120px; height: 120px; background: var(--orb-lilas); }
+.orb--b { top: 44px; right: -26px; width: 60px; height: 60px; background: var(--orb-ciel); }
+
 .tabs-bar {
   display: flex;
-  gap: 5px;
-  flex-wrap: wrap;
+  gap: var(--space-1);
+  margin: 0 calc(var(--space-4) * -1);
+  padding: 0 var(--space-4);
+  overflow-x: auto;
+  scrollbar-width: none;
 }
 
 .tab-btn {
-  padding: 7px 13px;
-  border-radius: var(--radius-sm);
-  font-size: 12px;
-  font-weight: 500;
-  cursor: pointer;
-  border: 1px solid var(--border-subtle);
-  background: transparent;
-  color: var(--text-muted);
+  flex-shrink: 0;
+  min-height: 44px;
+  padding: 0 var(--space-4);
+  border: none;
+  border-radius: var(--radius-pill);
+  background: var(--bg-raised);
   font-family: var(--font-sans);
-  transition: all var(--dur-fast) var(--ease-out);
+  font-size: var(--text-xs);
+  font-weight: 600;
+  color: var(--text-primary);
+  cursor: pointer;
 }
-
-.tab-btn:hover { color: var(--text-secondary); border-color: var(--border-default); }
 
 .tab-btn--active {
-  background: rgba(212, 151, 106, 0.10);
-  color: var(--accent);
-  border-color: rgba(212, 151, 106, 0.25);
+  background: var(--action);
+  color: var(--on-action);
 }
 
-/* ── Card ── */
-.card {
-  background: var(--bg-raised);
-  border: 1px solid var(--border-subtle);
+.tab-panel {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-3);
+  align-items: start;
+}
+
+.tip,
+.section-intro {
+  padding: var(--space-3) var(--space-4);
   border-radius: var(--radius-md);
-  padding: 16px 20px;
-  margin-bottom: 10px;
+  background: var(--bg-raised);
+  font-size: var(--text-xs);
+  line-height: 1.5;
+  color: var(--text-secondary);
 }
 
-.card--decharge {
-  border-left: 2px solid rgba(212, 151, 106, 0.30);
-  border-radius: 0 var(--radius-md) var(--radius-md) 0;
+.card .tip {
+  margin-top: var(--space-1);
+  padding: var(--space-3);
+  background: var(--bg-overlay);
 }
 
-.card--accent-blue {
-  border-left: 2px solid #7A91B8;
-  border-radius: 0 var(--radius-md) var(--radius-md) 0;
+/* ── Semaine ── */
+.week-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-2);
 }
 
-/* ── Badge ── */
-.badge {
-  display: inline-block;
-  padding: 2px 8px;
-  border-radius: 8px;
-  font-size: 10px;
+.day-card {
+  gap: var(--space-1);
+}
+
+.day-card--today {
+  background: var(--rail);
+  color: var(--on-rail);
+}
+
+.day-card--today .day-label,
+.day-card--today .day-sub,
+.day-card--today .day-note { color: var(--on-rail-dim); }
+
+.day-card--today .day-title { color: var(--on-rail); }
+.day-card--today .badge { background: var(--on-rail) !important; color: var(--on-rail-active-text) !important; }
+
+.day-label {
+  font-size: var(--text-2xs);
   font-weight: 500;
-  margin-right: 4px;
-  margin-bottom: 4px;
+  color: var(--text-secondary);
+}
+
+.day-title {
+  font-size: var(--text-lg);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.day-sub,
+.day-note {
+  font-size: var(--text-2xs);
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+
+.badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+  margin-top: var(--space-1);
+}
+
+.badge {
+  display: inline-flex;
+  padding: 3px 10px;
+  border-radius: var(--radius-pill);
+  font-size: var(--text-2xs);
+  font-weight: 500;
 }
 
 .new-b {
-  background: rgba(125, 173, 138, 0.10);
-  color: #7DAD8A;
-}
-
-/* ── Ex row ── */
-.ex-row {
-  display: grid;
-  grid-template-columns: 1fr 100px 80px;
-  align-items: start;
-  gap: 8px;
-  padding: 8px 0;
-  border-bottom: 1px solid var(--border-subtle);
-  font-size: 13px;
-}
-
-.ex-row:last-child { border-bottom: none; }
-
-.ex-row--single { grid-template-columns: 1fr; }
-.ex-row--timing { grid-template-columns: 1fr 60px; }
-
-.ex-name {
-  color: var(--text-primary);
-  line-height: 1.4;
-}
-
-.ex-note {
-  font-size: 11px;
-  color: var(--text-muted);
-  margin-top: 3px;
-  line-height: 1.4;
-}
-
-.ex-sets {
-  text-align: right;
-  font-size: 12px;
-  color: var(--text-muted);
-  padding-top: 1px;
-}
-
-.ex-sets--strikethrough {
-  opacity: 0.35;
-  text-decoration: line-through;
-}
-
-.ex-sets--accent {
+  margin-left: var(--space-1);
+  background: var(--accent-dim);
   color: var(--accent);
+}
+
+/* ── Chiffres ── */
+.stats-row {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-2);
+}
+
+.stat-card {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  padding: 14px;
+  border-radius: var(--radius-lg);
+  background: var(--bg-raised);
+}
+
+.stat-label {
+  font-size: var(--text-2xs);
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+
+.stat-val {
+  font-size: var(--text-xl);
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+  font-variant-numeric: tabular-nums;
+}
+
+.stat-val--sm { font-size: var(--text-lg); }
+
+/* ── Tableaux d'exercices ── */
+.day-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.day-pill {
+  display: inline-flex;
+  padding: 3px 10px;
+  border-radius: var(--radius-pill);
+  font-size: var(--text-2xs);
   font-weight: 600;
 }
 
-.ex-rest {
-  text-align: right;
-  font-size: 12px;
-  color: var(--text-muted);
-  padding-top: 1px;
+.session-title {
+  font-size: var(--text-lg);
+  font-weight: 600;
+  letter-spacing: -0.01em;
 }
 
-/* ── Col header ── */
-.col-header {
-  display: grid;
-  grid-template-columns: 1fr 100px 80px;
-  gap: 8px;
-  padding: 0 0 6px;
-  border-bottom: 1px solid var(--border-subtle);
-  margin-bottom: 2px;
+.bloc-sub {
+  font-size: var(--text-2xs);
+  font-weight: 500;
+  color: var(--text-secondary);
 }
+
+.col-header,
+.ex-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 82px 58px;
+  align-items: start;
+  gap: var(--space-2);
+}
+
+.col-header { padding-top: var(--space-1); }
 
 .col-label {
-  font-size: 10px;
-  color: var(--text-muted);
+  font-size: var(--text-2xs);
+  font-weight: 500;
+  color: var(--text-secondary);
   text-align: right;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
 }
 
 .col-label--left { text-align: left; }
 
-/* ── Day header ── */
-.day-header {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin-bottom: 12px;
-  flex-wrap: wrap;
-}
-
-.day-pill {
-  padding: 4px 11px;
-  border-radius: 8px;
-  font-size: 11px;
-  font-weight: 500;
-  flex-shrink: 0;
-}
-
-.session-title {
-  font-size: 13px;
-  font-weight: 500;
-  color: var(--text-primary);
-}
-
-/* ── Tip ── */
-.tip {
-  background: var(--bg-overlay);
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-sm);
-  padding: 8px 12px;
-  font-size: 11px;
-  color: var(--text-muted);
-  margin-top: 8px;
-  line-height: 1.5;
-}
-
-/* ── Stat cards ── */
-.stat-card {
-  background: var(--bg-overlay);
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-sm);
-  padding: 12px;
-  text-align: center;
-}
-
-.stat-label {
-  font-size: 10px;
-  color: var(--text-muted);
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  line-height: 1.4;
-}
-
-.stat-val {
-  font-family: var(--font-serif);
-  font-size: 22px;
-  font-weight: 400;
-  color: var(--accent);
-  margin: 4px 0 2px;
-  line-height: 1;
-}
-
-.stat-val--sm { font-size: 16px; }
-
-/* ── Phase row ── */
-.phase-row {
-  display: flex;
-  gap: 10px;
-  margin-bottom: 8px;
-  align-items: flex-start;
-  font-size: 12px;
+.sep {
+  padding-top: var(--space-2);
+  font-size: var(--text-2xs);
+  font-weight: 600;
   color: var(--text-secondary);
-  line-height: 1.5;
+}
+
+.ex-row {
+  padding: var(--space-2) 0;
+  border-top: 1px solid var(--border-subtle);
+}
+
+.ex-row.single,
+.ex-row--single { grid-template-columns: minmax(0, 1fr); }
+.ex-row--timing { grid-template-columns: minmax(0, 1fr) auto; }
+
+.ex-name {
+  font-size: var(--text-sm);
+  font-weight: 500;
+}
+
+.ex-note {
+  margin-top: 2px;
+  font-size: var(--text-2xs);
+  font-weight: 400;
+  line-height: 1.4;
+  color: var(--text-secondary);
+}
+
+.ex-sets,
+.ex-rest {
+  font-size: var(--text-xs);
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.ex-sets { font-weight: 600; }
+.ex-rest { color: var(--text-secondary); }
+.ex-sets--strikethrough { color: var(--text-secondary); text-decoration: line-through; }
+.ex-sets--accent { color: var(--accent); }
+
+.card-title { margin-bottom: var(--space-1); }
+
+/* ── Décharge ── */
+.decharge-section {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-3);
+  padding-top: var(--space-3);
+}
+
+.decharge-title,
+.decharge-sub { grid-column: 1 / -1; }
+
+.decharge-title {
+  font-size: var(--text-xl);
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+
+.decharge-sub {
+  margin-top: calc(var(--space-2) * -1);
+  font-size: var(--text-xs);
+  color: var(--text-secondary);
+}
+
+.decharge-count {
+  margin-left: auto;
+  font-size: var(--text-2xs);
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+
+/* ── Phases ── */
+.phase-row {
+  display: grid;
+  grid-template-columns: 8px minmax(0, 1fr);
+  gap: var(--space-2);
+  padding: var(--space-1) 0;
+  font-size: var(--text-xs);
+  line-height: 1.45;
+  color: var(--text-secondary);
 }
 
 .phase-dot {
   width: 8px;
   height: 8px;
+  margin-top: 5px;
   border-radius: 50%;
-  flex-shrink: 0;
-  margin-top: 4px;
 }
 
-/* ── Sep ── */
-.sep {
-  font-size: 10px;
-  font-weight: 500;
-  color: var(--text-muted);
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  padding: 10px 0 4px;
-  border-bottom: 1px solid var(--border-subtle);
-  margin-bottom: 2px;
+@media (min-width: 768px) {
+  .view-break { display: none; }
+
+  .view-title {
+    font-size: var(--text-3xl);
+    font-weight: 700;
+    letter-spacing: -0.03em;
+    line-height: 1.1;
+  }
+
+  .banner { padding: var(--space-6) 28px; }
+  .card { padding: 20px; }
+  .tabs-bar { margin: 0; padding: 0; flex-wrap: wrap; }
+  .stats-row { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .week-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 
-/* ── Week grid ── */
-.week-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(128px, 1fr));
-  gap: 8px;
-  margin-bottom: 14px;
-}
-
-.day-label {
-  font-size: 10px;
-  color: var(--text-muted);
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  margin-bottom: 5px;
-}
-
-.day-title {
-  font-size: 13px;
-  font-weight: 500;
-  margin-bottom: 4px;
-  color: var(--text-primary);
-}
-
-.day-sub {
-  font-size: 11px;
-  color: var(--text-muted);
-  margin-bottom: 8px;
-  line-height: 1.4;
-}
-
-.day-note {
-  margin-top: 6px;
-  font-size: 11px;
-  color: var(--text-muted);
-}
-
-/* ── Stats row ── */
-.stats-row {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
-  gap: 8px;
-  margin-bottom: 12px;
-}
-
-/* ── Card title ── */
-.card-title {
-  font-size: 13px;
-  font-weight: 500;
-  color: var(--text-primary);
-  margin-bottom: 10px;
-}
-
-/* ── Decharge section ── */
-.decharge-section { margin-top: 20px; }
-
-.decharge-title {
-  font-size: 13px;
-  font-weight: 500;
-  color: var(--text-primary);
-  margin-bottom: 6px;
-}
-
-.decharge-sub {
-  font-size: 11px;
-  color: var(--text-muted);
-  margin-bottom: 12px;
-  line-height: 1.5;
-}
-
-.decharge-count {
-  font-size: 10px;
-  color: var(--text-muted);
-  margin-left: auto;
-}
-
-/* ── Section intro ── */
-.section-intro {
-  font-size: 12px;
-  color: var(--text-muted);
-  margin-bottom: 14px;
-  line-height: 1.5;
-}
-
-/* ── Bloc sub ── */
-.bloc-sub {
-  font-size: 12px;
-  color: var(--text-muted);
+@media (min-width: 1100px) {
+  .plan-view { gap: var(--space-4); }
+  .tab-panel { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-4); }
+  .tab-panel > .tip,
+  .tab-panel > .section-intro,
+  .tab-panel > .stats-row,
+  .tab-panel > .week-grid,
+  .tab-panel > .decharge-section { grid-column: 1 / -1; }
+  .week-grid { grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 10px; }
+  .day-card { min-height: 240px; }
+  .decharge-section { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-4); }
+  .orb--a { top: -70px; right: 90px; width: 220px; height: 220px; }
+  .orb--b { top: 40px; right: 20px; width: 110px; height: 110px; }
 }
 </style>

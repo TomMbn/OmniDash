@@ -1,176 +1,131 @@
 <template>
-  <div class="settings-view">
+  <div class="windows-view">
 
-    <header class="module-header">
-      <div class="module-header-title">
-        <div class="module-icon">
-          <Wind :size="18" stroke-width="1.75" />
-        </div>
-        <div>
-          <h2 class="module-name">Fenêtres</h2>
-          <p class="module-sub">Netatmo & notifications</p>
-        </div>
-      </div>
+    <!-- ── En-tête ── -->
+    <header class="view-head">
+      <h1 class="view-title">
+        Fenêtres,{{ ' ' }}<br class="view-break" />
+        <span class="view-title-soft">{{ netatmoData ? `${Math.round(netatmoData.indoor_temp)} °C chez toi` : 'Netatmo et prévisions' }}</span>
+      </h1>
+      <button class="btn btn--dark" :disabled="netatmoSyncing" @click="syncNetatmo()">
+        <RefreshCw :size="16" stroke-width="2" :class="{ spin: netatmoSyncing }" />
+        {{ netatmoSyncing ? 'Synchronisation…' : (netatmoData ? 'Actualiser' : 'Connecter Netatmo') }}
+      </button>
     </header>
 
-    <!-- ── Netatmo card ── -->
-    <div class="sync-card">
-      <div class="sync-content">
-        <div class="sync-left">
-          <div class="sync-title-row">
-            <div class="sync-zap-icon"><Thermometer :size="14" stroke-width="1.75" /></div>
-            <h3 class="sync-title">Station Netatmo</h3>
-          </div>
-          <p class="sync-desc">Connecte ta station intérieure pour suivre température et humidité.</p>
+    <p v-if="netatmoError" class="error" role="alert">{{ netatmoError }}</p>
 
-          <div v-if="netatmoData" class="sync-timestamp">
-            <div class="sync-timestamp-dot" />
-            <span>Intérieur {{ Math.round(netatmoData.indoor_temp) }}°C · humidex {{ Math.round(netatmoData.indoor_humidex) }}</span>
-          </div>
-          <div v-if="netatmoError" class="sync-error">
-            <div class="sync-error-dot" />
-            {{ netatmoError }}
-          </div>
+    <div class="grid">
+
+      <!-- ── Créneau ── -->
+      <section class="banner" aria-label="Créneau recommandé">
+        <span class="orb orb--a" aria-hidden="true" />
+        <span class="orb orb--b" aria-hidden="true" />
+        <span v-if="forecastPlan?.openAt" class="chip">Créneau favorable</span>
+        <h2 class="banner-title">
+          {{ heroTitle }}<br />
+          <span class="banner-title-soft">{{ heroSubtitle }}</span>
+        </h2>
+      </section>
+
+      <!-- ── Températures ── -->
+      <section class="card temp temp--in">
+        <p class="card-label">Dedans</p>
+        <p class="temp-value">{{ netatmoData ? `${Math.round(netatmoData.indoor_temp)} °C` : '–' }}</p>
+        <p class="card-sub">{{ netatmoData ? `humidex ${Math.round(netatmoData.indoor_humidex)}` : 'Station non connectée' }}</p>
+      </section>
+
+      <section class="card temp temp--out">
+        <p class="card-label">Dehors</p>
+        <p class="temp-value">{{ outdoorNow != null ? `${Math.round(outdoorNow)} °C` : '–' }}</p>
+        <p class="card-sub">{{ outdoorNow != null ? 'Prévision Open-Meteo' : 'Pas encore de prévision' }}</p>
+      </section>
+
+      <!-- ── Prévisions ── -->
+      <section class="card forecast" aria-labelledby="forecast-title">
+        <div class="forecast-head">
+          <h2 id="forecast-title" class="card-title">Prévisions</h2>
+          <button class="btn btn--soft" :disabled="forecastLoading" @click="refreshForecast">
+            <RefreshCw :size="16" stroke-width="2" :class="{ spin: forecastLoading }" />
+            {{ forecastLoading ? 'Calcul…' : 'Actualiser' }}
+          </button>
         </div>
 
-        <button @click="syncNetatmo()" :disabled="netatmoSyncing" class="sync-btn" :class="{ 'sync-btn--loading': netatmoSyncing }">
-          <RefreshCw :size="14" stroke-width="2" :class="netatmoSyncing ? 'sync-icon-spin' : 'sync-icon-idle'" />
-          {{ netatmoSyncing ? 'Sync…' : (netatmoData ? 'Actualiser' : 'Connecter Netatmo') }}
-        </button>
-      </div>
-    </div>
+        <p v-if="forecastError" class="error" role="alert">{{ forecastError }}</p>
 
-    <!-- ── Notifications card ── -->
-    <div class="settings-card">
-      <div class="settings-card-head">
-        <div class="sync-title-row">
-          <div class="sync-zap-icon"><Bell :size="14" stroke-width="1.75" /></div>
-          <h3 class="sync-title">Notifications fenêtres</h3>
-        </div>
-        <label class="toggle">
-          <input type="checkbox" v-model="notificationsEnabled" @change="onToggleNotifications" />
-          <span class="toggle-track"><span class="toggle-thumb" /></span>
-        </label>
-      </div>
-
-      <p class="sync-desc">
-        Reçois une notif pour ouvrir les fenêtres dès qu'il fait à la fois plus frais et plus confortable dehors (température ET humidex plus bas, Netatmo vs Open-Meteo), et pour les refermer quand ça s'inverse.
-      </p>
-
-      <div v-if="pushError" class="sync-error">
-        <div class="sync-error-dot" />
-        {{ pushError }}
-      </div>
-    </div>
-
-    <!-- ── Wall type card ── -->
-    <div class="settings-card">
-      <div class="sync-title-row">
-        <div class="sync-zap-icon"><Building2 :size="14" stroke-width="1.75" /></div>
-        <h3 class="sync-title">Type de murs</h3>
-      </div>
-      <p class="sync-desc">
-        Détermine la vitesse à laquelle ton logement se réchauffe/refroidit — utilisé pour prédire le meilleur créneau.
-      </p>
-      <div class="segmented">
-        <button
-          v-for="option in wallTypeOptions"
-          :key="option.value"
-          class="segmented-btn"
-          :class="{ 'segmented-btn--active': wallType === option.value }"
-          @click="setWallType(option.value)"
-        >
-          {{ option.label }}
-        </button>
-      </div>
-    </div>
-
-    <!-- ── Forecast card ── -->
-    <div class="settings-card">
-      <div class="sync-title-row">
-        <div class="sync-zap-icon"><TrendingUp :size="14" stroke-width="1.75" /></div>
-        <h3 class="sync-title">Prévisions</h3>
-      </div>
-      <p class="sync-desc">
-        Créneau optimal calculé à partir des prévisions Open-Meteo sur 48h et de l'inertie thermique de ton logement.
-      </p>
-
-      <button @click="refreshForecast" :disabled="forecastLoading" class="sync-btn" :class="{ 'sync-btn--loading': forecastLoading }" style="align-self: flex-start;">
-        <RefreshCw :size="14" stroke-width="2" :class="forecastLoading ? 'sync-icon-spin' : 'sync-icon-idle'" />
-        {{ forecastLoading ? 'Calcul…' : 'Actualiser les prévisions' }}
-      </button>
-
-      <div v-if="forecastError" class="sync-error">
-        <div class="sync-error-dot" />
-        {{ forecastError }}
-      </div>
-
-      <template v-if="forecastPlan">
-        <p class="forecast-window-label">
-          <span v-if="forecastPlan.openAt">
-            Ouvrez de {{ formatHour(forecastPlan.openAt) }}
-            <span v-if="forecastPlan.closeAt">à {{ formatHour(forecastPlan.closeAt) }}</span>
-            <span v-else>(durée indéterminée)</span>
-          </span>
-          <span v-else>Aucun créneau favorable dans les prochaines 48h.</span>
-        </p>
         <WindowForecastChart
+          v-if="forecastPlan"
           :hours="forecastPlan.hours"
           :open-at="forecastPlan.openAt"
           :close-at="forecastPlan.closeAt"
         />
-      </template>
+        <p v-else class="card-sub">
+          Le créneau optimal se calcule avec Open-Meteo sur 48 h et l'inertie de ton logement.
+        </p>
+      </section>
+
+      <!-- ── Réglages ── -->
+      <div class="side">
+        <section class="card">
+          <div class="setting">
+            <h2 id="notif-title" class="setting-title">Notifications fenêtres</h2>
+            <label class="switch">
+              <input v-model="notificationsEnabled" type="checkbox" aria-labelledby="notif-title" @change="onToggleNotifications" />
+              <span class="switch-track"><span class="switch-thumb" /></span>
+            </label>
+          </div>
+          <p class="card-sub">
+            Une notification pour ouvrir quand il fait plus frais et plus confortable dehors, et pour refermer quand ça s'inverse.
+          </p>
+          <p v-if="pushError" class="error" role="alert">{{ pushError }}</p>
+        </section>
+
+        <section class="card">
+          <h2 class="setting-title">Type de murs</h2>
+          <div class="segmented" role="group" aria-label="Type de murs">
+            <button
+              v-for="option in wallTypeOptions"
+              :key="option.value"
+              class="segmented-btn"
+              :class="{ 'segmented-btn--active': wallType === option.value }"
+              :aria-pressed="wallType === option.value"
+              @click="setWallType(option.value)"
+            >{{ option.label }}</button>
+          </div>
+          <p class="card-sub">Ils déterminent la vitesse à laquelle ton logement change de température.</p>
+        </section>
+
+        <section class="card check">
+          <h2 class="setting-title">Vérifier maintenant</h2>
+          <p class="card-sub">Compare l'humidex dedans et dehors sans attendre la prochaine vérification.</p>
+          <button class="btn btn--dark btn--wide" :disabled="checking" @click="checkNow">
+            <RefreshCw v-if="checking" :size="16" stroke-width="2" class="spin" />
+            {{ checking ? 'Vérification…' : 'Lancer la vérification' }}
+          </button>
+
+          <p v-if="checkError" class="error" role="alert">{{ checkError }}</p>
+
+          <div v-if="checkResult" class="result" :class="`result--${checkResult.recommendation}`">
+            <p class="result-title">
+              <component :is="resultIcon" :size="18" stroke-width="1.75" />
+              {{ resultLabel }}
+            </p>
+            <p class="result-line">
+              <span>Dedans</span>
+              <span>{{ Math.round(checkResult.indoorTemp) }} °C, humidex {{ Math.round(checkResult.indoorHumidex) }}, {{ comfortLevel(checkResult.indoorHumidex).label.toLowerCase() }}</span>
+            </p>
+            <p class="result-line">
+              <span>Dehors</span>
+              <span>{{ Math.round(checkResult.outdoorTemp) }} °C, humidex {{ Math.round(checkResult.outdoorHumidex) }}, {{ comfortLevel(checkResult.outdoorHumidex).label.toLowerCase() }}</span>
+            </p>
+            <p v-if="checkResult.precipitation > 0" class="result-line">
+              <span>Pluie</span>
+              <span>{{ checkResult.precipitation.toLocaleString('fr-FR') }} mm</span>
+            </p>
+          </div>
+        </section>
+      </div>
     </div>
-
-    <!-- ── Manual check card ── -->
-    <div class="settings-card">
-      <div class="sync-title-row">
-        <div class="sync-zap-icon"><Gauge :size="14" stroke-width="1.75" /></div>
-        <h3 class="sync-title">Tester maintenant</h3>
-      </div>
-
-      <p class="sync-desc">
-        Compare l'humidex intérieur et extérieur tout de suite, sans attendre la prochaine vérification automatique.
-      </p>
-
-      <button @click="checkNow" :disabled="checking" class="sync-btn" :class="{ 'sync-btn--loading': checking }" style="align-self: flex-start;">
-        <RefreshCw :size="14" stroke-width="2" :class="checking ? 'sync-icon-spin' : 'sync-icon-idle'" />
-        {{ checking ? 'Vérification…' : 'Vérifier maintenant' }}
-      </button>
-
-      <div v-if="checkError" class="sync-error">
-        <div class="sync-error-dot" />
-        {{ checkError }}
-      </div>
-
-      <div v-if="checkResult" class="result-card" :class="`result-card--${checkResult.recommendation}`">
-        <div class="result-title">
-          <component :is="resultIcon" :size="18" stroke-width="1.75" />
-          <span>{{ resultLabel }}</span>
-        </div>
-        <div class="result-metrics">
-          <div class="result-metric">
-            <span class="result-metric-label">Intérieur</span>
-            <span class="result-metric-value">
-              {{ Math.round(checkResult.indoorTemp) }}°C · humidex {{ Math.round(checkResult.indoorHumidex) }}
-              <span class="comfort-badge" :style="{ color: comfortLevel(checkResult.indoorHumidex).color }">{{ comfortLevel(checkResult.indoorHumidex).label }}</span>
-            </span>
-          </div>
-          <div class="result-metric">
-            <span class="result-metric-label">Extérieur</span>
-            <span class="result-metric-value">
-              {{ Math.round(checkResult.outdoorTemp) }}°C · humidex {{ Math.round(checkResult.outdoorHumidex) }}
-              <span class="comfort-badge" :style="{ color: comfortLevel(checkResult.outdoorHumidex).color }">{{ comfortLevel(checkResult.outdoorHumidex).label }}</span>
-            </span>
-          </div>
-          <div v-if="checkResult.precipitation > 0" class="result-metric">
-            <span class="result-metric-label">Pluie</span>
-            <span class="result-metric-value">{{ checkResult.precipitation }} mm</span>
-          </div>
-        </div>
-      </div>
-    </div>
-
   </div>
 </template>
 
@@ -178,7 +133,7 @@
 import { ref, computed, onMounted, watch } from 'vue'
 import { supabase } from '@/supabase'
 import { useAuth } from '@/composables/useAuth'
-import { Wind, Thermometer, Bell, RefreshCw, Gauge, DoorOpen, DoorClosed, Check, Building2, TrendingUp } from 'lucide-vue-next'
+import { RefreshCw, DoorOpen, DoorClosed, Check } from 'lucide-vue-next'
 import WindowForecastChart from '@/components/WindowForecastChart.vue'
 
 const { user } = useAuth()
@@ -439,6 +394,32 @@ const simulateWindowPlan = (hourlyRaw, currentIndoorTemp, currentIndoorHumidity,
 const formatHour = (iso) =>
   new Intl.DateTimeFormat('fr-FR', { hour: '2-digit', minute: '2-digit' }).format(new Date(iso))
 
+const dayPrefix = (iso) => {
+  const date = new Date(iso)
+  const tomorrow = new Date()
+  tomorrow.setDate(tomorrow.getDate() + 1)
+  if (date.toDateString() === tomorrow.toDateString()) return 'demain '
+  return ''
+}
+
+const heroTitle = computed(() => {
+  if (!netatmoData.value) return 'Connecte ta station,'
+  if (!forecastPlan.value) return 'Calcul du créneau,'
+  if (!forecastPlan.value.openAt) return 'Aucun créneau favorable,'
+  return `Ouvre ${dayPrefix(forecastPlan.value.openAt)}à ${formatHour(forecastPlan.value.openAt)},`
+})
+
+const heroSubtitle = computed(() => {
+  if (!netatmoData.value) return 'pour suivre ton intérieur'
+  if (!forecastPlan.value) return 'avec les prévisions Open-Meteo'
+  if (!forecastPlan.value.openAt) return 'dans les prochaines 48 h'
+  return forecastPlan.value.closeAt
+    ? `jusqu'à ${formatHour(forecastPlan.value.closeAt)}`
+    : 'sans fin prévue'
+})
+
+const outdoorNow = computed(() => forecastPlan.value?.hours?.[0]?.outdoorTemp ?? null)
+
 const refreshForecast = async () => {
   forecastLoading.value = true
   forecastError.value = ''
@@ -535,301 +516,340 @@ const resultIcon = computed(() => {
 </script>
 
 <style scoped>
-.settings-view {
-  max-width: 560px;
-  margin: 0 auto;
+/* ── En-tête ── */
+.view-head {
   display: flex;
   flex-direction: column;
-  gap: 12px;
-}
-
-.module-header { padding-bottom: 4px; }
-
-.module-header-title {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.module-icon {
-  width: 38px;
-  height: 38px;
-  border-radius: var(--radius-sm);
-  background: var(--bg-overlay);
-  border: 1px solid var(--border-subtle);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--text-primary);
-  flex-shrink: 0;
-}
-
-.module-name {
-  font-family: var(--font-serif);
-  font-size: var(--text-xl);
-  font-weight: 400;
-  color: var(--text-primary);
-  margin: 0;
-}
-
-.module-sub {
-  font-size: 10px;
-  font-weight: 500;
-  text-transform: uppercase;
-  letter-spacing: 0.12em;
-  color: var(--text-muted);
-  margin-top: 2px;
-}
-
-.sync-card {
-  position: relative;
-  overflow: hidden;
-  background: var(--bg-raised);
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-xl);
-  padding: 28px 24px;
-}
-
-.sync-content {
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
+  gap: var(--space-3);
   align-items: flex-start;
 }
 
-@media (min-width: 480px) {
-  .sync-content {
-    flex-direction: row;
-    align-items: center;
-    justify-content: space-between;
-  }
+.view-title {
+  font-size: var(--text-xl);
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  line-height: 1.22;
 }
 
-.sync-left { flex: 1; }
+.view-title-soft { color: var(--text-secondary); }
 
-.sync-title-row {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin-bottom: 8px;
-}
-
-.sync-zap-icon {
-  width: 28px;
-  height: 28px;
-  border-radius: var(--radius-sm);
-  background: var(--bg-overlay);
-  display: flex;
+/* ── Boutons ── */
+.btn {
+  display: inline-flex;
   align-items: center;
   justify-content: center;
-  color: var(--text-primary);
-  flex-shrink: 0;
+  gap: var(--space-2);
+  min-height: 44px;
+  padding: 0 18px;
+  border: none;
+  border-radius: var(--radius-pill);
+  font-family: var(--font-sans);
+  font-size: var(--text-xs);
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: opacity var(--dur-fast) var(--ease-out), transform var(--dur-fast) var(--ease-out);
 }
 
-.sync-title {
-  font-family: var(--font-serif);
-  font-size: var(--text-md);
-  font-weight: 400;
-  color: var(--text-primary);
-}
+.btn:hover { opacity: 0.88; }
+.btn:active { transform: scale(0.97); }
+.btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.btn--dark  { background: var(--action); color: var(--on-action); }
+.btn--soft  { background: var(--bg-overlay); color: var(--text-primary); }
+.btn--light { background: var(--bg-raised); color: var(--text-primary); }
+.btn--wide  { width: 100%; }
 
-.sync-desc {
-  font-size: var(--text-sm);
-  color: var(--text-muted);
-  line-height: 1.5;
-  max-width: 360px;
-}
+.spin { animation: spin 0.8s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
 
-.sync-timestamp {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  margin-top: 10px;
-  font-size: 10px;
-  color: var(--text-muted);
-}
-
-.sync-timestamp-dot {
-  width: 5px;
-  height: 5px;
-  border-radius: 50%;
-  background: var(--status-success);
-  opacity: 0.7;
-}
-
-.sync-error {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-top: 12px;
-  padding: 10px 14px;
-  background: var(--status-error-dim);
-  border: 1px solid rgba(176, 90, 90, 0.2);
+.error {
+  padding: var(--space-3) var(--space-4);
   border-radius: var(--radius-md);
-  font-size: 11px;
+  background: var(--status-error-dim);
+  font-size: var(--text-xs);
+  font-weight: 500;
   color: var(--status-error);
 }
 
-.sync-error-dot {
-  width: 5px;
-  height: 5px;
-  border-radius: 50%;
-  background: var(--status-error);
-  flex-shrink: 0;
-}
-
-.sync-btn {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 12px 20px;
-  background: var(--bg-overlay);
-  border: 1px solid var(--border-default);
-  border-radius: var(--radius-md);
-  font-family: var(--font-sans);
-  font-size: var(--text-sm);
-  font-weight: 500;
-  color: var(--text-primary);
-  cursor: pointer;
-  white-space: nowrap;
-  flex-shrink: 0;
-}
-
-.sync-btn:disabled { opacity: 0.5; cursor: not-allowed; }
-
-@keyframes spin { to { transform: rotate(360deg); } }
-.sync-icon-spin { animation: spin 0.9s linear infinite; }
-
-.settings-card {
-  background: var(--bg-raised);
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-xl);
-  padding: 24px;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.settings-card-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-
-.toggle { display: inline-flex; cursor: pointer; }
-.toggle input { display: none; }
-
-.toggle-track {
-  width: 40px;
-  height: 22px;
-  background: var(--bg-overlay);
-  border: 1px solid var(--border-default);
-  border-radius: 999px;
+/* ── Bandeau ── */
+.banner {
   position: relative;
-  transition: background var(--dur-fast) var(--ease-out);
-}
-
-.toggle-thumb {
-  position: absolute;
-  top: 2px;
-  left: 2px;
-  width: 16px;
-  height: 16px;
-  border-radius: 50%;
-  background: var(--text-muted);
-  transition: transform var(--dur-fast) var(--ease-out), background var(--dur-fast) var(--ease-out);
-}
-
-.toggle input:checked + .toggle-track { background: var(--status-success-dim); }
-.toggle input:checked + .toggle-track .toggle-thumb {
-  transform: translateX(18px);
-  background: var(--status-success);
-}
-
-.result-card {
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-md);
-  padding: 16px;
   display: flex;
   flex-direction: column;
-  gap: 12px;
-  background: var(--bg-overlay);
+  align-items: flex-start;
+  justify-content: center;
+  gap: var(--space-2);
+  min-height: 160px;
+  padding: 18px;
+  overflow: hidden;
+  border-radius: var(--radius-lg);
 }
 
-.result-card--open { border-color: rgba(90, 176, 120, 0.35); }
-.result-card--close { border-color: rgba(176, 90, 90, 0.35); }
-
-.result-title {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-family: var(--font-serif);
-  font-size: var(--text-md);
-  color: var(--text-primary);
+.banner > :not(.orb) {
+  position: relative;
+  z-index: var(--z-raised);
 }
 
-.result-card--open .result-title { color: var(--status-success); }
-.result-card--close .result-title { color: var(--status-error); }
-
-.result-metrics {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.result-metric {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 12px;
-  font-size: var(--text-sm);
-}
-
-.result-metric-label { color: var(--text-muted); flex-shrink: 0; }
-.result-metric-value {
-  color: var(--text-primary);
-  font-variant-numeric: tabular-nums;
-  text-align: right;
-}
-
-.comfort-badge {
-  display: inline-block;
-  margin-left: 6px;
-  font-size: 10px;
+.banner-title {
+  max-width: 72%;
+  font-size: var(--text-xl);
   font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
+  letter-spacing: -0.02em;
+  line-height: 1.22;
 }
 
+.banner-title-soft { color: var(--text-secondary); }
+
+.chip {
+  display: inline-flex;
+  padding: 5px 10px;
+  border-radius: var(--radius-pill);
+  background: var(--bg-raised);
+  font-size: var(--text-2xs);
+  font-weight: 500;
+  color: var(--status-success);
+}
+
+.orb {
+  position: absolute;
+  border-radius: 50%;
+  opacity: var(--orb-opacity);
+  pointer-events: none;
+}
+
+/* ── Cartes ── */
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  min-width: 0;
+  padding: var(--space-4);
+  border-radius: var(--radius-lg);
+  background: var(--bg-raised);
+}
+
+.card-title {
+  font-size: var(--text-lg);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.card-label,
+.card-sub {
+  font-size: var(--text-2xs);
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+
+/* ── Sélecteur ── */
 .segmented {
   display: flex;
-  gap: 6px;
+  gap: 2px;
+  padding: var(--space-1);
+  border-radius: var(--radius-pill);
   background: var(--bg-overlay);
-  border: 1px solid var(--border-default);
-  border-radius: var(--radius-md);
-  padding: 4px;
 }
 
 .segmented-btn {
   flex: 1;
-  padding: 8px 10px;
-  background: transparent;
+  min-height: 44px;
+  padding: 0 14px;
   border: none;
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-pill);
+  background: none;
   font-family: var(--font-sans);
-  font-size: var(--text-sm);
-  color: var(--text-muted);
+  font-size: var(--text-xs);
+  font-weight: 600;
+  color: var(--text-secondary);
+  white-space: nowrap;
   cursor: pointer;
 }
 
 .segmented-btn--active {
-  background: var(--bg-raised);
-  color: var(--text-primary);
+  background: var(--action);
+  color: var(--on-action);
 }
 
-.forecast-window-label {
-  font-family: var(--font-serif);
-  font-size: var(--text-md);
-  color: var(--text-primary);
+.windows-view {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  max-width: 1480px;
+  margin: 0 auto;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-areas:
+    "banner banner"
+    "in     out"
+    "chart  chart"
+    "side   side";
+  gap: var(--space-3);
+}
+
+.banner {
+  grid-area: banner;
+  background: var(--aurore-windows);
+}
+
+.orb--a { top: -40px; right: -30px; width: 130px; height: 130px; background: var(--orb-peche); }
+.orb--b { top: 50px; right: -30px; width: 70px; height: 70px; background: var(--orb-ciel); }
+
+.temp--in { grid-area: in; }
+.temp--out { grid-area: out; }
+.temp { gap: 0; }
+
+.temp-value {
+  font-size: var(--text-2xl);
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  line-height: 1.15;
+  font-variant-numeric: tabular-nums;
+}
+
+.forecast { grid-area: chart; gap: var(--space-3); }
+
+.forecast-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.side {
+  grid-area: side;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  min-width: 0;
+}
+
+.setting {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.setting-title {
+  font-size: var(--text-sm);
+  font-weight: 500;
+}
+
+.switch {
+  position: relative;
+  display: inline-flex;
+  flex-shrink: 0;
+  cursor: pointer;
+}
+
+.switch input {
+  position: absolute;
+  inset: -6px 0;
+  width: 100%;
+  height: calc(100% + 12px);
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.switch-track {
+  display: flex;
+  align-items: center;
+  width: 52px;
+  height: 32px;
+  padding: 0 4px;
+  border-radius: var(--radius-pill);
+  background: var(--bg-muted);
+  transition: background var(--dur-fast) var(--ease-out);
+}
+
+.switch-thumb {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--on-rail);
+  box-shadow: var(--shadow-sm);
+  transition: transform var(--dur-fast) var(--ease-out);
+}
+
+.switch input:checked + .switch-track { background: var(--accent); }
+.switch input:checked + .switch-track .switch-thumb { transform: translateX(20px); }
+.switch input:focus-visible + .switch-track { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+.result {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-3);
+  border-radius: var(--radius-md);
+  background: var(--bg-overlay);
+}
+
+.result--open  { background: var(--status-success-dim); }
+.result--close { background: var(--status-warning-dim); }
+
+.result-title {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--text-sm);
+  font-weight: 600;
+}
+
+.result--open .result-title  { color: var(--status-success); }
+.result--close .result-title { color: var(--status-warning); }
+
+.result-line {
+  display: grid;
+  grid-template-columns: 56px minmax(0, 1fr);
+  gap: var(--space-2);
+  font-size: var(--text-2xs);
+  font-weight: 500;
+}
+
+.result-line > :first-child { color: var(--text-secondary); }
+
+@media (min-width: 768px) {
+  .view-head {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .view-break { display: none; }
+
+  .view-title {
+    font-size: var(--text-3xl);
+    font-weight: 700;
+    letter-spacing: -0.03em;
+    line-height: 1.1;
+  }
+
+  .banner { padding: var(--space-6) 28px; }
+  .card { padding: 20px; }
+}
+
+@media (min-width: 1100px) {
+  .windows-view { gap: var(--space-4); }
+
+  .grid {
+    grid-template-columns: minmax(0, 1fr) 240px 240px;
+    grid-template-rows: 232px minmax(360px, 1fr);
+    grid-template-areas:
+      "banner in   out"
+      "chart  side side";
+    gap: var(--space-4);
+  }
+
+  .orb--a { top: -50px; right: 80px; width: 220px; height: 220px; }
+  .orb--b { top: 70px; right: 10px; width: 120px; height: 120px; }
+  .temp { justify-content: center; padding: var(--space-6); }
+  .temp-value { font-size: var(--text-3xl); }
+  .card-title { font-size: var(--text-xl); }
+  .forecast { padding: var(--space-6); }
+  .side { gap: var(--space-4); }
 }
 </style>
