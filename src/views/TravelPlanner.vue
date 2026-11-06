@@ -585,20 +585,20 @@ const goBack = () => {
   border-radius: var(--radius-md);
 }
 
-.error-icon { color: #EF4444; margin-top: 1px; flex-shrink: 0; }
+.error-icon { color: var(--status-error); margin-top: 1px; flex-shrink: 0; }
 
 .error-body { flex: 1; min-width: 0; }
 
 .error-title {
   font-size: 11px;
   font-weight: 500;
-  color: #EF4444;
+  color: var(--status-error);
   margin: 0;
 }
 
 .error-msg {
   font-size: 11px;
-  color: #EF4444;
+  color: var(--status-error);
   opacity: 0.75;
   margin: 3px 0 0;
 }
@@ -612,7 +612,7 @@ const goBack = () => {
   transition: color var(--dur-fast) var(--ease-out);
 }
 
-.error-close:hover { color: #EF4444; }
+.error-close:hover { color: var(--status-error); }
 
 /* ── Form card ── */
 .form-card {
@@ -668,7 +668,6 @@ const goBack = () => {
   outline: none;
   transition: border-color var(--dur-fast) var(--ease-out), box-shadow var(--dur-fast) var(--ease-out);
   box-sizing: border-box;
-  color-scheme: dark;
 }
 
 .field-input--icon { padding-left: 40px; }
@@ -706,7 +705,6 @@ const goBack = () => {
   cursor: pointer;
   appearance: none;
   transition: border-color var(--dur-fast) var(--ease-out);
-  color-scheme: dark;
 }
 
 .time-select:focus { border-color: var(--module-travel-border); }

@@ -1,44 +1,31 @@
 <template>
-  <div class="app-shell">
+  <div class="app-shell" :class="{ 'app-shell--auth': user }">
 
-    <!-- ── Desktop Sidebar ── -->
-    <aside v-if="user" class="sidebar">
-      <div class="sidebar-logo">
-        <img src="/pwa-192x192.png" alt="" class="sidebar-logo-img" />
-        <span class="sidebar-logo-name">OmniDash</span>
-      </div>
+    <!-- ── Rail desktop ── -->
+    <aside v-if="user" class="rail">
+      <router-link to="/" class="rail-logo" aria-label="OmniDash, aujourd'hui">O</router-link>
 
-      <nav class="sidebar-nav">
+      <nav class="rail-nav" aria-label="Navigation principale">
         <router-link
           v-for="link in navLinks"
           :key="link.to"
           :to="link.to"
-          class="sidebar-link"
-          :style="{ '--module-color': link.color }"
+          class="rail-link"
+          :aria-label="link.label"
         >
-          <component :is="link.icon" :size="18" stroke-width="1.75" class="sidebar-link-icon" />
-          <span>{{ link.label }}</span>
+          <component :is="link.icon" :size="22" stroke-width="1.75" />
+          <span class="rail-tip" aria-hidden="true">{{ link.label }}</span>
         </router-link>
       </nav>
 
-      <div class="sidebar-footer">
-        <button @click="handleLogout" class="sidebar-logout">
-          <LogOut :size="16" stroke-width="1.75" />
-          <span>Déconnexion</span>
-        </button>
-      </div>
+      <button @click="handleLogout" class="rail-link rail-logout" aria-label="Déconnexion">
+        <LogOut :size="20" stroke-width="1.75" />
+        <span class="rail-tip" aria-hidden="true">Déconnexion</span>
+      </button>
     </aside>
 
     <!-- ── Main ── -->
     <main class="app-main">
-
-      <!-- Mobile Header -->
-      <header v-if="user" class="mobile-header">
-        <span class="mobile-header-logo">OmniDash</span>
-        <button @click="handleLogout" class="mobile-header-logout" aria-label="Déconnexion">
-          <LogOut :size="18" stroke-width="1.75" />
-        </button>
-      </header>
 
       <!-- Content -->
       <div class="app-content">
@@ -70,14 +57,14 @@ const router = useRouter()
 const { user, logout } = useAuth()
 
 const navLinks = [
-  { to: '/',            label: 'Dashboard',   icon: LayoutDashboard, color: 'var(--accent)' },
-  { to: '/musculation', label: 'Musculation', icon: Dumbbell,         color: 'var(--module-muscu)' },
-  { to: '/nutrition',   label: 'Nutrition',   icon: Utensils,         color: 'var(--module-nutri)' },
-  { to: '/sommeil',     label: 'Sommeil',     icon: Moon,             color: 'var(--module-sleep)' },
-  { to: '/travel',      label: 'Travel',      icon: Plane,            color: 'var(--module-travel)' },
-  { to: '/dressing',    label: 'Dressing',    icon: Shirt,            color: 'var(--module-dress)' },
-  { to: '/plan',        label: 'Plan',        icon: ClipboardList,    color: 'var(--accent)' },
-  { to: '/fenetres',    label: 'Fenêtres',    icon: Wind,             color: 'var(--text-secondary)' },
+  { to: '/',            label: "Aujourd'hui", icon: LayoutDashboard },
+  { to: '/plan',        label: 'Plan',        icon: ClipboardList },
+  { to: '/musculation', label: 'Musculation', icon: Dumbbell },
+  { to: '/nutrition',   label: 'Nutrition',   icon: Utensils },
+  { to: '/sommeil',     label: 'Sommeil',     icon: Moon },
+  { to: '/travel',      label: 'Travel',      icon: Plane },
+  { to: '/dressing',    label: 'Dressing',    icon: Shirt },
+  { to: '/fenetres',    label: 'Fenêtres',    icon: Wind },
 ]
 
 onMounted(() => {
@@ -110,108 +97,102 @@ const handleLogout = async () => {
   color: var(--text-primary);
 }
 
-/* ── Sidebar ── */
-.sidebar {
+/* ── Rail ── */
+.rail {
   display: none;
   flex-direction: column;
-  width: 220px;
+  align-items: center;
+  gap: var(--space-3);
+  width: 72px;
   flex-shrink: 0;
-  background: var(--bg-raised);
-  border-right: 1px solid var(--border-subtle);
+  padding: 18px 0;
+  background: var(--rail);
+  border-radius: 36px;
+  position: relative;
+  z-index: var(--z-nav);
 }
 
-@media (min-width: 768px) {
-  .sidebar { display: flex; }
-}
-
-.sidebar-logo {
+.rail-logo {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 28px 24px 24px;
-  border-bottom: 1px solid var(--border-subtle);
-}
-
-.sidebar-logo-img {
-  width: 28px;
-  height: 28px;
-  border-radius: 8px;
-  object-fit: contain;
-}
-
-.sidebar-logo-name {
-  font-family: var(--font-serif);
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 14px;
+  background: linear-gradient(120deg, #CFC3FA 0%, #F6B6D6 60%, #A9D6FA 100%);
+  color: #15151A;
   font-size: var(--text-lg);
-  color: var(--text-primary);
-  letter-spacing: -0.01em;
+  font-weight: 600;
+  text-decoration: none;
 }
 
-.sidebar-nav {
+.rail-nav {
   flex: 1;
-  padding: 16px 12px;
   display: flex;
   flex-direction: column;
-  gap: 2px;
-  overflow-y: auto;
+  align-items: center;
+  gap: 6px;
+  padding-top: var(--space-2);
 }
 
-.sidebar-link {
+.rail-link {
+  position: relative;
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 11px 14px;
-  border-radius: var(--radius-md);
-  font-size: var(--text-sm);
-  font-weight: 400;
-  color: var(--text-muted);
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  border: none;
+  border-radius: var(--radius-pill);
+  background: none;
+  color: var(--on-rail-dim);
+  cursor: pointer;
   text-decoration: none;
   transition:
     color var(--dur-fast) var(--ease-out),
-    background var(--dur-fast) var(--ease-out);
+    background var(--dur-fast) var(--ease-out),
+    transform var(--dur-fast) var(--ease-out);
+}
+
+.rail-link:hover { color: var(--on-rail); }
+.rail-link:active { transform: scale(0.94); }
+
+.rail-link.router-link-active {
+  background: var(--on-rail);
+  color: var(--on-rail-active);
+}
+
+.rail-logout { width: 44px; height: 44px; }
+.rail-logout:hover { color: var(--on-rail); }
+
+.rail-link:focus-visible,
+.rail-logo:focus-visible {
+  outline-color: var(--on-rail);
+}
+
+.rail-tip {
+  position: absolute;
+  left: calc(100% + 18px);
+  top: 50%;
+  padding: 6px 12px;
+  background: var(--rail);
+  border-radius: var(--radius-pill);
+  color: var(--on-rail);
+  font-size: var(--text-xs);
+  font-weight: 500;
   white-space: nowrap;
-}
-
-.sidebar-link:hover {
-  color: var(--text-secondary);
-  background: var(--bg-subtle);
-}
-
-.sidebar-link.router-link-active {
-  color: var(--module-color, var(--accent));
-  background: color-mix(in srgb, var(--module-color, var(--accent)) 8%, transparent);
-}
-
-.sidebar-link-icon {
-  flex-shrink: 0;
-  transition: color var(--dur-fast) var(--ease-out);
-}
-
-.sidebar-footer {
-  padding: 16px 12px;
-  border-top: 1px solid var(--border-subtle);
-}
-
-.sidebar-logout {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  width: 100%;
-  padding: 10px 14px;
-  border-radius: var(--radius-md);
-  background: none;
-  border: none;
-  cursor: pointer;
-  font-family: var(--font-sans);
-  font-size: var(--text-sm);
-  color: var(--text-disabled);
+  pointer-events: none;
+  opacity: 0;
+  transform: translate(-4px, -50%);
   transition:
-    color var(--dur-fast) var(--ease-out),
-    background var(--dur-fast) var(--ease-out);
+    opacity var(--dur-fast) var(--ease-out),
+    transform var(--dur-fast) var(--ease-out);
 }
 
-.sidebar-logout:hover {
-  color: var(--status-error);
-  background: var(--status-error-dim);
+.rail-link:hover .rail-tip,
+.rail-link:focus-visible .rail-tip {
+  opacity: 1;
+  transform: translate(0, -50%);
 }
 
 /* ── Main ── */
@@ -223,63 +204,26 @@ const handleLogout = async () => {
   overflow: hidden;
 }
 
-/* ── Mobile Header ── */
-.mobile-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding-left: 24px;
-  padding-right: 24px;
-  padding-top: env(safe-area-inset-top, 0px);
-  padding-bottom: 0;
-  height: calc(60px + env(safe-area-inset-top, 0px));
-  flex-shrink: 0;
-  background: color-mix(in srgb, var(--bg-base) 80%, transparent);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border-bottom: 1px solid var(--border-subtle);
-  position: relative;
-  z-index: var(--z-raised);
-}
-
-@media (min-width: 768px) {
-  .mobile-header { display: none; }
-}
-
-.mobile-header-logo {
-  font-family: var(--font-serif);
-  font-size: var(--text-lg);
-  color: var(--text-primary);
-  letter-spacing: -0.01em;
-}
-
-.mobile-header-logout {
-  background: none;
-  border: none;
-  cursor: pointer;
-  color: var(--text-muted);
-  padding: 8px;
-  border-radius: var(--radius-sm);
-  transition: color var(--dur-fast) var(--ease-out);
-  display: flex;
-  align-items: center;
-}
-
-.mobile-header-logout:hover {
-  color: var(--status-error);
-}
-
 /* ── Content ── */
 .app-content {
   flex: 1;
   overflow-y: auto;
   overscroll-behavior: contain;
-  padding: 24px 16px calc(100px + env(safe-area-inset-bottom, 16px));
+  padding: calc(var(--space-4) + env(safe-area-inset-top, 0px)) var(--space-4) calc(100px + env(safe-area-inset-bottom, 16px));
 }
 
+/* ── Desktop ── */
 @media (min-width: 768px) {
+  .app-shell--auth {
+    gap: var(--space-5);
+    padding: var(--space-5);
+  }
+
+  .rail { display: flex; }
+
   .app-content {
-    padding: 40px;
+    padding: 0;
+    border-radius: var(--radius-lg);
   }
 }
 

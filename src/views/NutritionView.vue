@@ -4,226 +4,200 @@
     @touchstart="handleTouchStart"
     @touchend="handleTouchEnd"
   >
-    <!-- ── Header ── -->
-    <header class="module-header">
-      <div class="module-header-left">
-        <div class="module-icon">
-          <Utensils :size="18" stroke-width="1.75" />
-        </div>
-        <div>
-          <h2 class="module-name">Nutrition</h2>
-          <p class="module-sub">Carburant & Énergie</p>
-        </div>
-      </div>
-      <div class="header-actions">
-        <button @click="showLibrary = true" class="action-btn" title="Meal Prep">
-          <Archive :size="17" stroke-width="1.75" />
+    <!-- ── En-tête ── -->
+    <header class="view-head">
+      <h1 class="view-title">
+        Nutrition,{{ ' ' }}<br class="view-break" />
+        <span class="view-title-soft">{{ fullDateLabel }}</span>
+      </h1>
+      <div class="head-actions">
+        <button class="pill-btn" aria-label="Meal prep" @click="showLibrary = true">
+          <Archive :size="18" stroke-width="1.75" />
+          <span class="pill-text">Meal prep</span>
         </button>
-        <button @click="showHabits = true" class="action-btn" title="Habitudes">
-          <Repeat :size="17" stroke-width="1.75" />
+        <button class="pill-btn" aria-label="Habitudes" @click="showHabits = true">
+          <Repeat :size="18" stroke-width="1.75" />
+          <span class="pill-text">Habitudes</span>
         </button>
-        <button @click="showSettings = true" class="action-btn" title="Paramètres">
-          <Settings :size="17" stroke-width="1.75" />
+        <button class="pill-btn" aria-label="Réglages" @click="showSettings = true">
+          <Settings :size="18" stroke-width="1.75" />
+          <span class="pill-text">Réglages</span>
         </button>
       </div>
     </header>
 
-    <!-- ── Date navigator ── -->
-    <div class="date-nav">
-      <button @click="changeDate(-1)" class="date-nav-btn" aria-label="Jour précédent">
-        <ChevronLeft :size="18" stroke-width="1.75" />
+    <!-- ── Choix du jour ── -->
+    <nav class="date-nav" aria-label="Choisir un jour">
+      <button class="date-nav-btn" aria-label="Jour précédent" @click="changeDate(-1)">
+        <ChevronLeft :size="20" stroke-width="2" />
       </button>
-      <div class="date-nav-label">
-        <Calendar :size="11" stroke-width="1.75" />
-        <span>{{ formattedCurrentDate }}</span>
-      </div>
-      <button @click="changeDate(1)" class="date-nav-btn" aria-label="Jour suivant">
-        <ChevronRight :size="18" stroke-width="1.75" />
+      <span class="date-nav-label">{{ formattedCurrentDate }}</span>
+      <button class="date-nav-btn" aria-label="Jour suivant" @click="changeDate(1)">
+        <ChevronRight :size="20" stroke-width="2" />
       </button>
-    </div>
+    </nav>
 
-    <!-- ── Loading ── -->
-    <div v-if="loading" class="skeleton-stack">
+    <p v-if="notice" class="notice" :class="`notice--${notice.type}`" role="status">{{ notice.text }}</p>
+
+    <!-- ── Chargement ── -->
+    <div v-if="loading" class="layout">
+      <div class="skeleton skeleton--banner" />
       <div class="skeleton skeleton--summary" />
-      <div class="skeleton skeleton--hydration" />
-      <div class="skeleton skeleton--ai" />
+      <div class="skeleton skeleton--journal" />
     </div>
 
-    <template v-else>
-      <!-- ── Macro summary ── -->
-      <section class="summary-card">
-        <div class="summary-top">
-          <div>
-            <p class="summary-eyebrow">Calories totales</p>
-            <div class="summary-calories">
-              <span class="cal-value">{{ dailyTotals.calories }}</span>
-              <span class="cal-goal">/ {{ calculatedGoals.calories }} kcal</span>
-            </div>
-          </div>
-          <div class="summary-flame">
-            <Flame :size="20" stroke-width="1.75" />
-          </div>
-        </div>
+    <div v-else class="layout">
 
-        <div class="macro-bars">
-          <div v-for="macro in macros" :key="macro.label" class="macro-row">
-            <div class="macro-meta">
-              <div class="macro-label">
-                <component :is="macro.icon" :size="10" stroke-width="2" :style="{ color: macro.color }" />
-                <span>{{ macro.label }}</span>
-              </div>
-              <div class="macro-values">
-                <span class="macro-current" :style="{ color: macro.color }">{{ Math.round(macro.current) }}g</span>
-                <span class="macro-goal">/ {{ macro.goal }}g</span>
-              </div>
-            </div>
-            <div class="macro-track">
-              <div
-                class="macro-fill"
-                :style="{
-                  width: Math.min(100, (macro.current / macro.goal) * 100) + '%',
-                  background: macro.color
-                }"
-              />
-            </div>
-          </div>
-        </div>
-      </section>
+      <!-- ── Saisie IA ── -->
+      <section class="banner" aria-label="Ajouter un repas">
+        <span class="orb orb--a" aria-hidden="true" />
+        <span class="orb orb--b" aria-hidden="true" />
 
-      <!-- ── Hydration ── -->
-      <HydrationWidget v-model:weight="userProfile.weight" />
-
-      <!-- ── AI Assistant ── -->
-      <div class="ai-card">
-        <div class="ai-sparkle-bg">
-          <Sparkles :size="72" stroke-width="1" />
-        </div>
-
-        <div class="ai-content">
-          <h3 class="ai-title">Enregistrement magique</h3>
-          <p class="ai-sub">Décrivez votre repas, l'IA s'occupe des chiffres.</p>
-
-          <!-- Input state -->
-          <div v-if="!analyzedMeal" class="ai-form">
+        <template v-if="!analyzedMeal">
+          <h2 class="banner-title">
+            Qu'as-tu mangé ?<br />
+            <span class="banner-title-soft">L'IA fait les calculs</span>
+          </h2>
+          <form class="ai-form" @submit.prevent="analyzeWithAI">
             <textarea
               v-model="mealText"
-              rows="3"
-              class="ai-textarea"
-              placeholder="Ex: Un bol de riz avec du poulet grillé…"
+              rows="2"
+              class="ai-input"
+              aria-label="Décris ton repas"
+              placeholder="Un bol de riz avec du poulet grillé"
               :disabled="analyzing"
+              @keydown.enter.exact.prevent="analyzeWithAI"
             />
-            <button
-              @click="analyzeWithAI"
-              :disabled="analyzing || !mealText.trim()"
-              class="ai-submit-btn"
-            >
-              <span v-if="analyzing" class="btn-spinner btn-spinner--dark" />
-              <Sparkles v-else :size="14" stroke-width="1.75" />
-              {{ analyzing ? 'Analyse…' : 'Analyser le repas' }}
+            <button type="submit" class="round-btn round-btn--dark" :disabled="analyzing || !mealText.trim()" aria-label="Analyser le repas">
+              <span v-if="analyzing" class="btn-spinner" />
+              <ArrowUp v-else :size="20" stroke-width="2" />
             </button>
-          </div>
+          </form>
+        </template>
 
-          <!-- Analyzed result -->
-          <div v-else class="ai-result animate-fade-in">
-            <div class="ai-result-card">
-              <div class="ai-result-head">
-                <div>
-                  <h4 class="ai-result-name">{{ analyzedMeal.meal_name }}</h4>
-                  <div v-if="analyzedMeal.is_exceptional_meal" class="ai-pleasure-badge">
-                    <AlertCircle :size="9" /> Repas plaisir
-                  </div>
-                </div>
-                <button @click="analyzedMeal = null" class="ai-result-edit">
-                  <Pencil :size="14" stroke-width="1.75" />
-                </button>
-              </div>
-              <div class="ai-result-macros">
-                <div v-for="(val, key) in { Cal: analyzedMeal.calories, Prot: analyzedMeal.protein+'g', Gluc: analyzedMeal.carbs+'g', Lip: analyzedMeal.fats+'g' }" :key="key" class="ai-macro-chip">
-                  <span class="ai-macro-key">{{ key }}</span>
-                  <span class="ai-macro-val">{{ val }}</span>
-                </div>
-              </div>
-            </div>
-            <button @click="saveAnalyzedMeal" :disabled="savingMeal" class="btn-primary">
-              <span v-if="savingMeal" class="btn-spinner btn-spinner--dark" />
-              <Save v-else :size="14" stroke-width="1.75" />
+        <div v-else class="ai-result">
+          <div class="ai-result-head">
+            <h2 class="banner-title">{{ analyzedMeal.meal_name }}</h2>
+            <span v-if="analyzedMeal.is_exceptional_meal" class="tag">Repas plaisir</span>
+          </div>
+          <ul class="ai-macros">
+            <li><span>Calories</span><strong>{{ analyzedMeal.calories }}</strong></li>
+            <li><span>Protéines</span><strong>{{ analyzedMeal.protein }} g</strong></li>
+            <li><span>Glucides</span><strong>{{ analyzedMeal.carbs }} g</strong></li>
+            <li><span>Lipides</span><strong>{{ analyzedMeal.fats }} g</strong></li>
+          </ul>
+          <div class="ai-actions">
+            <button class="btn btn--dark" :disabled="savingMeal" @click="saveAnalyzedMeal">
+              <span v-if="savingMeal" class="btn-spinner" />
+              <Check v-else :size="18" stroke-width="2" />
               {{ savingMeal ? 'Enregistrement…' : 'Confirmer ce repas' }}
             </button>
-          </div>
-        </div>
-      </div>
-
-      <!-- ── Journal ── -->
-      <section>
-        <p class="section-eyebrow">Journal nutritionnel</p>
-
-        <!-- Empty meals -->
-        <div v-if="todaysMeals.length === 0" class="meals-empty">
-          <div class="meals-empty-icon"><Utensils :size="22" stroke-width="1.25" /></div>
-          <p class="meals-empty-title">Aucun repas</p>
-          <p class="meals-empty-sub">Utilisez l'enregistreur magique ci-dessus.</p>
-        </div>
-
-        <div v-else class="meals-list">
-          <div
-            v-for="meal in todaysMeals"
-            :key="meal.id"
-            class="meal-card"
-            :class="{ 'meal-card--skipped': meal.is_skipped }"
-          >
-            <div class="meal-card-top">
-              <div class="meal-card-info">
-                <h4 class="meal-name" :class="{ 'meal-name--skipped': meal.is_skipped }">
-                  {{ meal.meal_name }}
-                </h4>
-                <p class="meal-cal">{{ meal.calories }} kcal</p>
-              </div>
-              <div class="meal-actions">
-                <button @click="toggleSkipMeal(meal)" class="meal-action-btn" :class="{ 'meal-action-btn--active': meal.is_skipped }" :title="meal.is_skipped ? 'Manger' : 'Passer'">
-                  <CheckCircle2 v-if="meal.is_skipped" :size="15" stroke-width="1.75" />
-                  <Circle v-else :size="15" stroke-width="1.75" />
-                </button>
-                <button @click="saveToLibrary(meal)" class="meal-action-btn" title="Bibliothèque">
-                  <Save :size="15" stroke-width="1.75" />
-                </button>
-                <button @click="openEditModal(meal)" class="meal-action-btn" title="Modifier">
-                  <Pencil :size="15" stroke-width="1.75" />
-                </button>
-                <button @click="deleteMeal(meal.id)" class="meal-action-btn meal-action-btn--danger" title="Supprimer">
-                  <Trash2 :size="15" stroke-width="1.75" />
-                </button>
-              </div>
-            </div>
-
-            <div class="meal-macros-row">
-              <div class="meal-macro">
-                <div class="meal-macro-bar">
-                  <div class="meal-macro-fill" style="background: var(--macro-protein)"
-                    :style="{ width: Math.min(100, (meal.protein / (meal.calories/10 || 1) * 100)) + '%', background: 'var(--macro-protein)' }" />
-                </div>
-                <span class="meal-macro-label">{{ meal.protein }}g Prot</span>
-              </div>
-              <div class="meal-macro">
-                <div class="meal-macro-bar">
-                  <div class="meal-macro-fill"
-                    :style="{ width: Math.min(100, (meal.carbs / (meal.calories/10 || 1) * 100)) + '%', background: 'var(--macro-carbs)' }" />
-                </div>
-                <span class="meal-macro-label">{{ meal.carbs }}g Gluc</span>
-              </div>
-              <div class="meal-macro">
-                <div class="meal-macro-bar">
-                  <div class="meal-macro-fill"
-                    :style="{ width: Math.min(100, (meal.fats / (meal.calories/20 || 1) * 100)) + '%', background: 'var(--macro-fats)' }" />
-                </div>
-                <span class="meal-macro-label">{{ meal.fats }}g Lipi</span>
-              </div>
-            </div>
-
-            <div v-if="meal.is_exceptional_meal" class="meal-exceptional-pip" />
+            <button class="btn btn--light" @click="analyzedMeal = null">Modifier</button>
           </div>
         </div>
       </section>
-    </template>
+
+      <!-- ── Bilan ── -->
+      <section class="card summary" aria-label="Bilan du jour">
+        <svg class="summary-ring" viewBox="0 0 36 36" role="img" :aria-label="`${dailyTotals.calories} kilocalories sur ${calculatedGoals.calories}`">
+          <circle cx="18" cy="18" r="15.9" class="ring-track" pathLength="100" />
+          <circle
+            v-for="seg in macroSegments"
+            :key="seg.label"
+            cx="18"
+            cy="18"
+            r="15.9"
+            class="ring-seg"
+            pathLength="100"
+            :stroke="seg.color"
+            :stroke-dasharray="`${seg.length} 100`"
+            :stroke-dashoffset="-seg.offset"
+          />
+        </svg>
+        <div class="summary-body">
+          <p class="summary-total">
+            <span class="summary-value" :class="{ 'summary-value--over': dailyTotals.calories > calculatedGoals.calories }">{{ dailyTotals.calories.toLocaleString('fr-FR') }}</span>
+            <span class="card-sub">sur {{ calculatedGoals.calories.toLocaleString('fr-FR') }} kcal</span>
+          </p>
+          <ul class="macro-list">
+            <li v-for="macro in macros" :key="macro.label">
+              <span :style="{ color: macro.color }">{{ macro.label }}</span>
+              <span>{{ Math.round(macro.current) }} / {{ macro.goal }} g</span>
+            </li>
+          </ul>
+        </div>
+      </section>
+
+      <!-- ── Hydratation ── -->
+      <HydrationWidget v-model:weight="userProfile.weight" class="hydration" />
+
+      <!-- ── Journal ── -->
+      <section class="card journal" aria-labelledby="journal-title">
+        <div class="journal-head">
+          <h2 id="journal-title" class="card-title">Journal</h2>
+          <p v-if="todaysMeals.length" class="card-sub">
+            {{ todaysMeals.length }} repas, {{ dailyTotals.calories.toLocaleString('fr-FR') }} kcal
+          </p>
+        </div>
+
+        <div v-if="todaysMeals.length === 0" class="journal-empty">
+          <p class="item-name">Aucun repas ce jour-là</p>
+          <p class="card-sub">Décris ton repas ci-dessus pour l'ajouter.</p>
+        </div>
+
+        <ul v-else class="meal-list">
+          <li
+            v-for="meal in todaysMeals"
+            :key="meal.id"
+            class="meal"
+            :class="{ 'meal--skipped': meal.is_skipped }"
+          >
+            <div class="meal-info">
+              <p class="item-name meal-name">{{ meal.meal_name }}</p>
+              <p class="card-sub">
+                {{ meal.protein }} g P, {{ meal.carbs }} g G, {{ meal.fats }} g L
+                <span v-if="meal.is_exceptional_meal" class="tag tag--inline">Plaisir</span>
+              </p>
+            </div>
+            <p class="meal-kcal">{{ meal.calories }} kcal</p>
+            <div class="meal-actions">
+              <button
+                class="icon-btn"
+                :class="{ 'icon-btn--active': meal.is_skipped }"
+                :aria-label="meal.is_skipped ? 'Remettre ce repas' : 'Passer ce repas'"
+                :title="meal.is_skipped ? 'Remettre ce repas' : 'Passer ce repas'"
+                @click="toggleSkipMeal(meal)"
+              >
+                <CheckCircle2 v-if="meal.is_skipped" :size="18" stroke-width="1.75" />
+                <Circle v-else :size="18" stroke-width="1.75" />
+              </button>
+              <button class="icon-btn" aria-label="Ajouter au meal prep" title="Ajouter au meal prep" @click="saveToLibrary(meal)">
+                <Save :size="18" stroke-width="1.75" />
+              </button>
+              <button class="icon-btn" aria-label="Modifier" title="Modifier" @click="openEditModal(meal)">
+                <Pencil :size="18" stroke-width="1.75" />
+              </button>
+              <button class="icon-btn icon-btn--danger" aria-label="Supprimer" title="Supprimer" @click="deleteMeal(meal.id)">
+                <Trash2 :size="18" stroke-width="1.75" />
+              </button>
+            </div>
+          </li>
+        </ul>
+      </section>
+
+      <!-- ── Semaine ── -->
+      <section class="card week" aria-labelledby="week-title">
+        <h2 id="week-title" class="card-title">Calories sur 7 jours</h2>
+        <div class="week-bars">
+          <div v-for="day in weekBars" :key="day.date" class="week-col" :title="`${day.label}, ${day.calories.toLocaleString('fr-FR')} kcal`">
+            <span class="week-track">
+              <span class="week-bar" :class="`week-bar--${day.state}`" :style="{ height: day.height + '%' }" />
+            </span>
+            <span class="week-day" :class="{ 'week-day--current': day.isCurrent }">{{ day.letter }}</span>
+          </div>
+        </div>
+      </section>
+    </div>
 
     <!-- ════ MODALS ════ -->
 
@@ -234,7 +208,7 @@
           <div class="modal-head">
             <div class="modal-head-left">
               <div class="modal-icon"><Archive :size="16" stroke-width="1.75" /></div>
-              <h3 class="modal-title">Mon Meal Prep</h3>
+              <h3 class="modal-title">Mon meal prep</h3>
             </div>
             <button @click="showLibrary = false" class="modal-close"><X :size="18" stroke-width="1.75" /></button>
           </div>
@@ -248,7 +222,7 @@
             <div v-else-if="savedMeals.length === 0" class="modal-empty">
               <div class="modal-empty-icon"><Utensils :size="20" stroke-width="1.25" /></div>
               <p class="modal-empty-title">Bibliothèque vide</p>
-              <p class="modal-empty-sub">Enregistrez vos créations depuis le journal pour les retrouver ici.</p>
+              <p class="modal-empty-sub">Ajoute des repas depuis le journal pour les retrouver ici.</p>
             </div>
 
             <div v-else class="saved-meals-list">
@@ -434,7 +408,7 @@
           <div class="modal-head">
             <div class="modal-head-left">
               <div class="modal-icon"><Repeat :size="16" stroke-width="1.75" /></div>
-              <h3 class="modal-title">Mes Habitudes</h3>
+              <h3 class="modal-title">Mes habitudes</h3>
             </div>
             <button @click="showHabits = false" class="modal-close"><X :size="18" stroke-width="1.75" /></button>
           </div>
@@ -467,7 +441,7 @@
               <div class="habit-form">
                 <p class="settings-section-title">Ajouter un modèle</p>
                 <div class="field-group" style="margin-bottom:12px">
-                  <input v-model="newHabit.meal_name" type="text" class="field-input" placeholder="Ex: Shaker Whey" />
+                  <input v-model="newHabit.meal_name" type="text" class="field-input" placeholder="Shaker whey" />
                 </div>
                 <div class="field-grid-4">
                   <div class="field-group">
@@ -546,11 +520,10 @@
 import { ref, computed, onMounted, watch } from 'vue'
 import { supabase } from '@/supabase'
 import { useAuth } from '@/composables/useAuth'
+import { calorieState } from '@/composables/useCalorieStatus'
 import {
-  Activity, Flame, Beef, Wheat, Droplet,
-  ChevronLeft, ChevronRight, Settings, Repeat, Archive,
-  Plus, Sparkles, Save, Pencil, Trash2, X, Calendar,
-  Utensils, CheckCircle2, AlertCircle, Circle
+  ArrowUp, Calendar, Check, CheckCircle2, ChevronLeft, ChevronRight, Circle,
+  Archive, Pencil, Plus, Repeat, Save, Settings, Trash2, Utensils, X
 } from 'lucide-vue-next'
 import HydrationWidget from '@/components/HydrationWidget.vue'
 
@@ -578,6 +551,10 @@ const formattedCurrentDate = computed(() => {
   if (currentDate.value.toDateString() === tomorrow.toDateString()) return "Demain"
   return currentDate.value.toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'long' })
 })
+
+const fullDateLabel = computed(() =>
+  currentDate.value.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })
+)
 
 const getLocalISOString = (date) => {
   const offset = date.getTimezoneOffset()
@@ -630,12 +607,85 @@ const calculatedGoals = computed(() => {
 })
 
 const macros = computed(() => [
-  { label: 'Protéines', current: dailyTotals.value.protein, goal: calculatedGoals.value.protein, color: 'var(--macro-protein)', icon: Beef },
-  { label: 'Glucides',  current: dailyTotals.value.carbs,   goal: calculatedGoals.value.carbs,   color: 'var(--macro-carbs)',   icon: Wheat },
-  { label: 'Lipides',   current: dailyTotals.value.fats,    goal: calculatedGoals.value.fats,    color: 'var(--macro-fats)',    icon: Droplet },
+  { label: 'Protéines', current: dailyTotals.value.protein, goal: calculatedGoals.value.protein, kcal: 4, color: 'var(--macro-protein)' },
+  { label: 'Glucides',  current: dailyTotals.value.carbs,   goal: calculatedGoals.value.carbs,   kcal: 4, color: 'var(--macro-carbs)' },
+  { label: 'Lipides',   current: dailyTotals.value.fats,    goal: calculatedGoals.value.fats,    kcal: 9, color: 'var(--macro-fats)' },
 ])
 
-watch(currentDateStr, async (v) => { if (user.value?.id) await fetchTodaysMeals(user.value.id, v) })
+const macroSegments = computed(() => {
+  const total = calculatedGoals.value.calories || 1
+  let offset = 0
+  return macros.value.map(macro => {
+    const length = Math.max(0, Math.min(100 - offset, (macro.current * macro.kcal / total) * 100))
+    const segment = { label: macro.label, color: macro.color, length, offset }
+    offset += length
+    return segment
+  })
+})
+
+// ── Semaine ──
+const weekLogs = ref([])
+
+const weekDates = computed(() =>
+  Array.from({ length: 7 }, (_, index) => {
+    const date = new Date(currentDate.value)
+    date.setDate(date.getDate() - 6 + index)
+    return date
+  })
+)
+
+const fetchWeek = async (userId) => {
+  const { data, error } = await supabase
+    .from('nutrition_logs')
+    .select('date, calories')
+    .eq('user_id', userId)
+    .gte('date', getLocalISOString(weekDates.value[0]))
+    .lte('date', currentDateStr.value)
+    .eq('is_skipped', false)
+  if (!error) weekLogs.value = data ?? []
+}
+
+const weekBars = computed(() => {
+  const totals = new Map()
+  for (const log of weekLogs.value) {
+    totals.set(log.date, (totals.get(log.date) ?? 0) + (Number(log.calories) || 0))
+  }
+  totals.set(currentDateStr.value, dailyTotals.value.calories)
+
+  const goal = calculatedGoals.value.calories
+  const highest = Math.max(goal, ...totals.values()) || 1
+
+  return weekDates.value.map(date => {
+    const dateStr = getLocalISOString(date)
+    const calories = totals.get(dateStr) ?? 0
+    const isCurrent = dateStr === currentDateStr.value
+    return {
+      date: dateStr,
+      calories,
+      isCurrent,
+      label: date.toLocaleDateString('fr-FR', { weekday: 'long' }),
+      letter: date.toLocaleDateString('fr-FR', { weekday: 'narrow' }).toUpperCase(),
+      height: (calories / highest) * 100,
+      state: !calories ? 'empty' : isCurrent ? 'today' : calorieState(calories, goal)
+    }
+  })
+})
+
+// ── Messages ──
+const notice = ref(null)
+let noticeTimer = null
+
+const showNotice = (text, type = 'good') => {
+  notice.value = { text, type }
+  clearTimeout(noticeTimer)
+  noticeTimer = setTimeout(() => { notice.value = null }, 4000)
+}
+
+watch(currentDateStr, async (v) => {
+  if (!user.value?.id) return
+  await fetchTodaysMeals(user.value.id, v)
+  await fetchWeek(user.value.id)
+})
 
 onMounted(async () => {
   const { data: { session } } = await supabase.auth.getSession()
@@ -645,6 +695,7 @@ onMounted(async () => {
     await loadUserSettings(userId)
     await fetchHabits(userId)
     await fetchLibrary(userId)
+    await fetchWeek(userId)
   }
 })
 
@@ -731,7 +782,12 @@ const analyzeWithAI = async () => {
     if (response.error) throw new Error(response.error.context?.error || response.error.message)
     if (!response.data) throw new Error("Aucune donnée.")
     analyzedMeal.value = response.data
-  } catch (e) { console.error(e); alert(`Échec. ${e.message}`) } finally { analyzing.value = false }
+  } catch (e) {
+    console.error(e)
+    showNotice(`Analyse impossible : ${e.message}`, 'error')
+  } finally {
+    analyzing.value = false
+  }
 }
 
 const saveAnalyzedMeal = async () => {
@@ -771,7 +827,10 @@ const saveToLibrary = async (meal) => {
   if (!user.value) return
   const payload = { ...meal, user_id: user.value.id, id: undefined, date: undefined, created_at: undefined }
   const { data } = await supabase.from('saved_meals').insert(payload).select()
-  if (data?.[0]) { savedMeals.value.unshift(data[0]); alert("Meal ajouté à votre Prep Library !") }
+  if (data?.[0]) {
+    savedMeals.value.unshift(data[0])
+    showNotice('Repas ajouté au meal prep.')
+  }
 }
 
 const planningMealPayload = ref(null)
@@ -784,8 +843,12 @@ const dispatchPlannedMeals = async () => {
   if (!planningMealPayload.value || !planningDatesSelection.value.length) return
   const payloads = planningDatesSelection.value.map(dateStr => ({ user_id: user.value.id, date: dateStr, meal_name: planningMealPayload.value.meal_name, calories: planningMealPayload.value.calories, protein: planningMealPayload.value.protein, carbs: planningMealPayload.value.carbs, fats: planningMealPayload.value.fats, is_exceptional_meal: planningMealPayload.value.is_exceptional_meal }))
   const { error } = await supabase.from('nutrition_logs').insert(payloads)
-  if (error) { console.error(error); return }
-  alert("Repas planifié !")
+  if (error) {
+    console.error(error)
+    showNotice('Planification impossible, réessaie.', 'error')
+    return
+  }
+  showNotice('Repas planifié.')
   showPlanningModal.value = false
   if (planningDatesSelection.value.includes(currentDateStr.value)) await fetchTodaysMeals(user.value.id, currentDateStr.value)
 }
@@ -812,648 +875,576 @@ watch(isAnyModalOpen, (open) => { document.body.style.overflow = open ? 'hidden'
 </script>
 
 <style scoped>
-/* ── Macro color tokens (local) ── */
-.nutrition-view {
-  --macro-protein: #8EA0C8;
-  --macro-carbs:   #C9A04C;
-  --macro-fats:    #7DAD8A;
-
-  max-width: 540px;
-  margin: 0 auto;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  user-select: none;
+/* ── Couleurs des macros ── */
+.nutrition-view,
+.modal-backdrop {
+  --macro-protein: var(--accent);
+  --macro-carbs:   var(--module-sleep);
+  --macro-fats:    var(--module-windows);
 }
 
-/* ── Module header ── */
-.module-header {
+.nutrition-view {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  max-width: 1480px;
+  margin: 0 auto;
+}
+
+/* ── En-tête ── */
+.view-head {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
+  gap: var(--space-3);
 }
 
-.module-header-left { display: flex; align-items: center; gap: 12px; }
-
-.module-icon {
-  width: 38px;
-  height: 38px;
-  flex-shrink: 0;
-  border-radius: var(--radius-sm);
-  background: var(--module-nutri-dim);
-  border: 1px solid var(--module-nutri-border);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--module-nutri);
-}
-
-.module-name {
-  font-family: var(--font-serif);
+.view-title {
   font-size: var(--text-xl);
-  font-weight: 400;
-  color: var(--text-primary);
-  margin: 0;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  line-height: 1.22;
 }
 
-.module-sub {
-  font-size: 10px;
-  font-weight: 500;
-  text-transform: uppercase;
-  letter-spacing: 0.12em;
-  color: var(--text-muted);
-  margin-top: 2px;
+.view-title-soft {
+  font-size: var(--text-lg);
+  color: var(--text-secondary);
+  white-space: nowrap;
 }
 
-.header-actions { display: flex; gap: 4px; }
-
-.action-btn {
-  width: 36px;
-  height: 36px;
+.head-actions {
   display: flex;
+  gap: var(--space-1);
+  flex-shrink: 0;
+}
+
+.pill-btn {
+  display: inline-flex;
   align-items: center;
   justify-content: center;
-  background: none;
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-sm);
-  color: var(--text-muted);
+  gap: var(--space-2);
+  min-width: 44px;
+  min-height: 44px;
+  border: none;
+  border-radius: var(--radius-pill);
+  background: var(--bg-raised);
+  font-family: var(--font-sans);
+  font-size: var(--text-xs);
+  font-weight: 600;
+  color: var(--text-primary);
   cursor: pointer;
-  transition: color var(--dur-fast) var(--ease-out), border-color var(--dur-fast) var(--ease-out);
 }
 
-.action-btn:hover { color: var(--text-secondary); border-color: var(--border-default); }
+.pill-text { display: none; }
 
-/* ── Date navigator ── */
+/* ── Jour ── */
 .date-nav {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  padding: var(--space-1);
+  border-radius: var(--radius-pill);
   background: var(--bg-raised);
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-md);
-  padding: 4px;
 }
 
 .date-nav-btn {
-  width: 40px;
-  height: 40px;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: none;
+  width: 44px;
+  height: 44px;
   border: none;
-  color: var(--text-muted);
+  border-radius: var(--radius-pill);
+  background: none;
+  color: var(--text-primary);
   cursor: pointer;
-  border-radius: var(--radius-sm);
-  transition: color var(--dur-fast) var(--ease-out), background var(--dur-fast) var(--ease-out);
 }
 
-.date-nav-btn:hover { color: var(--text-secondary); background: var(--bg-subtle); }
-.date-nav-btn:active { transform: scale(0.9); }
+.date-nav-btn:hover { background: var(--bg-overlay); }
 
 .date-nav-label {
-  display: flex;
-  align-items: center;
-  gap: 6px;
+  font-size: var(--text-xs);
+  font-weight: 600;
+}
+
+/* ── Messages ── */
+.notice {
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-md);
   font-size: var(--text-xs);
   font-weight: 500;
-  text-transform: uppercase;
-  letter-spacing: 0.12em;
+}
+
+.notice--good  { background: var(--status-success-dim); color: var(--status-success); }
+.notice--error { background: var(--status-error-dim);   color: var(--status-error); }
+
+/* ── Grille ── */
+.layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-3);
+}
+
+/* ── Boutons ── */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  min-height: 48px;
+  padding: 0 var(--space-5);
+  border: none;
+  border-radius: var(--radius-pill);
+  font-family: var(--font-sans);
+  font-size: var(--text-xs);
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: opacity var(--dur-fast) var(--ease-out), transform var(--dur-fast) var(--ease-out);
+}
+
+.btn:hover { opacity: 0.88; }
+.btn:active { transform: scale(0.97); }
+.btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.btn--dark  { background: var(--action); color: var(--on-action); }
+.btn--light { background: var(--bg-raised); color: var(--text-primary); }
+
+.round-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  flex-shrink: 0;
+  border: none;
+  border-radius: var(--radius-pill);
+  cursor: pointer;
+}
+
+.round-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+.round-btn--dark { background: var(--action); color: var(--on-action); }
+
+.btn-spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid color-mix(in srgb, currentColor 30%, transparent);
+  border-top-color: currentColor;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ── Bandeau ── */
+.banner {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: var(--space-3);
+  padding: 18px;
+  overflow: hidden;
+  border-radius: var(--radius-lg);
+  background: var(--aurore-nutri);
+}
+
+.banner > :not(.orb) {
+  position: relative;
+  z-index: var(--z-raised);
+}
+
+.banner-title {
+  max-width: 80%;
+  font-size: var(--text-xl);
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  line-height: 1.22;
+}
+
+.banner-title-soft { color: var(--text-secondary); }
+
+.orb {
+  position: absolute;
+  border-radius: 50%;
+  opacity: var(--orb-opacity);
+  pointer-events: none;
+}
+
+.orb--a { top: -40px; right: -30px; width: 120px; height: 120px; background: var(--orb-ciel); }
+.orb--b { top: 36px; right: -30px; width: 66px; height: 66px; background: var(--orb-rose); }
+
+.ai-form {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: 6px 6px 6px var(--space-4);
+  border-radius: var(--radius-lg);
+  background: var(--bg-raised);
+}
+
+.ai-input {
+  flex: 1;
+  min-width: 0;
+  padding: 6px 0;
+  border: none;
+  background: none;
+  font-family: var(--font-sans);
+  font-size: var(--text-md);
+  line-height: 1.4;
+  color: var(--text-primary);
+  outline: none;
+  resize: none;
+}
+
+.ai-input::placeholder { color: var(--text-secondary); }
+
+.ai-result {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.ai-result-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.ai-macros {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--space-2);
+  padding: var(--space-3);
+  border-radius: var(--radius-md);
+  background: var(--bg-raised);
+  list-style: none;
+}
+
+.ai-macros li {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.ai-macros span {
+  font-size: var(--text-2xs);
+  font-weight: 500;
   color: var(--text-secondary);
 }
 
-/* ── Skeletons ── */
+.ai-macros strong {
+  font-size: var(--text-lg);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.ai-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.tag {
+  padding: 3px 10px;
+  border-radius: var(--radius-pill);
+  background: var(--status-warning-dim);
+  font-size: var(--text-2xs);
+  font-weight: 500;
+  color: var(--status-warning);
+}
+
+.tag--inline { margin-left: var(--space-1); padding: 1px 8px; }
+
+/* ── Cartes ── */
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  min-width: 0;
+  padding: var(--space-4);
+  border-radius: var(--radius-lg);
+  background: var(--bg-raised);
+}
+
+.card-title {
+  font-size: var(--text-lg);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.card-sub {
+  font-size: var(--text-2xs);
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+
+.item-name {
+  font-size: var(--text-sm);
+  font-weight: 500;
+}
+
+/* ── Bilan ── */
+.summary {
+  flex-direction: row;
+  align-items: center;
+  gap: var(--space-4);
+}
+
+.summary-ring {
+  display: block;
+  width: 96px;
+  height: 96px;
+  flex-shrink: 0;
+  transform: rotate(-90deg);
+}
+
+.ring-track,
+.ring-seg {
+  fill: none;
+  stroke-width: 3.2;
+}
+
+.ring-track { stroke: var(--bg-overlay); }
+
+.summary-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  min-width: 0;
+}
+
+.summary-total {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-2);
+}
+
+.summary-value {
+  font-size: var(--text-2xl);
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  line-height: 1.15;
+  font-variant-numeric: tabular-nums;
+}
+
+.summary-value--over { color: var(--status-error); }
+
+.macro-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 0;
+  list-style: none;
+  font-size: var(--text-2xs);
+  font-weight: 500;
+}
+
+.macro-list li {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-2);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── Journal ── */
+.journal { gap: 0; }
+
+.journal-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding-bottom: var(--space-2);
+}
+
+.journal-empty {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: var(--space-5) 0;
+}
+
+.meal-list {
+  display: flex;
+  flex-direction: column;
+  padding: 0;
+  list-style: none;
+}
+
+.meal {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 2px var(--space-3);
+  padding: var(--space-3) 0 var(--space-1);
+  border-top: 1px solid var(--border-subtle);
+}
+
+.meal--skipped .meal-info,
+.meal--skipped .meal-kcal { opacity: 0.55; }
+.meal--skipped .meal-name { text-decoration: line-through; }
+
+.meal-info { min-width: 0; }
+
+.meal-kcal {
+  font-size: var(--text-xs);
+  font-weight: 600;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.meal-actions {
+  grid-column: 1 / -1;
+  display: flex;
+  justify-content: flex-end;
+  gap: 2px;
+}
+
+.icon-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: none;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: background var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out);
+}
+
+.icon-btn:hover { background: var(--bg-overlay); color: var(--text-primary); }
+.icon-btn--active { color: var(--status-success); }
+.icon-btn--danger:hover { background: var(--status-error-dim); color: var(--status-error); }
+
+/* ── Semaine ── */
+.week { gap: var(--space-3); }
+
+.week-bars {
+  flex: 1;
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: var(--space-2);
+  min-height: 150px;
+}
+
+.week-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-1);
+  min-width: 0;
+}
+
+.week-track {
+  flex: 1;
+  display: flex;
+  align-items: flex-end;
+  width: 100%;
+}
+
+.week-bar {
+  display: block;
+  width: 100%;
+  min-height: 6px;
+  border-radius: var(--radius-sm);
+  background: var(--bg-overlay);
+  transition: height var(--dur-base) var(--ease-out);
+}
+
+.week-bar--good  { background: var(--status-success-dim); }
+.week-bar--mid   { background: var(--status-warning-dim); }
+.week-bar--bad   { background: var(--status-error-dim); }
+.week-bar--today { background: var(--accent-dim); }
+
+.week-day {
+  font-size: var(--text-2xs);
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+
+.week-day--current { color: var(--text-primary); font-weight: 600; }
+
+/* ── Squelettes ── */
 @keyframes shimmer {
   0%   { background-position: -200% 0; }
   100% { background-position:  200% 0; }
 }
 
-.skeleton-stack { display: flex; flex-direction: column; gap: 10px; }
-
 .skeleton {
-  border-radius: var(--radius-xl);
-  background: linear-gradient(90deg, var(--bg-overlay) 25%, var(--bg-muted) 50%, var(--bg-overlay) 75%);
+  border-radius: var(--radius-lg);
+  background: linear-gradient(90deg, var(--bg-raised) 25%, var(--bg-muted) 50%, var(--bg-raised) 75%);
   background-size: 200% 100%;
   animation: shimmer 1.6s ease-in-out infinite;
 }
 
-.skeleton--summary    { height: 200px; }
-.skeleton--hydration  { height: 140px; }
-.skeleton--ai         { height: 160px; }
-.skeleton--line       { height: 56px; border-radius: var(--radius-md); }
+.skeleton--banner  { height: 170px; }
+.skeleton--summary { height: 130px; }
+.skeleton--journal { height: 240px; }
+.skeleton--line    { height: 56px; margin-bottom: var(--space-2); border-radius: var(--radius-md); }
 
-/* ── Summary card ── */
-.summary-card {
-  background: var(--bg-raised);
-  border: 1px solid var(--border-subtle);
-  border-top-color: var(--module-nutri-border);
-  border-radius: var(--radius-xl);
-  padding: 24px;
+/* ── Tablette ── */
+@media (min-width: 768px) {
+  .view-break { display: none; }
+  .view-title-soft { font-size: inherit; }
+
+  .view-title {
+    font-size: var(--text-3xl);
+    font-weight: 700;
+    letter-spacing: -0.03em;
+    line-height: 1.1;
+  }
+
+  .pill-btn { padding: 0 18px; }
+  .pill-text { display: inline; }
+  .date-nav { align-self: flex-start; gap: var(--space-3); }
+  .banner { padding: var(--space-6) 28px; }
+
+  .meal {
+    grid-template-columns: minmax(0, 1fr) auto auto;
+    padding: var(--space-2) 0;
+  }
+
+  .meal-actions { grid-column: auto; }
 }
 
-.summary-top {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  margin-bottom: 24px;
+/* ── Desktop ── */
+@media (min-width: 1100px) {
+  .nutrition-view { gap: var(--space-4); }
+
+  .layout {
+    grid-template-columns: minmax(0, 1fr) 400px;
+    grid-template-rows: auto auto auto 1fr;
+    grid-template-areas:
+      "banner  summary"
+      "journal hydration"
+      "journal week"
+      "journal week";
+    gap: var(--space-4);
+  }
+
+  .banner { grid-area: banner; min-height: 216px; }
+  .summary { grid-area: summary; padding: var(--space-6); }
+  .hydration { grid-area: hydration; }
+  .journal { grid-area: journal; padding: 20px var(--space-6); }
+  .week { grid-area: week; padding: 20px; }
+
+  .banner-title { max-width: 60%; }
+  .ai-form { max-width: 620px; }
+  .orb--a { top: -70px; right: 60px; width: 240px; height: 240px; }
+  .orb--b { top: 70px; right: -20px; width: 120px; height: 120px; }
+
+  .summary-ring { width: 150px; height: 150px; }
+  .card-title { font-size: var(--text-xl); }
+  .week .card-title { font-size: var(--text-lg); }
+  .week-bars { min-height: 180px; }
 }
 
-.summary-eyebrow {
-  font-size: 10px;
-  font-weight: 500;
-  text-transform: uppercase;
-  letter-spacing: 0.12em;
-  color: var(--text-muted);
-  margin-bottom: 8px;
-}
-
-.summary-calories {
-  display: flex;
-  align-items: baseline;
-  gap: 8px;
-}
-
-.cal-value {
-  font-family: var(--font-serif);
-  font-size: 2.4rem;
-  font-weight: 400;
-  color: var(--text-primary);
-  line-height: 1;
-  letter-spacing: -0.02em;
-}
-
-.cal-goal {
-  font-size: var(--text-sm);
-  color: var(--text-muted);
-}
-
-.summary-flame {
-  width: 40px;
-  height: 40px;
-  border-radius: var(--radius-sm);
-  background: rgba(125, 173, 138, 0.10);
-  border: 1px solid rgba(125, 173, 138, 0.18);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--module-nutri);
-}
-
-.macro-bars { display: flex; flex-direction: column; gap: 14px; }
-
-.macro-row { display: flex; flex-direction: column; gap: 6px; }
-
-.macro-meta {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-
-.macro-label {
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  font-size: 10px;
-  font-weight: 500;
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-  color: var(--text-muted);
-}
-
-.macro-values { display: flex; align-items: baseline; gap: 4px; }
-.macro-current { font-size: var(--text-sm); font-weight: 500; }
-.macro-goal    { font-size: 11px; color: var(--text-disabled); }
-
-.macro-track {
-  height: 3px;
-  background: var(--bg-overlay);
-  border-radius: 999px;
-  overflow: hidden;
-}
-
-.macro-fill {
-  height: 100%;
-  border-radius: 999px;
-  transition: width var(--dur-slow) var(--ease-out);
-  opacity: 0.8;
-}
-
-/* ── AI card ── */
-.ai-card {
-  position: relative;
-  overflow: hidden;
-  background: var(--bg-raised);
-  border: 1px solid var(--border-subtle);
-  border-top-color: var(--module-nutri-border);
-  border-radius: var(--radius-xl);
-  padding: 26px 24px;
-}
-
-.ai-sparkle-bg {
-  position: absolute;
-  top: -20px;
-  right: -20px;
-  color: var(--module-nutri);
-  opacity: 0.04;
-  pointer-events: none;
-}
-
-.ai-content { position: relative; }
-
-.ai-title {
-  font-family: var(--font-serif);
-  font-size: var(--text-lg);
-  font-weight: 400;
-  color: var(--text-primary);
-  margin-bottom: 4px;
-}
-
-.ai-sub {
-  font-size: var(--text-xs);
-  color: var(--text-muted);
-  margin-bottom: 18px;
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-}
-
-.ai-form { display: flex; flex-direction: column; gap: 10px; }
-
-.ai-textarea {
-  width: 100%;
-  padding: 14px 16px;
-  background: var(--bg-subtle);
-  border: 1px solid var(--border-default);
-  border-radius: var(--radius-md);
-  font-family: var(--font-sans);
-  font-size: var(--text-sm);
-  color: var(--text-primary);
-  outline: none;
-  resize: none;
-  transition: border-color var(--dur-fast) var(--ease-out), box-shadow var(--dur-fast) var(--ease-out);
-  line-height: 1.5;
-}
-
-.ai-textarea::placeholder { color: var(--text-disabled); }
-
-.ai-textarea:focus {
-  border-color: var(--module-nutri-border);
-  box-shadow: 0 0 0 3px var(--module-nutri-dim);
-}
-
-.ai-submit-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  width: 100%;
-  padding: 13px;
-  background: var(--text-primary);
-  color: var(--bg-base);
-  border: none;
-  border-radius: var(--radius-md);
-  font-family: var(--font-sans);
-  font-size: var(--text-sm);
-  font-weight: 500;
-  cursor: pointer;
-  transition: background var(--dur-fast) var(--ease-out), transform var(--dur-fast) var(--ease-out);
-}
-
-.ai-submit-btn:hover  { background: #fff; }
-.ai-submit-btn:active { transform: scale(0.98); }
-.ai-submit-btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
-
-.ai-result { display: flex; flex-direction: column; gap: 10px; }
-
-.ai-result-card {
-  background: var(--bg-overlay);
-  border: 1px solid var(--module-nutri-border);
-  border-radius: var(--radius-lg);
-  padding: 18px;
-}
-
-.ai-result-head {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 12px;
-  margin-bottom: 14px;
-}
-
-.ai-result-name {
-  font-family: var(--font-serif);
-  font-size: var(--text-lg);
-  font-weight: 400;
-  color: var(--text-primary);
-}
-
-.ai-pleasure-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  margin-top: 4px;
-  font-size: 9px;
-  font-weight: 500;
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-  color: var(--status-warning);
-}
-
-.ai-result-edit {
-  background: none;
-  border: none;
-  color: var(--text-muted);
-  cursor: pointer;
-  padding: 4px;
-  transition: color var(--dur-fast) var(--ease-out);
-}
-
-.ai-result-edit:hover { color: var(--text-secondary); }
-
-.ai-result-macros { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
-
-.ai-macro-chip {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 3px;
-  padding: 10px 6px;
-  background: var(--bg-subtle);
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-sm);
-}
-
-.ai-macro-key { font-size: 9px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-muted); }
-.ai-macro-val { font-size: var(--text-sm); color: var(--text-primary); font-weight: 300; }
-
-/* ── Section eyebrow ── */
-.section-eyebrow {
-  font-size: 10px;
-  font-weight: 500;
-  text-transform: uppercase;
-  letter-spacing: 0.14em;
-  color: var(--text-muted);
-  margin-bottom: 10px;
-}
-
-/* ── Meals ── */
-.meals-empty {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  text-align: center;
-  padding: 36px 24px;
-  background: var(--bg-raised);
-  border: 1px dashed var(--border-default);
-  border-radius: var(--radius-xl);
-  gap: 8px;
-}
-
-.meals-empty-icon {
-  width: 48px;
-  height: 48px;
-  border-radius: var(--radius-md);
-  background: var(--bg-overlay);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--text-disabled);
-  margin-bottom: 4px;
-}
-
-.meals-empty-title { font-family: var(--font-serif); font-size: var(--text-md); color: var(--text-primary); }
-.meals-empty-sub   { font-size: var(--text-xs); color: var(--text-muted); }
-
-.meals-list { display: flex; flex-direction: column; gap: 8px; }
-
-.meal-card {
-  position: relative;
-  background: var(--bg-raised);
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-lg);
-  padding: 16px 18px;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  transition: border-color var(--dur-fast) var(--ease-out);
-}
-
-.meal-card:hover { border-color: var(--border-default); }
-.meal-card--skipped { opacity: 0.45; }
-
-.meal-card-top {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 12px;
-}
-
-.meal-card-info { flex: 1; min-width: 0; }
-
-.meal-name {
-  font-size: var(--text-sm);
-  color: var(--text-secondary);
-  line-height: 1.3;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.meal-name--skipped { text-decoration: line-through; }
-
-.meal-cal {
-  font-size: 10px;
-  color: var(--module-nutri);
-  margin-top: 3px;
-  font-weight: 500;
-}
-
-.meal-actions {
-  display: flex;
-  gap: 2px;
-  flex-shrink: 0;
-}
-
-.meal-action-btn {
-  width: 32px;
-  height: 32px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: none;
-  border: none;
-  color: var(--text-disabled);
-  cursor: pointer;
-  border-radius: var(--radius-sm);
-  transition: color var(--dur-fast) var(--ease-out);
-}
-
-.meal-action-btn:hover { color: var(--text-muted); }
-.meal-action-btn--active { color: var(--module-nutri); }
-.meal-action-btn--danger:hover { color: var(--status-error); }
-
-.meal-macros-row {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 8px;
-}
-
-.meal-macro { display: flex; flex-direction: column; gap: 4px; }
-
-.meal-macro-bar {
-  height: 2px;
-  background: var(--bg-overlay);
-  border-radius: 999px;
-  overflow: hidden;
-}
-
-.meal-macro-fill {
-  height: 100%;
-  border-radius: 999px;
-  opacity: 0.7;
-}
-
-.meal-macro-label { font-size: 9px; font-weight: 500; color: var(--text-muted); }
-
-.meal-exceptional-pip {
-  position: absolute;
-  top: 10px;
-  right: 10px;
-  width: 5px;
-  height: 5px;
-  border-radius: 50%;
-  background: var(--status-warning);
-  animation: pulse-dot 2s ease-in-out infinite;
-}
-
-@keyframes pulse-dot {
-  0%, 100% { opacity: 1; }
-  50%       { opacity: 0.3; }
-}
-
-/* ── Shared form atoms ── */
-.field-group   { display: flex; flex-direction: column; gap: 6px; }
-.field-grid-2  { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-.field-grid-4  { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
-
-.field-label {
-  font-size: 10px;
-  font-weight: 500;
-  text-transform: uppercase;
-  letter-spacing: 0.12em;
-  color: var(--text-muted);
-}
-
-.field-input {
-  width: 100%;
-  padding: 11px 14px;
-  background: var(--bg-subtle);
-  border: 1px solid var(--border-default);
-  border-radius: var(--radius-md);
-  font-family: var(--font-sans);
-  font-size: var(--text-sm);
-  color: var(--text-primary);
-  outline: none;
-  transition: border-color var(--dur-fast) var(--ease-out), box-shadow var(--dur-fast) var(--ease-out);
-}
-
-.field-input::placeholder { color: var(--text-disabled); }
-
-.field-input:focus {
-  border-color: var(--module-nutri-border);
-  box-shadow: 0 0 0 3px var(--module-nutri-dim);
-}
-
-.field-input--center { text-align: center; }
-
-.field-select { appearance: none; cursor: pointer; }
-
-.select-wrap { position: relative; }
-
-.select-chevron {
-  position: absolute;
-  right: 12px;
-  top: 50%;
-  transform: translateY(-50%) rotate(90deg);
-  color: var(--text-muted);
-  pointer-events: none;
-}
-
-/* ── Buttons ── */
-.btn-primary {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  width: 100%;
-  padding: 14px;
-  background: var(--text-primary);
-  color: var(--bg-base);
-  border: none;
-  border-radius: var(--radius-md);
-  font-family: var(--font-sans);
-  font-size: var(--text-sm);
-  font-weight: 500;
-  cursor: pointer;
-  transition: background var(--dur-fast) var(--ease-out), transform var(--dur-fast) var(--ease-out);
-}
-
-.btn-primary:hover  { background: #fff; }
-.btn-primary:active { transform: scale(0.98); }
-.btn-primary:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
-.btn-primary--sm { padding: 11px 20px; width: auto; }
-
-.btn-ghost {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 11px 16px;
-  background: none;
-  border: none;
-  font-family: var(--font-sans);
-  font-size: var(--text-sm);
-  color: var(--text-muted);
-  cursor: pointer;
-  border-radius: var(--radius-md);
-  transition: color var(--dur-fast) var(--ease-out);
-}
-
-.btn-ghost:hover { color: var(--text-secondary); }
-
-.btn-sm-accent {
-  padding: 7px 14px;
-  background: var(--module-nutri-dim);
-  border: 1px solid var(--module-nutri-border);
-  border-radius: var(--radius-sm);
-  font-family: var(--font-sans);
-  font-size: var(--text-xs);
-  font-weight: 500;
-  color: var(--module-nutri);
-  cursor: pointer;
-  white-space: nowrap;
-  transition: background var(--dur-fast) var(--ease-out);
-}
-
-.btn-sm-accent:hover { background: color-mix(in srgb, var(--module-nutri) 16%, transparent); }
-
-@keyframes spin { to { transform: rotate(360deg); } }
-
-.btn-spinner {
-  width: 15px;
-  height: 15px;
-  border-radius: 50%;
-  border: 2px solid rgba(255,255,255,0.3);
-  border-top-color: #fff;
-  animation: spin 0.7s linear infinite;
-  flex-shrink: 0;
-}
-
-.btn-spinner--dark {
-  border-color: rgba(0,0,0,0.15);
-  border-top-color: var(--bg-base);
-}
-
-/* ── Modals ── */
+/* ════ Fenêtres de dialogue ════ */
 .modal-backdrop {
   position: fixed;
   inset: 0;
@@ -1461,41 +1452,19 @@ watch(isAnyModalOpen, (open) => { document.body.style.overflow = open ? 'hidden'
   display: flex;
   align-items: flex-end;
   justify-content: center;
-  background: rgba(0, 0, 0, 0.7);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-  padding-bottom: env(safe-area-inset-bottom, 0px);
+  background: rgba(15, 16, 20, 0.45);
 }
 
-@media (min-width: 480px) {
-  .modal-backdrop { align-items: center; }
-}
-
-.modal-sheet {
-  position: relative;
-  width: 100%;
-  max-width: 540px;
-  background: var(--bg-overlay);
-  border: 1px solid var(--border-default);
-  border-radius: var(--radius-xl) var(--radius-xl) 0 0;
-  max-height: 90dvh;
+.modal-sheet,
+.modal-compact {
   display: flex;
   flex-direction: column;
-  overflow: hidden;
-}
-
-@media (min-width: 480px) {
-  .modal-sheet { border-radius: var(--radius-xl); margin: 16px; }
-}
-
-.modal-compact {
-  position: relative;
   width: 100%;
-  max-width: 400px;
-  margin: 16px;
-  background: var(--bg-overlay);
-  border: 1px solid var(--border-default);
-  border-radius: var(--radius-xl);
+  max-width: 560px;
+  max-height: 88dvh;
+  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+  background: var(--bg-base);
+  box-shadow: var(--shadow-lg);
   overflow: hidden;
 }
 
@@ -1503,272 +1472,401 @@ watch(isAnyModalOpen, (open) => { document.body.style.overflow = open ? 'hidden'
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 20px 22px;
-  border-bottom: 1px solid var(--border-subtle);
-  flex-shrink: 0;
+  gap: var(--space-3);
+  padding: var(--space-4) var(--space-4) var(--space-3);
 }
 
-.modal-head-left { display: flex; align-items: center; gap: 10px; }
+.modal-head-left {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-width: 0;
+}
 
 .modal-icon {
-  width: 32px;
-  height: 32px;
-  border-radius: var(--radius-sm);
-  background: var(--module-nutri-dim);
-  border: 1px solid var(--module-nutri-border);
   display: flex;
   align-items: center;
   justify-content: center;
-  color: var(--module-nutri);
+  width: 40px;
+  height: 40px;
   flex-shrink: 0;
+  border-radius: var(--radius-md);
+  background: var(--module-nutri-dim);
+  color: var(--module-nutri);
 }
 
 .modal-title {
-  font-family: var(--font-serif);
   font-size: var(--text-lg);
-  font-weight: 400;
-  color: var(--text-primary);
+  font-weight: 600;
+  letter-spacing: -0.01em;
 }
 
 .modal-close {
-  background: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  flex-shrink: 0;
   border: none;
-  color: var(--text-muted);
+  border-radius: var(--radius-pill);
+  background: var(--bg-raised);
+  color: var(--text-primary);
   cursor: pointer;
-  padding: 6px;
-  border-radius: var(--radius-sm);
-  transition: color var(--dur-fast) var(--ease-out);
 }
-
-.modal-close:hover { color: var(--text-secondary); }
 
 .modal-body {
   flex: 1;
-  overflow-y: auto;
-  padding: 22px;
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: var(--space-3);
+  padding: 0 var(--space-4) var(--space-4);
+  overflow-y: auto;
+  overscroll-behavior: contain;
 }
 
 .modal-footer {
   display: flex;
-  align-items: center;
   justify-content: flex-end;
-  gap: 8px;
-  padding: 16px 22px;
-  border-top: 1px solid var(--border-subtle);
-  flex-shrink: 0;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-4) calc(var(--space-4) + env(safe-area-inset-bottom, 0px));
+  background: var(--bg-raised);
 }
-
-.modal-loading { display: flex; flex-direction: column; gap: 8px; }
 
 .modal-empty {
   display: flex;
   flex-direction: column;
   align-items: center;
+  gap: var(--space-1);
+  padding: var(--space-8) 0;
   text-align: center;
-  padding: 40px 0;
-  gap: 8px;
 }
 
 .modal-empty-icon {
-  width: 44px;
-  height: 44px;
-  border-radius: var(--radius-md);
-  background: var(--bg-subtle);
   display: flex;
   align-items: center;
   justify-content: center;
-  color: var(--text-disabled);
-  margin-bottom: 4px;
+  width: 44px;
+  height: 44px;
+  margin-bottom: var(--space-2);
+  border-radius: var(--radius-md);
+  background: var(--module-nutri-dim);
+  color: var(--module-nutri);
 }
 
-.modal-empty-title { font-family: var(--font-serif); font-size: var(--text-md); color: var(--text-primary); }
-.modal-empty-sub   { font-size: var(--text-sm); color: var(--text-muted); max-width: 240px; line-height: 1.5; }
+.modal-empty-title { font-size: var(--text-sm); font-weight: 600; }
 
-/* ── Saved meals ── */
-.saved-meals-list { display: flex; flex-direction: column; gap: 8px; }
+.modal-empty-sub {
+  max-width: 300px;
+  font-size: var(--text-xs);
+  color: var(--text-secondary);
+}
 
-.saved-meal-card {
-  background: var(--bg-raised);
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-lg);
-  padding: 16px;
+.btn-primary,
+.btn-ghost {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  min-height: 48px;
+  padding: 0 var(--space-5);
+  border: none;
+  border-radius: var(--radius-pill);
+  font-family: var(--font-sans);
+  font-size: var(--text-xs);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.btn-primary { background: var(--action); color: var(--on-action); }
+.btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+.btn-ghost { background: none; color: var(--text-primary); }
+
+.btn-sm-accent {
+  min-height: 40px;
+  padding: 0 var(--space-4);
+  border: none;
+  border-radius: var(--radius-pill);
+  background: var(--action);
+  font-family: var(--font-sans);
+  font-size: var(--text-xs);
+  font-weight: 600;
+  color: var(--on-action);
+  cursor: pointer;
+}
+
+.meal-action-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  flex-shrink: 0;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: none;
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+
+.meal-action-btn--danger:hover { background: var(--status-error-dim); color: var(--status-error); }
+
+/* ── Meal prep ── */
+.saved-meals-list,
+.habits-list {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: var(--space-2);
 }
 
-.saved-meal-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
-.saved-meal-name { font-size: var(--text-sm); color: var(--text-secondary); }
-.saved-meal-cal  { font-size: 10px; color: var(--module-nutri); margin-top: 3px; }
-.saved-meal-actions { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
+.saved-meal-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-md);
+  background: var(--bg-raised);
+}
 
-.saved-meal-macros { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+.saved-meal-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.saved-meal-name,
+.habit-name {
+  font-size: var(--text-sm);
+  font-weight: 500;
+}
+
+.saved-meal-cal {
+  font-size: var(--text-2xs);
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+
+.saved-meal-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  flex-shrink: 0;
+}
+
+.saved-meal-macros {
+  display: flex;
+  gap: var(--space-4);
+}
 
 .saved-macro {
   display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 2px;
-  padding: 8px 4px;
-  background: var(--bg-overlay);
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-sm);
+  gap: var(--space-1);
+  font-size: var(--text-2xs);
+  font-weight: 500;
 }
 
-.saved-macro-label { font-size: 9px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-muted); }
-.saved-macro-val   { font-size: var(--text-xs); color: var(--text-secondary); }
+.saved-macro-label { color: var(--text-secondary); }
 
-/* ── Planning ── */
+/* ── Planification ── */
 .plan-meal-preview {
-  background: var(--bg-raised);
-  border: 1px solid var(--border-subtle);
+  padding: var(--space-3) var(--space-4);
   border-radius: var(--radius-md);
-  padding: 14px;
-  margin-bottom: 4px;
+  background: var(--bg-raised);
 }
 
-.plan-meal-name { font-size: var(--text-sm); color: var(--text-secondary); margin-top: 6px; }
+.plan-meal-name { font-size: var(--text-sm); font-weight: 600; }
 
-.plan-days-list { display: flex; flex-direction: column; gap: 4px; max-height: 36vh; overflow-y: auto; }
+.plan-days-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
 
 .plan-day {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 10px;
-  padding: 12px 14px;
-  background: var(--bg-raised);
-  border: 1px solid var(--border-subtle);
+  min-height: 48px;
+  padding: 0 var(--space-4);
   border-radius: var(--radius-md);
+  background: var(--bg-raised);
   cursor: pointer;
-  transition: border-color var(--dur-fast) var(--ease-out), background var(--dur-fast) var(--ease-out);
-  text-transform: capitalize;
 }
 
-.plan-day:hover { border-color: var(--border-default); }
-
-.plan-day--selected {
-  background: var(--accent-dim);
-  border-color: var(--accent-border);
-}
+.plan-day--selected { background: var(--module-nutri-dim); }
 
 .plan-day-label {
   font-size: var(--text-sm);
-  color: var(--text-secondary);
+  font-weight: 500;
+  text-transform: capitalize;
 }
 
-.plan-day--selected .plan-day-label { color: var(--accent); }
-
 .plan-day-check {
-  width: 22px;
-  height: 22px;
-  border-radius: 50%;
-  border: 1px solid var(--border-default);
   display: flex;
   align-items: center;
   justify-content: center;
-  color: var(--accent);
-  transition: border-color var(--dur-fast) var(--ease-out);
+  width: 24px;
+  height: 24px;
+  border: 1.5px solid var(--border-strong);
+  border-radius: var(--radius-pill);
+  color: var(--module-nutri);
 }
 
-.plan-day-check--on { border-color: var(--accent-border); }
+.plan-day-check--on { border-color: transparent; }
 
-/* ── Settings ── */
-.settings-section { display: flex; flex-direction: column; gap: 14px; }
+/* ── Formulaires ── */
+.settings-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
 
 .settings-section-title {
-  font-size: 10px;
+  font-size: var(--text-sm);
+  font-weight: 600;
+}
+
+.field-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.field-label {
+  font-size: var(--text-2xs);
   font-weight: 500;
-  text-transform: uppercase;
-  letter-spacing: 0.14em;
-  color: var(--text-muted);
-  padding-top: 4px;
+  color: var(--text-secondary);
+}
+
+.field-grid-2 {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-3);
+}
+
+.field-grid-4 {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--space-2);
+}
+
+.field-input {
+  width: 100%;
+  min-height: 48px;
+  padding: 0 var(--space-4);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  background: var(--bg-raised);
+  font-family: var(--font-sans);
+  font-size: var(--text-md);
+  color: var(--text-primary);
+  outline: none;
+}
+
+.field-input:focus { border-color: var(--accent); }
+.field-input--center { padding: 0 var(--space-1); text-align: center; }
+
+.select-wrap { position: relative; }
+.field-select { padding-right: 36px; appearance: none; }
+
+.select-chevron {
+  position: absolute;
+  top: 50%;
+  right: var(--space-3);
+  color: var(--text-secondary);
+  pointer-events: none;
+  transform: translateY(-50%) rotate(90deg);
 }
 
 .goal-picker {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 6px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 2px;
+  padding: var(--space-1);
+  border-radius: var(--radius-pill);
+  background: var(--bg-raised);
 }
 
 .goal-option {
-  padding: 11px 8px;
-  background: var(--bg-overlay);
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-md);
+  min-height: 40px;
+  border: none;
+  border-radius: var(--radius-pill);
+  background: none;
   font-family: var(--font-sans);
   font-size: var(--text-xs);
-  font-weight: 500;
-  color: var(--text-muted);
+  font-weight: 600;
+  color: var(--text-secondary);
   cursor: pointer;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  transition: all var(--dur-fast) var(--ease-out);
 }
 
-.goal-option:hover { color: var(--text-secondary); border-color: var(--border-default); }
-
 .goal-option--active {
-  background: var(--bg-muted);
-  border-color: var(--border-strong);
-  color: var(--text-primary);
+  background: var(--action);
+  color: var(--on-action);
 }
 
 .goals-preview {
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-md);
   background: var(--bg-raised);
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-lg);
-  padding: 18px;
 }
 
-.goals-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+.goals-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--space-2);
+}
 
 .goal-chip {
   display: flex;
   flex-direction: column;
-  align-items: center;
-  gap: 4px;
-  padding: 10px 4px;
-  background: var(--bg-overlay);
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-sm);
+  min-width: 0;
 }
 
-.goal-chip-label { font-size: 9px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-muted); }
-.goal-chip-value { font-size: var(--text-sm); font-weight: 300; }
+.goal-chip-label {
+  font-size: var(--text-2xs);
+  font-weight: 500;
+  color: var(--text-secondary);
+}
 
-/* ── Habits ── */
-.habits-list { display: flex; flex-direction: column; gap: 6px; margin-bottom: 20px; }
+.goal-chip-value {
+  font-size: var(--text-lg);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
 
 .habit-row {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 10px;
-  padding: 12px 14px;
-  background: var(--bg-raised);
-  border: 1px solid var(--border-subtle);
+  gap: var(--space-3);
+  padding: var(--space-2) var(--space-2) var(--space-2) var(--space-4);
   border-radius: var(--radius-md);
+  background: var(--bg-raised);
 }
-
-.habit-name { font-size: var(--text-sm); color: var(--text-secondary); }
 
 .habit-meta {
   display: flex;
-  gap: 10px;
-  font-size: 10px;
-  color: var(--text-muted);
-  margin-top: 3px;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  font-size: var(--text-2xs);
+  font-weight: 500;
+  color: var(--text-secondary);
 }
 
 .habit-form {
-  padding-top: 20px;
-  border-top: 1px solid var(--border-subtle);
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  margin-top: var(--space-3);
+}
+
+.habit-form .settings-section-title { margin-bottom: var(--space-2); }
+
+@media (min-width: 768px) {
+  .modal-backdrop { align-items: center; padding: var(--space-5); }
+  .modal-sheet,
+  .modal-compact { border-radius: var(--radius-lg); }
+  .modal-compact { max-width: 440px; }
 }
 </style>

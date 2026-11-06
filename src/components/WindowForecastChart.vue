@@ -19,6 +19,8 @@ import {
 
 ChartJS.register(LineElement, PointElement, LinearScale, CategoryScale, Filler, Tooltip)
 
+const cssVar = (name) => getComputedStyle(document.documentElement).getPropertyValue(name).trim()
+
 const props = defineProps({
   hours: { type: Array, required: true }, // [{ time, indoorTemp, outdoorTemp }]
   openAt: { type: String, default: null },
@@ -56,7 +58,7 @@ const chartData = computed(() => {
       {
         label: 'Extérieur',
         data: outdoor,
-        borderColor: '#7A91B8',
+        borderColor: cssVar('--module-sleep'),
         backgroundColor: 'transparent',
         borderWidth: 2,
         tension: 0.35,
@@ -65,7 +67,7 @@ const chartData = computed(() => {
       {
         label: 'Intérieur',
         data: indoor,
-        borderColor: '#D4976A',
+        borderColor: cssVar('--module-windows'),
         backgroundColor: 'transparent',
         borderWidth: 2,
         borderDash: [4, 4],
@@ -99,21 +101,21 @@ const chartOptions = {
   plugins: {
     legend: { display: false },
     tooltip: {
-      backgroundColor: 'rgba(26, 26, 26, 0.95)',
-      titleColor: '#F0EBE3',
-      bodyColor: '#F0EBE3',
-      borderColor: 'rgba(255,255,255,0.08)',
+      backgroundColor: cssVar('--bg-raised'),
+      titleColor: cssVar('--text-primary'),
+      bodyColor: cssVar('--text-secondary'),
+      borderColor: cssVar('--border-default'),
       borderWidth: 1,
       filter: (item) => item.datasetIndex < 2
     }
   },
   scales: {
     y: {
-      ticks: { color: 'rgba(240, 235, 227, 0.52)', callback: (v) => `${v}°` },
-      grid: { color: 'rgba(255, 255, 255, 0.05)' }
+      ticks: { color: cssVar('--text-secondary'), callback: (v) => `${v}°` },
+      grid: { color: cssVar('--border-subtle') }
     },
     x: {
-      ticks: { color: 'rgba(240, 235, 227, 0.28)', maxTicksLimit: 8 },
+      ticks: { color: cssVar('--text-secondary'), maxTicksLimit: 8 },
       grid: { display: false }
     }
   }

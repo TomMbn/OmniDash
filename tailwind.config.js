@@ -7,28 +7,29 @@ export default {
     theme: {
         extend: {
             fontFamily: {
-                serif: ['DM Serif Display', 'Georgia', 'serif'],
-                sans:  ['DM Sans', 'system-ui', 'sans-serif'],
+                serif: ['Onest', 'system-ui', 'sans-serif'],
+                sans:  ['Onest', 'system-ui', 'sans-serif'],
             },
             colors: {
-                // Backgrounds
-                'od-base':    '#0A0A0A',
-                'od-raised':  '#111111',
-                'od-overlay': '#1A1A1A',
-                'od-subtle':  '#222222',
-                'od-muted':   '#2C2C2C',
+                // Fonds
+                'od-base':    'var(--bg-base)',
+                'od-raised':  'var(--bg-raised)',
+                'od-overlay': 'var(--bg-overlay)',
+                'od-subtle':  'var(--bg-subtle)',
+                'od-muted':   'var(--bg-muted)',
                 // Accent
-                'od-accent':  '#D4976A',
+                'od-accent':  'var(--accent)',
                 // Modules
-                'muscu':  '#D4976A',
-                'sleep':  '#7A91B8',
-                'nutri':  '#7DAD8A',
-                'dress':  '#B8967E',
-                'travel': '#A08B6A',
-                // Status
-                'od-success': '#6AAA7E',
-                'od-warning': '#C9A04C',
-                'od-error':   '#B05A5A',
+                'muscu':   'var(--module-muscu)',
+                'sleep':   'var(--module-sleep)',
+                'nutri':   'var(--module-nutri)',
+                'dress':   'var(--module-dress)',
+                'travel':  'var(--module-travel)',
+                'windows': 'var(--module-windows)',
+                // Statuts
+                'od-success': 'var(--status-success)',
+                'od-warning': 'var(--status-warning)',
+                'od-error':   'var(--status-error)',
             },
             animation: {
                 'fade-in':    'fadeIn var(--dur-base, 320ms) var(--ease-out, cubic-bezier(0.16,1,0.3,1)) forwards',
@@ -50,16 +51,16 @@ export default {
                 },
             },
             borderRadius: {
-                'sm': '10px',
-                'md': '16px',
-                'lg': '22px',
-                'xl': '28px',
+                'sm': 'var(--radius-sm)',
+                'md': 'var(--radius-md)',
+                'lg': 'var(--radius-lg)',
+                'xl': 'var(--radius-xl)',
             },
             boxShadow: {
-                'sm':     '0 1px 4px rgba(0,0,0,0.5)',
-                'md':     '0 4px 20px rgba(0,0,0,0.55)',
-                'lg':     '0 16px 48px rgba(0,0,0,0.65)',
-                'accent': '0 8px 32px rgba(212,151,106,0.18)',
+                'sm':     'var(--shadow-sm)',
+                'md':     'var(--shadow-md)',
+                'lg':     'var(--shadow-lg)',
+                'accent': 'var(--shadow-accent)',
             },
             transitionTimingFunction: {
                 'spring': 'cubic-bezier(0.16, 1, 0.3, 1)',

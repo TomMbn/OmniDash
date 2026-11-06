@@ -1,82 +1,116 @@
 /* ══════════════════════════════════════════════
-   OmniDash — Design Tokens v1
+   OmniDash — Design Tokens v2 (Aurore)
+   Thème Jour par défaut, Soir selon le système.
+   data-theme="jour" ou "soir" sur <html> force le thème.
    ══════════════════════════════════════════════ */
 
-@import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:opsz,wght@9..40,300;400;500;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600;700&display=swap');
 
 :root {
+  color-scheme: light;
 
-  /* ── Backgrounds ── */
-  --bg-base:      #0A0A0A;
-  --bg-raised:    #111111;
-  --bg-overlay:   #1A1A1A;
-  --bg-subtle:    #222222;
-  --bg-muted:     #2C2C2C;
+  /* ── Fonds ── */
+  --bg-base:      #EDEEF2;
+  --bg-raised:    #FFFFFF;
+  --bg-overlay:   #F4F5F8;
+  --bg-subtle:    #F4F5F8;
+  --bg-muted:     #E4E5EA;
 
-  /* ── Borders ── */
-  --border-subtle:  rgba(255, 255, 255, 0.05);
-  --border-default: rgba(255, 255, 255, 0.09);
-  --border-strong:  rgba(255, 255, 255, 0.16);
+  /* ── Bordures ── */
+  --border-subtle:  #E4E5EA;
+  --border-default: #D9DAE1;
+  --border-strong:  #B9BAC4;
 
-  /* ── Text ── */
-  --text-primary:   #F0EBE3;
-  --text-secondary: rgba(240, 235, 227, 0.52);
-  --text-muted:     rgba(240, 235, 227, 0.28);
-  --text-disabled:  rgba(240, 235, 227, 0.15);
+  /* ── Texte ── */
+  --text-primary:   #15151A;
+  --text-secondary: #565763;
+  --text-muted:     #565763;
+  --text-disabled:  #6F707C;
 
-  /* ── Accent global — Cuivré chaud ── */
-  --accent:        #D4976A;
-  --accent-dim:    rgba(212, 151, 106, 0.10);
-  --accent-border: rgba(212, 151, 106, 0.22);
-  --accent-glow:   0 8px 32px rgba(212, 151, 106, 0.18);
+  /* ── Rail et boutons principaux ── */
+  --rail:        #121216;
+  --on-rail:     #FFFFFF;
+  --on-rail-dim: #B9BAC4;
+  --on-rail-active: #5B3FD6;
+  --on-rail-active-text: #15151A;
+  --action:      #121216;
+  --on-action:   #FFFFFF;
+
+  /* ── Accent global — Lilas ── */
+  --accent:        #5B3FD6;
+  --on-accent:     #FFFFFF;
+  --accent-dim:    #E8E2FC;
+  --accent-border: rgba(91, 63, 214, 0.22);
+  --accent-glow:   0 8px 24px rgba(91, 63, 214, 0.16);
 
   /* ── Accents par module ── */
-  --module-muscu:  #D4976A;  /* cuivré — physique, chaleur */
-  --module-sleep:  #7A91B8;  /* ardoise bleue — calme, nuit */
-  --module-nutri:  #7DAD8A;  /* vert sauge — nature, vitalité */
-  --module-dress:  #B8967E;  /* taupe rosé — matière, style */
-  --module-travel: #A08B6A;  /* sable — horizon, aventure */
+  --module-muscu:   #5B3FD6;
+  --module-sleep:   #2A62B8;
+  --module-nutri:   #14603F;
+  --module-dress:   #A12A5F;
+  --module-travel:  #2A62B8;
+  --module-windows: #A84C18;
 
-  /* ── Modules dim/border ── */
-  --module-muscu-dim:    rgba(212, 151, 106, 0.10);
-  --module-muscu-border: rgba(212, 151, 106, 0.20);
-  --module-sleep-dim:    rgba(122, 145, 184, 0.10);
-  --module-sleep-border: rgba(122, 145, 184, 0.20);
-  --module-nutri-dim:    rgba(125, 173, 138, 0.10);
-  --module-nutri-border: rgba(125, 173, 138, 0.20);
-  --module-dress-dim:    rgba(184, 150, 126, 0.10);
-  --module-dress-border: rgba(184, 150, 126, 0.20);
-  --module-travel-dim:   rgba(160, 139, 106, 0.10);
-  --module-travel-border:rgba(160, 139, 106, 0.20);
+  --module-muscu-dim:      #E8E2FC;
+  --module-muscu-border:   rgba(91, 63, 214, 0.22);
+  --module-sleep-dim:      #D9E9FC;
+  --module-sleep-border:   rgba(42, 98, 184, 0.22);
+  --module-nutri-dim:      #D5F2E3;
+  --module-nutri-border:   rgba(20, 96, 63, 0.22);
+  --module-dress-dim:      #FBDDE8;
+  --module-dress-border:   rgba(161, 42, 95, 0.22);
+  --module-travel-dim:     #D9E9FC;
+  --module-travel-border:  rgba(42, 98, 184, 0.22);
+  --module-windows-dim:    #FDE7D9;
+  --module-windows-border: rgba(168, 76, 24, 0.22);
 
   /* ── Statuts ── */
-  --status-success:       #6AAA7E;
-  --status-success-dim:   rgba(106, 170, 126, 0.12);
-  --status-warning:       #C9A04C;
-  --status-warning-dim:   rgba(201, 160, 76, 0.12);
-  --status-error:         #B05A5A;
-  --status-error-dim:     rgba(176, 90, 90, 0.12);
+  --status-success:     #14603F;
+  --status-success-dim: #D5F2E3;
+  --status-warning:     #6E5406;
+  --status-warning-dim: #FBF0CC;
+  --status-error:       #A12A5F;
+  --status-error-dim:   #FBDDE8;
+
+  /* ── Bandeaux irisés ── */
+  --aurore-dashboard: linear-gradient(120deg, #E3DBFC 0%, #F8DDED 55%, #D3E8FB 100%);
+  --aurore-sleep:     linear-gradient(120deg, #D3E8FB 0%, #E3DBFC 60%, #F8DDED 100%);
+  --aurore-nutri:     linear-gradient(120deg, #D5F2E3 0%, #EAF5D6 60%, #D3E8FB 100%);
+  --aurore-windows:   linear-gradient(120deg, #FDE7D9 0%, #F8E6E6 55%, #D3E8FB 100%);
+  --aurore-dress:     linear-gradient(120deg, #FBDDE8 0%, #F5E3F5 60%, #E3DBFC 100%);
+  --aurore-travel:    linear-gradient(120deg, #D3E8FB 0%, #E8E6F5 55%, #FDE7D9 100%);
+  --aurore-plan:      linear-gradient(120deg, #E3DBFC 0%, #E7E1FB 55%, #D3E8FB 100%);
+  --aurore-match:     linear-gradient(120deg, #FDE7D9 0%, #F8DDED 60%, #E3DBFC 100%);
+
+  /* ── Sphères des bandeaux (jamais de texte dessus) ── */
+  --orb-lilas: radial-gradient(circle at 45% 45%, #FFFFFF 0%, #E6DCFF 38%, #B9A6F5 72%, #8E78E8 100%);
+  --orb-rose:  radial-gradient(circle at 45% 45%, #FFFFFF 0%, #FDE0EE 40%, #F6B6D6 75%, #EE93C2 100%);
+  --orb-ciel:  radial-gradient(circle at 45% 45%, #FFFFFF 0%, #DDF0FF 40%, #A9D6FA 75%, #7DBDF3 100%);
+  --orb-peche: radial-gradient(circle at 45% 45%, #FFFFFF 0%, #FFE9DA 40%, #FFC8A6 75%, #FBA97E 100%);
+  --orb-opacity: 1;
+  --avatar:    linear-gradient(120deg, #CFC3FA 0%, #F6B6D6 100%);
 
   /* ── Typographie ── */
-  --font-serif: 'DM Serif Display', Georgia, serif;
-  --font-sans:  'DM Sans', system-ui, sans-serif;
+  --font-sans:  'Onest', system-ui, sans-serif;
+  --font-serif: var(--font-sans); /* alias conservé : retiré une fois les vues migrées */
 
   /* ── Type scale ── */
-  --text-2xs: 0.625rem;   /* 10px — labels caps */
-  --text-xs:  0.75rem;    /* 12px */
-  --text-sm:  0.875rem;   /* 14px */
-  --text-md:  1rem;       /* 16px */
-  --text-lg:  1.125rem;   /* 18px */
-  --text-xl:  1.375rem;   /* 22px */
-  --text-2xl: 1.75rem;    /* 28px */
-  --text-3xl: 2.25rem;    /* 36px */
-  --text-4xl: 3rem;       /* 48px */
+  --text-2xs:   0.75rem;    /* 12px — minimum de l'interface */
+  --text-xs:    0.8125rem;  /* 13px */
+  --text-sm:    0.9375rem;  /* 15px */
+  --text-md:    1rem;       /* 16px */
+  --text-lg:    1.0625rem;  /* 17px */
+  --text-xl:    1.625rem;   /* 26px */
+  --text-2xl:   2.125rem;   /* 34px */
+  --text-3xl:   2.75rem;    /* 44px */
+  --text-4xl:   3rem;       /* 48px */
+  --text-geant: 6rem;       /* 96px */
 
   /* ── Radius ── */
-  --radius-sm:  10px;
-  --radius-md:  16px;
-  --radius-lg:  22px;
-  --radius-xl:  28px;
+  --radius-sm:   10px;
+  --radius-md:   18px;
+  --radius-lg:   28px;
+  --radius-xl:   28px;
   --radius-pill: 999px;
 
   /* ── Spacing ── */
@@ -91,10 +125,10 @@
   --space-12: 48px;
 
   /* ── Shadows ── */
-  --shadow-sm:  0 1px 4px rgba(0, 0, 0, 0.5);
-  --shadow-md:  0 4px 20px rgba(0, 0, 0, 0.55);
-  --shadow-lg:  0 16px 48px rgba(0, 0, 0, 0.65);
-  --shadow-accent: 0 8px 32px rgba(212, 151, 106, 0.18);
+  --shadow-sm:  0 1px 3px rgba(21, 21, 26, 0.06);
+  --shadow-md:  0 6px 20px rgba(21, 21, 26, 0.08);
+  --shadow-lg:  0 16px 40px rgba(21, 21, 26, 0.12);
+  --shadow-accent: 0 8px 24px rgba(91, 63, 214, 0.16);
 
   /* ── Animations ── */
   --dur-fast:   180ms;
@@ -111,6 +145,155 @@
   --z-nav:     200;
   --z-modal:   300;
   --z-toast:   400;
+}
+
+/* ── Thème Soir ──
+   Les deux sélecteurs portent les mêmes valeurs : le premier suit le système,
+   le second force le thème via data-theme. */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="jour"]) {
+    color-scheme: dark;
+
+    --bg-base:    #0F1014;
+    --bg-raised:  #1A1B21;
+    --bg-overlay: #24252C;
+    --bg-subtle:  #24252C;
+    --bg-muted:   #2E2F38;
+
+    --border-subtle:  #2E2F38;
+    --border-default: #3A3B45;
+    --border-strong:  #565763;
+
+    --text-primary:   #F3F3F6;
+    --text-secondary: #B4B5C0;
+    --text-muted:     #B4B5C0;
+    --text-disabled:  #94959F;
+
+    --rail:      #26272F;
+    --action:    #FFFFFF;
+    --on-action: #15151A;
+
+    --accent:        #B8A9FF;
+    --on-accent:     #15151A;
+    --accent-dim:    #2A2448;
+    --accent-border: rgba(184, 169, 255, 0.28);
+    --accent-glow:   0 8px 24px rgba(0, 0, 0, 0.4);
+
+    --module-muscu:   #B8A9FF;
+    --module-sleep:   #9CC4F7;
+    --module-nutri:   #8FE0B8;
+    --module-dress:   #F5A3C5;
+    --module-travel:  #9CC4F7;
+    --module-windows: #F6B48B;
+
+    --module-muscu-dim:      #2A2448;
+    --module-muscu-border:   rgba(184, 169, 255, 0.28);
+    --module-sleep-dim:      #1B2C47;
+    --module-sleep-border:   rgba(156, 196, 247, 0.28);
+    --module-nutri-dim:      #173A2B;
+    --module-nutri-border:   rgba(143, 224, 184, 0.28);
+    --module-dress-dim:      #45182B;
+    --module-dress-border:   rgba(245, 163, 197, 0.28);
+    --module-travel-dim:     #1B2C47;
+    --module-travel-border:  rgba(156, 196, 247, 0.28);
+    --module-windows-dim:    #41261A;
+    --module-windows-border: rgba(246, 180, 139, 0.28);
+
+    --status-success:     #8FE0B8;
+    --status-success-dim: #173A2B;
+    --status-warning:     #EBCF7A;
+    --status-warning-dim: #3B3113;
+    --status-error:       #F5A3C5;
+    --status-error-dim:   #45182B;
+
+    --orb-opacity: 0.72;
+
+    --aurore-dashboard: linear-gradient(120deg, #2A2448 0%, #3B1E3A 55%, #1B2C47 100%);
+    --aurore-sleep:     linear-gradient(120deg, #1B2C47 0%, #2A2448 60%, #3B1E3A 100%);
+    --aurore-nutri:     linear-gradient(120deg, #173A2B 0%, #2B3A1F 60%, #1B2C47 100%);
+    --aurore-windows:   linear-gradient(120deg, #41261A 0%, #3B1E2A 55%, #1B2C47 100%);
+    --aurore-dress:     linear-gradient(120deg, #45182B 0%, #3B1E3A 60%, #2A2448 100%);
+    --aurore-travel:    linear-gradient(120deg, #1B2C47 0%, #2A2448 55%, #41261A 100%);
+    --aurore-plan:      linear-gradient(120deg, #2A2448 0%, #2A2448 55%, #1B2C47 100%);
+    --aurore-match:     linear-gradient(120deg, #41261A 0%, #3B1E3A 60%, #2A2448 100%);
+
+    --shadow-sm:  0 1px 3px rgba(0, 0, 0, 0.4);
+    --shadow-md:  0 6px 20px rgba(0, 0, 0, 0.45);
+    --shadow-lg:  0 16px 40px rgba(0, 0, 0, 0.55);
+    --shadow-accent: 0 8px 24px rgba(0, 0, 0, 0.4);
+  }
+}
+
+:root[data-theme="soir"] {
+  color-scheme: dark;
+
+  --bg-base:    #0F1014;
+  --bg-raised:  #1A1B21;
+  --bg-overlay: #24252C;
+  --bg-subtle:  #24252C;
+  --bg-muted:   #2E2F38;
+
+  --border-subtle:  #2E2F38;
+  --border-default: #3A3B45;
+  --border-strong:  #565763;
+
+  --text-primary:   #F3F3F6;
+  --text-secondary: #B4B5C0;
+  --text-muted:     #B4B5C0;
+  --text-disabled:  #94959F;
+
+  --rail:      #26272F;
+  --action:    #FFFFFF;
+  --on-action: #15151A;
+
+  --accent:        #B8A9FF;
+  --on-accent:     #15151A;
+  --accent-dim:    #2A2448;
+  --accent-border: rgba(184, 169, 255, 0.28);
+  --accent-glow:   0 8px 24px rgba(0, 0, 0, 0.4);
+
+  --module-muscu:   #B8A9FF;
+  --module-sleep:   #9CC4F7;
+  --module-nutri:   #8FE0B8;
+  --module-dress:   #F5A3C5;
+  --module-travel:  #9CC4F7;
+  --module-windows: #F6B48B;
+
+  --module-muscu-dim:      #2A2448;
+  --module-muscu-border:   rgba(184, 169, 255, 0.28);
+  --module-sleep-dim:      #1B2C47;
+  --module-sleep-border:   rgba(156, 196, 247, 0.28);
+  --module-nutri-dim:      #173A2B;
+  --module-nutri-border:   rgba(143, 224, 184, 0.28);
+  --module-dress-dim:      #45182B;
+  --module-dress-border:   rgba(245, 163, 197, 0.28);
+  --module-travel-dim:     #1B2C47;
+  --module-travel-border:  rgba(156, 196, 247, 0.28);
+  --module-windows-dim:    #41261A;
+  --module-windows-border: rgba(246, 180, 139, 0.28);
+
+  --status-success:     #8FE0B8;
+  --status-success-dim: #173A2B;
+  --status-warning:     #EBCF7A;
+  --status-warning-dim: #3B3113;
+  --status-error:       #F5A3C5;
+  --status-error-dim:   #45182B;
+
+  --orb-opacity: 0.72;
+
+  --aurore-dashboard: linear-gradient(120deg, #2A2448 0%, #3B1E3A 55%, #1B2C47 100%);
+  --aurore-sleep:     linear-gradient(120deg, #1B2C47 0%, #2A2448 60%, #3B1E3A 100%);
+  --aurore-nutri:     linear-gradient(120deg, #173A2B 0%, #2B3A1F 60%, #1B2C47 100%);
+  --aurore-windows:   linear-gradient(120deg, #41261A 0%, #3B1E2A 55%, #1B2C47 100%);
+  --aurore-dress:     linear-gradient(120deg, #45182B 0%, #3B1E3A 60%, #2A2448 100%);
+  --aurore-travel:    linear-gradient(120deg, #1B2C47 0%, #2A2448 55%, #41261A 100%);
+  --aurore-plan:      linear-gradient(120deg, #2A2448 0%, #2A2448 55%, #1B2C47 100%);
+  --aurore-match:     linear-gradient(120deg, #41261A 0%, #3B1E3A 60%, #2A2448 100%);
+
+  --shadow-sm:  0 1px 3px rgba(0, 0, 0, 0.4);
+  --shadow-md:  0 6px 20px rgba(0, 0, 0, 0.45);
+  --shadow-lg:  0 16px 40px rgba(0, 0, 0, 0.55);
+  --shadow-accent: 0 8px 24px rgba(0, 0, 0, 0.4);
 }
 
 /* ── Reduced motion ── */
@@ -139,7 +322,7 @@ body {
   font-family: var(--font-sans);
   font-size: var(--text-md);
   font-weight: 400;
-  line-height: 1.6;
+  line-height: 1.5;
   color: var(--text-primary);
   background: var(--bg-base);
   -webkit-font-smoothing: antialiased;
@@ -147,10 +330,10 @@ body {
 }
 
 h1, h2, h3 {
-  font-family: var(--font-serif);
-  font-weight: 400;
+  font-family: var(--font-sans);
+  font-weight: 600;
   line-height: 1.2;
-  letter-spacing: -0.01em;
+  letter-spacing: -0.015em;
   color: var(--text-primary);
 }
 
@@ -161,4 +344,10 @@ h1, h2, h3 {
 ::selection {
   background: var(--accent-dim);
   color: var(--accent);
+}
+
+/* ── Focus clavier ── */
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
 }

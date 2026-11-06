@@ -1,212 +1,229 @@
 <template>
   <div class="dressing-view">
-    <!-- Header -->
-    <header class="view-header">
-      <div class="header-top">
-        <div class="module-title-group">
-          <div class="module-icon">
-            <Shirt :size="18" stroke-width="1.75" />
-          </div>
-          <div>
-            <h1 class="view-title">Dressing Room</h1>
-            <p class="view-sub">Intelligence & Style</p>
-          </div>
-        </div>
-      </div>
 
-      <div class="tab-switcher">
+    <!-- ── En-tête ── -->
+    <header class="view-head">
+      <h1 class="view-title">
+        Dressing,{{ ' ' }}<br class="view-break" />
+        <span class="view-title-soft">{{ activeTab === 'generator' ? 'tenue du moment' : `${pieceCount} pièce${pieceCount > 1 ? 's' : ''}` }}</span>
+      </h1>
+      <div class="segmented" role="tablist" aria-label="Sections">
         <button
           v-for="tab in tabs"
           :key="tab.id"
+          role="tab"
+          :aria-selected="activeTab === tab.id"
+          class="segmented-btn"
+          :class="{ 'segmented-btn--active': activeTab === tab.id }"
           @click="activeTab = tab.id"
-          class="tab-btn"
-          :class="{ 'tab-btn--active': activeTab === tab.id }"
-        >
-          <component :is="tab.icon" :size="14" />
-          {{ tab.label }}
-        </button>
+        >{{ tab.label }}</button>
       </div>
     </header>
 
-    <!-- Generator tab -->
-    <div v-if="activeTab === 'generator'" class="tab-content">
-      <section class="stylist-card">
-        <div class="card-header">
-          <div class="card-icon">
-            <Sparkles :size="16" stroke-width="1.75" />
-          </div>
-          <h3 class="card-title">Assistant Styliste</h3>
-        </div>
+    <p v-if="errorMessage" class="error" role="alert">{{ errorMessage }}</p>
 
-        <div class="field-group">
-          <label class="field-label">L'occasion</label>
-          <div class="occasion-grid">
+    <!-- ═══ GÉNÉRATEUR ═══ -->
+    <div v-if="activeTab === 'generator'" class="generator">
+      <section class="banner" aria-label="Choix de la tenue">
+        <span class="orb orb--a" aria-hidden="true" />
+        <span class="orb orb--b" aria-hidden="true" />
+        <span class="orb orb--c" aria-hidden="true" />
+
+        <h2 class="banner-title">
+          Pour quelle occasion ?<br />
+          <span class="banner-title-soft">Et quel temps ?</span>
+        </h2>
+
+        <fieldset class="choice">
+          <legend class="field-label">L'occasion</legend>
+          <div class="choice-row">
             <button
               v-for="opt in occasions"
               :key="opt.id"
+              class="choice-btn"
+              :class="{ 'choice-btn--active': generatorState.occasion === opt.id }"
+              :aria-pressed="generatorState.occasion === opt.id"
               @click="generatorState.occasion = opt.id"
-              class="occasion-btn"
-              :class="{ 'occasion-btn--active': generatorState.occasion === opt.id }"
-            >
-              {{ opt.label }}
-            </button>
+            >{{ opt.label }}</button>
           </div>
-        </div>
+        </fieldset>
 
-        <div class="field-group">
-          <label class="field-label">Météo</label>
-          <div class="weather-grid">
+        <fieldset class="choice">
+          <legend class="field-label">La météo</legend>
+          <div class="choice-row">
             <button
               v-for="opt in weathers"
               :key="opt.id"
+              class="choice-btn"
+              :class="{ 'choice-btn--active': generatorState.weather === opt.id }"
+              :aria-pressed="generatorState.weather === opt.id"
               @click="generatorState.weather = opt.id"
-              class="weather-btn"
-              :class="{ 'weather-btn--active': generatorState.weather === opt.id }"
             >
-              <component :is="opt.icon" :size="15" />
+              <component :is="opt.icon" :size="16" stroke-width="1.75" />
               {{ opt.label }}
             </button>
           </div>
-        </div>
+        </fieldset>
 
-        <div class="actions-group">
-          <button @click="generateOutfit" :disabled="isGenerating" class="btn-primary">
-            <Wand2 v-if="!isGenerating" :size="16" stroke-width="1.75" />
-            <Loader2 v-else class="spin" :size="16" />
-            {{ isGenerating ? 'Styliste en réflexion...' : 'Générer une tenue' }}
+        <div class="banner-actions">
+          <button class="btn btn--dark btn--wide" :disabled="isGenerating" @click="generateOutfit">
+            <Loader2 v-if="isGenerating" class="spin" :size="18" />
+            {{ isGenerating ? 'Le styliste réfléchit…' : 'Générer une tenue' }}
           </button>
-          <button @click="analyzeGaps" :disabled="isGenerating" class="btn-secondary">
-            <Search v-if="!isGenerating" :size="16" stroke-width="1.75" />
-            <Loader2 v-else class="spin" :size="16" />
+          <button class="btn btn--light btn--wide" :disabled="isGenerating" @click="analyzeGaps">
             Analyser les manques
           </button>
         </div>
       </section>
 
-      <!-- AI Result -->
-      <section v-if="aiResult" class="ai-result">
-        <div class="sparkles-bg"><Sparkles :size="110" /></div>
-        <div class="ai-result-label">
-          <span class="label-line"></span>
-          Conseil de votre styliste
+      <!-- Résultat -->
+      <section class="card result" aria-labelledby="result-title" :aria-busy="isGenerating">
+        <h2 id="result-title" class="card-title">Conseil du styliste</h2>
+
+        <div v-if="isGenerating" class="result-loading">
+          <div v-for="i in 5" :key="i" class="skeleton skeleton--line" />
         </div>
-        <div class="ai-result-content" v-html="renderedResult"></div>
-        <button @click="aiResult = null" class="clear-btn">Effacer les conseils</button>
+
+        <template v-else-if="aiResult">
+          <div class="result-content" v-html="renderedResult" />
+          <button class="link-btn" @click="aiResult = null">Effacer le conseil</button>
+        </template>
+
+        <div v-else class="result-empty">
+          <span class="empty-icon" aria-hidden="true">
+            <Shirt :size="22" stroke-width="1.75" />
+          </span>
+          <p class="item-name">Aucun conseil pour l'instant</p>
+          <p class="card-sub">Choisis une occasion et la météo, puis génère une tenue.</p>
+        </div>
       </section>
 
-      <!-- Empty placeholder -->
-      <section v-else class="empty-state">
-        <div class="empty-icon"><Lightbulb :size="28" stroke-width="1.5" /></div>
-        <p class="empty-title">En attente de génération</p>
-        <p class="empty-sub">Sélectionnez une occasion et la météo pour commencer.</p>
+      <!-- Placard résumé -->
+      <section class="card overview" aria-labelledby="overview-title">
+        <div class="overview-head">
+          <h2 id="overview-title" class="card-title">Mon placard</h2>
+          <p class="card-sub">{{ pieceCount }} pièce{{ pieceCount > 1 ? 's' : '' }}</p>
+        </div>
+        <ul v-if="groupedWardrobe.length" class="overview-list">
+          <li v-for="group in groupedWardrobe" :key="group.id">
+            <span class="overview-name">{{ group.label }}</span>
+            <span class="overview-bar">
+              <span class="overview-fill" :style="{ ...group.tone, width: (group.itemsCount / largestGroup) * 100 + '%' }" />
+            </span>
+            <span class="overview-count">{{ group.itemsCount }}</span>
+          </li>
+        </ul>
+        <p v-else-if="!loading" class="card-sub">Ton placard est vide.</p>
+        <button class="btn btn--soft" @click="activeTab = 'wardrobe'">
+          {{ groupedWardrobe.length ? 'Voir le placard' : 'Ajouter une pièce' }}
+        </button>
       </section>
     </div>
 
-    <!-- Wardrobe tab -->
-    <div v-if="activeTab === 'wardrobe'" class="tab-content">
-      <section class="magic-add-card">
-        <div class="card-header">
-          <div class="card-icon card-icon--add">
-            <Wand2 :size="16" stroke-width="1.75" />
-          </div>
-          <h3 class="card-title">Ajout Magique</h3>
-        </div>
-
+    <!-- ═══ PLACARD ═══ -->
+    <div v-if="activeTab === 'wardrobe'" class="wardrobe">
+      <form class="card add" @submit.prevent="smartAdd">
+        <h2 class="card-title">Ajout magique</h2>
         <div class="field-group">
-          <label class="field-label">Description libre</label>
+          <label class="field-label" for="magic-text">Description libre</label>
           <textarea
+            id="magic-text"
             v-model="magicForm.rawInput"
-            rows="2"
-            placeholder="Ex: Gros pull en laine rouge un peu ample..."
-            class="magic-textarea"
-            :disabled="isMagicLoading"
-          ></textarea>
-        </div>
-
-        <div class="field-group">
-          <label class="field-label">Lien (optionnel)</label>
-          <input
-            v-model="magicForm.link"
-            type="url"
-            placeholder="https://www.exemple.com/article..."
-            class="magic-input"
+            rows="3"
+            class="field-input field-input--area"
+            placeholder="Gros pull en laine rouge un peu ample"
             :disabled="isMagicLoading"
           />
         </div>
-
-        <button @click="smartAdd" :disabled="isMagicLoading || !magicForm.rawInput" class="btn-magic">
-          <Loader2 v-if="isMagicLoading" class="spin" :size="16" />
-          <Sparkles v-else :size="16" />
-          {{ isMagicLoading ? "Analyse par l'IA..." : 'Ajout Magique' }}
+        <div class="field-group">
+          <label class="field-label" for="magic-link">Lien (optionnel)</label>
+          <input
+            id="magic-link"
+            v-model="magicForm.link"
+            type="url"
+            class="field-input"
+            placeholder="https://"
+            :disabled="isMagicLoading"
+          />
+        </div>
+        <button type="submit" class="btn btn--dark btn--wide" :disabled="isMagicLoading || !magicForm.rawInput">
+          <Loader2 v-if="isMagicLoading" class="spin" :size="18" />
+          <Plus v-else :size="18" stroke-width="2" />
+          {{ isMagicLoading ? "Analyse par l'IA…" : 'Ajouter au placard' }}
         </button>
-      </section>
+      </form>
 
-      <!-- Wardrobe list -->
-      <section v-if="wardrobe && wardrobe.length > 0" class="wardrobe-section">
-        <div class="wardrobe-header">
-          <h3 class="wardrobe-count">Mon Placard ({{ wardrobe.length }})</h3>
-          <button @click="copyWardrobeContent" class="copy-btn">
-            <component :is="copyStatus === 'copied' ? Check : ClipboardCopy" :size="13" />
-            {{ copyStatus === 'copied' ? 'Copié !' : "Copier pour l'IA" }}
+      <div v-if="loading" class="skeleton skeleton--list" />
+
+      <section v-else-if="wardrobe.length > 0" class="closet" aria-label="Mon placard">
+        <div class="closet-head">
+          <h2 class="card-title">Mon placard</h2>
+          <button class="link-btn" @click="copyWardrobeContent">
+            <component :is="copyStatus === 'copied' ? Check : ClipboardCopy" :size="16" stroke-width="2" />
+            {{ copyStatus === 'copied' ? 'Copié' : "Copier pour l'IA" }}
           </button>
         </div>
 
-        <div v-for="group in groupedWardrobe" :key="group.id" class="category-group">
-          <div class="category-header">
-            <div class="category-icon" :style="group.iconStyle">
-              <component :is="group.icon" :size="12" stroke-width="2.5" />
-            </div>
-            <span class="category-label">{{ group.label }} ({{ group.itemsCount }})</span>
-            <div class="category-divider"></div>
-          </div>
+        <div v-for="group in groupedWardrobe" :key="group.id" class="card category" :style="group.tone">
+          <h3 class="category-title">
+            <span class="item-icon item-icon--sm" aria-hidden="true">
+              <component :is="group.icon" :size="16" stroke-width="1.75" />
+            </span>
+            {{ group.label }}
+            <span class="card-sub">{{ group.itemsCount }}</span>
+          </h3>
 
           <div v-for="sub in group.subSections" :key="sub.label" class="sub-section">
-            <div v-if="group.subSections.length > 1" class="sub-label">{{ sub.label }}</div>
-            <div class="items-list">
-              <div v-for="item in sub.items" :key="item.id" class="item-card">
-                <div class="item-left">
-                  <div class="item-category-icon" :style="group.iconStyleLarge">
-                    <component :is="group.icon" :size="20" />
-                  </div>
-                  <div class="item-info">
-                    <h4 class="item-name">{{ item.name }}</h4>
-                    <div class="item-tags">
-                      <span v-if="item.quantity > 1" class="tag tag--qty">x{{ item.quantity }}</span>
-                      <span class="tag tag--color">{{ item.color }}</span>
-                      <span v-if="item.brand" class="tag tag--brand">{{ item.brand }}</span>
-                      <span v-if="item.style" class="tag tag--style">{{ item.style }}</span>
-                    </div>
-                  </div>
+            <p v-if="group.subSections.length > 1" class="sub-label">{{ sub.label }}</p>
+            <ul class="item-list">
+              <li v-for="item in sub.items" :key="item.id" class="item">
+                <span class="item-icon" aria-hidden="true">
+                  <component :is="group.icon" :size="20" stroke-width="1.75" />
+                </span>
+                <div class="item-info">
+                  <p class="item-name">
+                    {{ item.name }}
+                    <span v-if="item.quantity > 1" class="item-qty">× {{ item.quantity }}</span>
+                  </p>
+                  <p class="card-sub">{{ itemDetails(item) }}</p>
                 </div>
                 <div class="item-actions">
-                  <button @click="updateQuantity(item, -1)" class="action-btn action-btn--minus" title="Diminuer">
-                    <Minus :size="14" />
-                  </button>
-                  <button @click="updateQuantity(item, 1)" class="action-btn action-btn--plus" title="Augmenter">
-                    <Plus :size="14" />
-                  </button>
-                  <a v-if="item.link" :href="item.link" target="_blank" class="action-btn action-btn--link">
-                    <ExternalLink :size="14" />
+                  <a
+                    v-if="item.link"
+                    :href="item.link"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    class="icon-btn"
+                    :aria-label="`Ouvrir le lien de ${item.name}`"
+                  >
+                    <ExternalLink :size="18" stroke-width="1.75" />
                   </a>
+                  <button class="icon-btn" :aria-label="`Retirer un ${item.name}`" @click="updateQuantity(item, -1)">
+                    <Minus :size="18" stroke-width="2" />
+                  </button>
+                  <button class="icon-btn" :aria-label="`Ajouter un ${item.name}`" @click="updateQuantity(item, 1)">
+                    <Plus :size="18" stroke-width="2" />
+                  </button>
                 </div>
-              </div>
-            </div>
+              </li>
+            </ul>
           </div>
         </div>
       </section>
 
-      <!-- Empty wardrobe -->
-      <section v-else-if="!loading" class="empty-state">
-        <div class="empty-icon"><Shirt :size="28" stroke-width="1.5" /></div>
-        <p class="empty-title">Placard vide</p>
-        <p class="empty-sub">Décrivez votre premier vêtement ci-dessus !</p>
+      <section v-else class="card result-empty">
+        <span class="empty-icon" aria-hidden="true">
+          <Shirt :size="22" stroke-width="1.75" />
+        </span>
+        <p class="item-name">Placard vide</p>
+        <p class="card-sub">Décris ton premier vêtement pour commencer.</p>
       </section>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, reactive, onMounted, computed } from 'vue'
+import { ref, reactive, onMounted, computed, watch } from 'vue'
 import { supabase } from '@/supabase'
 import { useAuth } from '@/composables/useAuth'
 import { marked } from 'marked'
@@ -214,14 +231,10 @@ import { createLucideIcon } from 'lucide-vue-next'
 import { trousers, wardrobe as wardrobeNode } from '@lucide/lab'
 import {
   Shirt,
-  Sparkles,
-  Wand2,
-  Search,
   ExternalLink,
   Sun,
   CloudRain,
   ThermometerSnowflake,
-  Lightbulb,
   Loader2,
   Footprints,
   Watch,
@@ -239,8 +252,8 @@ const { user } = useAuth()
 // Tabs
 const activeTab = ref('generator')
 const tabs = [
-  { id: 'generator', label: 'Générateur', icon: Sparkles },
-  { id: 'wardrobe', label: 'Placard', icon: WardrobeIcon }
+  { id: 'generator', label: 'Générateur' },
+  { id: 'wardrobe', label: 'Placard' }
 ]
 
 // ── GENERATOR LOGIC ──
@@ -251,10 +264,10 @@ const generatorState = reactive({
 })
 
 const occasions = [
-  { id: 'Work', label: '💼 Travail' },
-  { id: 'Sport', label: '👟 Sport' },
-  { id: 'Evening', label: '🍸 Soirée' },
-  { id: 'Chill', label: '🛋️ Chill' }
+  { id: 'Work', label: 'Travail' },
+  { id: 'Sport', label: 'Sport' },
+  { id: 'Evening', label: 'Soirée' },
+  { id: 'Chill', label: 'Chill' }
 ]
 
 const weathers = [
@@ -264,6 +277,8 @@ const weathers = [
 ]
 
 const aiResult = ref(null)
+const errorMessage = ref('')
+watch(activeTab, () => { errorMessage.value = '' })
 
 const renderedResult = computed(() => {
   if (!aiResult.value) return ''
@@ -272,6 +287,7 @@ const renderedResult = computed(() => {
 
 const generateOutfit = async () => {
   isGenerating.value = true
+  errorMessage.value = ''
   try {
     const { data, error } = await supabase.functions.invoke('ai-stylist', {
       body: {
@@ -285,6 +301,7 @@ const generateOutfit = async () => {
     aiResult.value = data.result
   } catch (err) {
     console.error('Stylist error:', err)
+    errorMessage.value = 'Le styliste ne répond pas, réessaie dans un instant.'
   } finally {
     isGenerating.value = false
   }
@@ -292,6 +309,7 @@ const generateOutfit = async () => {
 
 const analyzeGaps = async () => {
   isGenerating.value = true
+  errorMessage.value = ''
   try {
     const { data, error } = await supabase.functions.invoke('ai-stylist', {
       body: {
@@ -303,6 +321,7 @@ const analyzeGaps = async () => {
     aiResult.value = data.result
   } catch (err) {
     console.error('Analysis error:', err)
+    errorMessage.value = 'Analyse impossible, réessaie dans un instant.'
   } finally {
     isGenerating.value = false
   }
@@ -341,28 +360,23 @@ const groupedWardrobe = computed(() => {
   const categories = [
     {
       id: 'haut', label: 'Hauts', icon: Shirt,
-      iconStyle: { background: 'rgba(184,150,126,0.12)', color: '#B8967E' },
-      iconStyleLarge: { background: 'rgba(184,150,126,0.10)', color: '#B8967E', borderRadius: '10px' }
+      tone: { '--tone': 'var(--module-dress)', '--tone-dim': 'var(--module-dress-dim)' }
     },
     {
       id: 'veste', label: 'Vestes', icon: Shirt,
-      iconStyle: { background: 'rgba(122,145,184,0.12)', color: '#7A91B8' },
-      iconStyleLarge: { background: 'rgba(122,145,184,0.10)', color: '#7A91B8', borderRadius: '10px' }
+      tone: { '--tone': 'var(--module-sleep)', '--tone-dim': 'var(--module-sleep-dim)' }
     },
     {
       id: 'bas', label: 'Bas', icon: TrousersIcon,
-      iconStyle: { background: 'rgba(125,173,138,0.12)', color: '#7DAD8A' },
-      iconStyleLarge: { background: 'rgba(125,173,138,0.10)', color: '#7DAD8A', borderRadius: '10px' }
+      tone: { '--tone': 'var(--module-nutri)', '--tone-dim': 'var(--module-nutri-dim)' }
     },
     {
       id: 'chaussures', label: 'Chaussures', icon: Footprints,
-      iconStyle: { background: 'rgba(212,151,106,0.12)', color: '#D4976A' },
-      iconStyleLarge: { background: 'rgba(212,151,106,0.10)', color: '#D4976A', borderRadius: '10px' }
+      tone: { '--tone': 'var(--module-windows)', '--tone-dim': 'var(--module-windows-dim)' }
     },
     {
       id: 'accessoire', label: 'Accessoires', icon: Watch,
-      iconStyle: { background: 'rgba(201,160,76,0.12)', color: '#C9A04C' },
-      iconStyleLarge: { background: 'rgba(201,160,76,0.10)', color: '#C9A04C', borderRadius: '10px' }
+      tone: { '--tone': 'var(--status-warning)', '--tone-dim': 'var(--status-warning-dim)' }
     }
   ]
 
@@ -396,8 +410,7 @@ const groupedWardrobe = computed(() => {
         id: 'autres',
         label: 'Autres',
         icon: WardrobeIcon,
-        iconStyle: { background: 'rgba(240,235,227,0.06)', color: 'var(--text-muted)' },
-        iconStyleLarge: { background: 'rgba(240,235,227,0.05)', color: 'var(--text-muted)', borderRadius: '10px' },
+        tone: { '--tone': 'var(--text-secondary)', '--tone-dim': 'var(--bg-overlay)' },
         subSections: [{ label: 'Divers', items: others }],
         itemsCount: others.length
       })
@@ -409,6 +422,17 @@ const groupedWardrobe = computed(() => {
     return []
   }
 })
+
+const pieceCount = computed(() =>
+  wardrobe.value.reduce((total, item) => total + (item?.quantity || 1), 0)
+)
+
+const largestGroup = computed(() =>
+  Math.max(1, ...groupedWardrobe.value.map(group => group.itemsCount))
+)
+
+const itemDetails = (item) =>
+  [item.color, item.brand, item.style].filter(Boolean).join(', ')
 
 // -- COPY FOR IA LOGIC --
 const copyStatus = ref('idle')
@@ -487,6 +511,7 @@ const deleteItem = async (id) => {
 const smartAdd = async () => {
   if (!magicForm.rawInput || !user.value) return
   isMagicLoading.value = true
+  errorMessage.value = ''
   try {
     const { data: extractedData, error: functionError } = await supabase.functions.invoke('smart-add-item', {
       body: {
@@ -510,690 +535,558 @@ const smartAdd = async () => {
     await fetchWardrobe()
   } catch (err) {
     console.error('Smart add error:', err)
+    errorMessage.value = "Impossible d'ajouter cette pièce, réessaie."
   } finally {
     isMagicLoading.value = false
   }
 }
 
-onMounted(() => {
-  fetchWardrobe()
+onMounted(async () => {
+  if (!user.value) {
+    const { data: { session } } = await supabase.auth.getSession()
+    if (session?.user && !user.value) user.value = session.user
+  }
+  await fetchWardrobe()
+  loading.value = false
 })
 </script>
 
 <style scoped>
 .dressing-view {
-  max-width: 640px;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  max-width: 1480px;
   margin: 0 auto;
-  padding: 8px 0 100px;
+}
+
+/* ── En-tête ── */
+.view-head {
   display: flex;
   flex-direction: column;
-  gap: 24px;
-}
-
-/* ── Header ── */
-.view-header {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-  padding: 0 2px;
-}
-
-.header-top {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-
-.module-title-group {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.module-icon {
-  width: 36px;
-  height: 36px;
-  flex-shrink: 0;
-  border-radius: var(--radius-sm);
-  background: var(--module-dress-dim);
-  border: 1px solid var(--module-dress-border);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--module-dress);
+  gap: var(--space-3);
 }
 
 .view-title {
-  font-family: var(--font-serif);
-  font-size: var(--text-2xl);
-  font-weight: 400;
-  color: var(--text-primary);
-  margin: 0;
+  font-size: var(--text-xl);
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  line-height: 1.22;
 }
 
-.view-sub {
-  font-size: 9px;
-  font-weight: 500;
-  text-transform: uppercase;
-  letter-spacing: 0.12em;
-  color: var(--text-muted);
-  margin-top: 1px;
-}
+.view-title-soft { color: var(--text-secondary); }
 
-/* ── Tab switcher ── */
-.tab-switcher {
+.segmented {
   display: flex;
-  padding: 4px;
-  background: var(--bg-overlay);
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-lg);
+  gap: 2px;
+  padding: var(--space-1);
+  border-radius: var(--radius-pill);
+  background: var(--bg-raised);
 }
 
-.tab-btn {
+.segmented-btn {
   flex: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 7px;
-  padding: 10px 14px;
-  border-radius: calc(var(--radius-lg) - 4px);
-  font-size: 10px;
-  font-weight: 500;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  color: var(--text-muted);
-  cursor: pointer;
-  transition: color var(--dur-fast) var(--ease-out), background var(--dur-fast) var(--ease-out);
-  user-select: none;
+  min-height: 40px;
+  padding: 0 var(--space-5);
   border: none;
-  background: transparent;
-}
-
-.tab-btn--active {
-  background: var(--bg-raised);
-  color: var(--text-primary);
-  border: 1px solid var(--border-subtle);
-}
-
-.tab-btn:not(.tab-btn--active):hover {
-  color: var(--text-secondary);
-}
-
-/* ── Tab content ── */
-.tab-content {
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-}
-
-/* ── Shared card ── */
-.stylist-card,
-.magic-add-card {
-  background: var(--bg-raised);
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-xl);
-  padding: 24px 22px;
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-}
-
-.card-header {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.card-icon {
-  width: 32px;
-  height: 32px;
-  flex-shrink: 0;
-  border-radius: var(--radius-sm);
-  background: var(--module-dress-dim);
-  border: 1px solid var(--module-dress-border);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--module-dress);
-}
-
-.card-icon--add {
-  background: rgba(125, 173, 138, 0.10);
-  border-color: rgba(125, 173, 138, 0.20);
-  color: #7DAD8A;
-}
-
-.card-title {
-  font-family: var(--font-serif);
-  font-size: var(--text-lg);
-  font-weight: 400;
-  color: var(--text-primary);
-  margin: 0;
-}
-
-/* ── Field groups ── */
-.field-group {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.field-label {
-  font-size: 10px;
-  font-weight: 500;
-  text-transform: uppercase;
-  letter-spacing: 0.12em;
-  color: var(--text-muted);
-}
-
-/* ── Occasion grid ── */
-.occasion-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 8px;
-}
-
-.occasion-btn {
-  padding: 14px 16px;
-  border-radius: var(--radius-md);
-  font-size: 11px;
-  font-weight: 500;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  color: var(--text-muted);
-  background: var(--bg-subtle);
-  border: 1px solid var(--border-subtle);
-  cursor: pointer;
-  transition: all var(--dur-fast) var(--ease-out);
-  user-select: none;
-}
-
-.occasion-btn:hover {
-  border-color: var(--border-default);
-  color: var(--text-secondary);
-}
-
-.occasion-btn--active {
-  background: var(--module-dress-dim);
-  border-color: var(--module-dress-border);
-  color: var(--module-dress);
-}
-
-/* ── Weather grid ── */
-.weather-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 8px;
-}
-
-.weather-btn {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 8px;
-  padding: 14px 10px;
-  border-radius: var(--radius-md);
-  font-size: 10px;
-  font-weight: 500;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  color: var(--text-muted);
-  background: var(--bg-subtle);
-  border: 1px solid var(--border-subtle);
-  cursor: pointer;
-  transition: all var(--dur-fast) var(--ease-out);
-  user-select: none;
-}
-
-.weather-btn:hover {
-  border-color: var(--border-default);
-  color: var(--text-secondary);
-}
-
-.weather-btn--active {
-  background: var(--module-dress-dim);
-  border-color: var(--module-dress-border);
-  color: var(--module-dress);
-}
-
-/* ── Action buttons ── */
-.actions-group {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.btn-primary,
-.btn-secondary,
-.btn-magic {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  width: 100%;
-  padding: 14px 20px;
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-pill);
+  background: none;
   font-family: var(--font-sans);
-  font-size: 11px;
-  font-weight: 500;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  cursor: pointer;
-  transition: all var(--dur-fast) var(--ease-out);
-  user-select: none;
-  border: 1px solid transparent;
-}
-
-.btn-primary:active,
-.btn-secondary:active,
-.btn-magic:active { transform: scale(0.98); }
-
-.btn-primary:disabled,
-.btn-secondary:disabled,
-.btn-magic:disabled { opacity: 0.45; cursor: not-allowed; }
-
-.btn-primary {
-  background: var(--text-primary);
-  color: var(--bg-base);
-}
-
-.btn-primary:hover:not(:disabled) { background: var(--text-secondary); }
-
-.btn-secondary {
-  background: var(--bg-overlay);
-  border-color: var(--border-default);
+  font-size: var(--text-xs);
+  font-weight: 600;
   color: var(--text-secondary);
+  cursor: pointer;
 }
 
-.btn-secondary:hover:not(:disabled) {
-  border-color: var(--module-dress-border);
-  color: var(--module-dress);
+.segmented-btn--active {
+  background: var(--action);
+  color: var(--on-action);
 }
 
-.btn-magic {
-  background: var(--module-dress-dim);
-  border-color: var(--module-dress-border);
-  color: var(--module-dress);
+.error {
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-md);
+  background: var(--status-error-dim);
+  font-size: var(--text-xs);
+  font-weight: 500;
+  color: var(--status-error);
 }
 
-.btn-magic:hover:not(:disabled) { background: rgba(184, 150, 126, 0.18); }
+/* ── Boutons ── */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  min-height: 48px;
+  padding: 0 var(--space-5);
+  border: none;
+  border-radius: var(--radius-pill);
+  font-family: var(--font-sans);
+  font-size: var(--text-xs);
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: opacity var(--dur-fast) var(--ease-out), transform var(--dur-fast) var(--ease-out);
+}
 
-/* ── AI Result ── */
-.ai-result {
-  background: var(--bg-raised);
-  border: 1px solid var(--border-subtle);
-  border-top: 2px solid var(--module-dress);
-  border-radius: var(--radius-xl);
-  padding: 26px 22px 22px;
+.btn:hover { opacity: 0.88; }
+.btn:active { transform: scale(0.97); }
+.btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.btn--dark  { background: var(--action); color: var(--on-action); }
+.btn--light { background: var(--bg-raised); color: var(--text-primary); }
+.btn--soft  { background: var(--bg-overlay); color: var(--text-primary); }
+.btn--wide  { width: 100%; }
+
+.link-btn {
+  display: inline-flex;
+  align-items: center;
+  align-self: flex-start;
+  gap: var(--space-1);
+  min-height: 44px;
+  border: none;
+  background: none;
+  font-family: var(--font-sans);
+  font-size: var(--text-xs);
+  font-weight: 600;
+  color: var(--text-primary);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+
+.spin { animation: spin 0.8s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ── Générateur ── */
+.generator {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-3);
+}
+
+.banner {
   position: relative;
-  overflow: hidden;
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: var(--space-3);
+  padding: 18px;
+  overflow: hidden;
+  border-radius: var(--radius-lg);
+  background: var(--aurore-dress);
 }
 
-.sparkles-bg {
+.banner > :not(.orb) {
+  position: relative;
+  z-index: var(--z-raised);
+}
+
+.banner-title {
+  max-width: 76%;
+  font-size: var(--text-xl);
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  line-height: 1.22;
+}
+
+.banner-title-soft { color: var(--text-secondary); }
+
+.choice {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+  padding: 0;
+  border: none;
+}
+
+.choice .field-label { padding: 0 0 6px; }
+
+.choice-row {
+  display: flex;
+  gap: 6px;
+}
+
+.choice-btn {
+  flex: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-width: 0;
+  min-height: 44px;
+  padding: 0 var(--space-2);
+  border: none;
+  border-radius: var(--radius-pill);
+  background: var(--bg-raised);
+  font-family: var(--font-sans);
+  font-size: var(--text-xs);
+  font-weight: 600;
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: background var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out);
+}
+
+.choice-btn--active {
+  background: var(--action);
+  color: var(--on-action);
+}
+
+.banner-actions {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin-top: var(--space-1);
+}
+
+.orb {
   position: absolute;
-  top: 0;
-  right: 0;
-  padding: 18px;
-  color: var(--module-dress);
-  opacity: 0.04;
+  border-radius: 50%;
+  opacity: var(--orb-opacity);
   pointer-events: none;
 }
 
-.ai-result-label {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  font-size: 9px;
-  font-weight: 500;
-  text-transform: uppercase;
-  letter-spacing: 0.2em;
-  color: var(--module-dress);
-}
+.orb--a { top: -44px; right: -30px; width: 118px; height: 118px; background: var(--orb-rose); }
+.orb--b { top: 24px; right: -26px; width: 56px; height: 56px; background: var(--orb-lilas); }
+.orb--c { display: none; }
 
-.label-line {
-  display: block;
-  width: 28px;
-  height: 1px;
-  background: var(--module-dress);
-  opacity: 0.5;
-}
-
-.ai-result-content {
-  font-size: var(--text-sm);
-  color: var(--text-secondary);
-  line-height: 1.75;
-}
-
-.ai-result-content :deep(h1),
-.ai-result-content :deep(h2),
-.ai-result-content :deep(h3),
-.ai-result-content :deep(h4) {
-  font-family: var(--font-serif);
-  font-weight: 400;
-  color: var(--text-primary);
-  margin: 18px 0 8px;
-}
-
-.ai-result-content :deep(strong) {
-  color: var(--module-dress);
-  font-weight: 600;
-}
-
-.ai-result-content :deep(p) { margin: 8px 0; }
-
-.ai-result-content :deep(ul),
-.ai-result-content :deep(ol) { padding-left: 20px; margin: 8px 0; }
-
-.ai-result-content :deep(li) { margin: 4px 0; }
-
-.clear-btn {
-  align-self: center;
-  font-size: 9px;
-  font-weight: 500;
-  text-transform: uppercase;
-  letter-spacing: 0.12em;
-  color: var(--text-muted);
-  background: none;
-  border: none;
-  cursor: pointer;
-  padding: 6px 0;
-  transition: color var(--dur-fast) var(--ease-out);
-}
-
-.clear-btn:hover { color: var(--module-dress); }
-
-/* ── Empty state ── */
-.empty-state {
+/* ── Cartes ── */
+.card {
   display: flex;
   flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 64px 24px;
-  background: var(--bg-overlay);
-  border: 1px dashed var(--border-subtle);
-  border-radius: var(--radius-xl);
-  gap: 10px;
-}
-
-.empty-icon {
-  width: 54px;
-  height: 54px;
-  background: var(--bg-raised);
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-md);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--text-muted);
-  margin-bottom: 4px;
-}
-
-.empty-title {
-  font-size: 10px;
-  font-weight: 500;
-  text-transform: uppercase;
-  letter-spacing: 0.2em;
-  color: var(--text-muted);
-  margin: 0;
-}
-
-.empty-sub {
-  font-size: 11px;
-  color: var(--text-muted);
-  opacity: 0.55;
-  text-align: center;
-  margin: 0;
-}
-
-/* ── Magic Add inputs ── */
-.magic-textarea,
-.magic-input {
-  width: 100%;
-  padding: 12px 16px;
-  background: var(--bg-subtle);
-  border: 1px solid var(--border-default);
-  border-radius: var(--radius-md);
-  font-family: var(--font-sans);
-  font-size: var(--text-sm);
-  color: var(--text-primary);
-  outline: none;
-  transition: border-color var(--dur-fast) var(--ease-out), box-shadow var(--dur-fast) var(--ease-out);
-  resize: none;
-  box-sizing: border-box;
-}
-
-.magic-textarea:focus,
-.magic-input:focus {
-  border-color: var(--module-dress-border);
-  box-shadow: 0 0 0 3px rgba(184, 150, 126, 0.08);
-}
-
-.magic-textarea::placeholder,
-.magic-input::placeholder {
-  color: var(--text-muted);
-  opacity: 0.5;
-}
-
-/* ── Wardrobe section ── */
-.wardrobe-section {
-  display: flex;
-  flex-direction: column;
-  gap: 32px;
-}
-
-.wardrobe-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0 2px;
-}
-
-.wardrobe-count {
-  font-family: var(--font-serif);
-  font-size: var(--text-xl);
-  font-weight: 400;
-  color: var(--text-primary);
-  margin: 0;
-}
-
-.copy-btn {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 8px 12px;
-  background: var(--bg-overlay);
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-sm);
-  font-size: 9px;
-  font-weight: 500;
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-  color: var(--text-muted);
-  cursor: pointer;
-  transition: all var(--dur-fast) var(--ease-out);
-}
-
-.copy-btn:hover {
-  border-color: var(--border-default);
-  color: var(--text-secondary);
-}
-
-/* ── Category groups ── */
-.category-group {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.category-header {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 0 2px;
-}
-
-.category-icon {
-  width: 24px;
-  height: 24px;
-  border-radius: 6px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-}
-
-.category-label {
-  font-size: 9px;
-  font-weight: 500;
-  text-transform: uppercase;
-  letter-spacing: 0.2em;
-  color: var(--text-muted);
-}
-
-.category-divider {
-  flex: 1;
-  height: 1px;
-  background: var(--border-subtle);
-}
-
-/* ── Sub-sections ── */
-.sub-section {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.sub-label {
-  font-size: 9px;
-  font-weight: 500;
-  text-transform: uppercase;
-  letter-spacing: 0.15em;
-  color: var(--text-muted);
-  opacity: 0.5;
-  padding: 0 2px;
-}
-
-.items-list {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-/* ── Item card ── */
-.item-card {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  padding: 14px 16px;
-  background: var(--bg-raised);
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-lg);
-  transition: border-color var(--dur-fast) var(--ease-out);
-}
-
-.item-card:hover { border-color: var(--module-dress-border); }
-
-.item-left {
-  display: flex;
-  align-items: center;
-  gap: 14px;
+  gap: var(--space-2);
   min-width: 0;
+  padding: var(--space-4);
+  border-radius: var(--radius-lg);
+  background: var(--bg-raised);
 }
 
-.item-category-icon {
-  width: 40px;
-  height: 40px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
+.card-title {
+  font-size: var(--text-lg);
+  font-weight: 600;
+  letter-spacing: -0.01em;
 }
 
-.item-info { min-width: 0; }
+.card-sub {
+  font-size: var(--text-2xs);
+  font-weight: 500;
+  color: var(--text-secondary);
+}
 
 .item-name {
   font-size: var(--text-sm);
   font-weight: 500;
-  color: var(--text-primary);
-  margin: 0 0 6px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  max-width: 200px;
 }
 
-.item-tags {
+.field-group {
   display: flex;
-  flex-wrap: wrap;
-  gap: 4px;
+  flex-direction: column;
+  gap: 6px;
 }
 
-.tag {
-  font-size: 8px;
+.field-label {
+  font-size: var(--text-2xs);
   font-weight: 500;
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-  padding: 3px 7px;
-  border-radius: 4px;
+  color: var(--text-secondary);
 }
 
-.tag--qty {
-  background: var(--bg-overlay);
-  color: var(--text-primary);
-  border: 1px solid var(--border-default);
-}
-
-.tag--color {
-  background: var(--module-dress-dim);
-  color: var(--module-dress);
-  border: 1px solid var(--module-dress-border);
-}
-
-.tag--brand {
-  background: rgba(125, 173, 138, 0.10);
-  color: #7DAD8A;
-  border: 1px solid rgba(125, 173, 138, 0.18);
-}
-
-.tag--style {
-  background: var(--bg-subtle);
-  color: var(--text-muted);
+.field-input {
+  width: 100%;
+  min-height: 48px;
+  padding: 0 var(--space-4);
   border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  background: var(--bg-overlay);
+  font-family: var(--font-sans);
+  font-size: var(--text-md);
+  color: var(--text-primary);
+  outline: none;
 }
 
-/* ── Item actions ── */
-.item-actions {
+.field-input--area {
+  padding: var(--space-3) var(--space-4);
+  line-height: 1.4;
+  resize: none;
+}
+
+.field-input:focus { border-color: var(--accent); }
+.field-input::placeholder { color: var(--text-secondary); }
+
+/* ── Conseil ── */
+.result { gap: var(--space-3); }
+
+.result-loading {
   display: flex;
-  align-items: center;
-  gap: 2px;
-  flex-shrink: 0;
+  flex-direction: column;
+  gap: var(--space-2);
 }
 
-.action-btn {
+.result-empty {
+  align-items: center;
+  gap: var(--space-1);
+  padding: var(--space-8) var(--space-4);
+  text-align: center;
+}
+
+.result > .result-empty { display: flex; flex-direction: column; flex: 1; justify-content: center; }
+
+.empty-icon {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 30px;
-  height: 30px;
-  border-radius: var(--radius-sm);
-  border: none;
-  background: transparent;
-  color: var(--text-muted);
-  cursor: pointer;
-  transition: all var(--dur-fast) var(--ease-out);
-  text-decoration: none;
+  width: 48px;
+  height: 48px;
+  margin-bottom: var(--space-2);
+  border-radius: var(--radius-md);
+  background: var(--module-dress-dim);
+  color: var(--module-dress);
 }
 
-.action-btn--minus:hover { background: rgba(239, 68, 68, 0.10); color: #EF4444; }
-.action-btn--plus:hover  { background: rgba(125, 173, 138, 0.12); color: #7DAD8A; }
-.action-btn--link:hover  { background: var(--module-dress-dim); color: var(--module-dress); }
+.result-content {
+  font-size: var(--text-sm);
+  line-height: 1.55;
+  color: var(--text-secondary);
+}
 
-/* ── Spinner ── */
-.spin { animation: spin 0.8s linear infinite; }
+.result-content :deep(h1),
+.result-content :deep(h2),
+.result-content :deep(h3),
+.result-content :deep(h4) {
+  margin: var(--space-4) 0 var(--space-1);
+  font-size: var(--text-lg);
+  font-weight: 600;
+  color: var(--text-primary);
+}
 
-@keyframes spin { to { transform: rotate(360deg); } }
+.result-content :deep(> :first-child) { margin-top: 0; }
+.result-content :deep(strong) { font-weight: 600; color: var(--text-primary); }
+.result-content :deep(p) { margin: var(--space-2) 0; }
+.result-content :deep(ul),
+.result-content :deep(ol) { margin: var(--space-2) 0; padding-left: var(--space-5); }
+.result-content :deep(ul) { list-style: disc; }
+.result-content :deep(ol) { list-style: decimal; }
+.result-content :deep(li) { margin: var(--space-1) 0; }
+
+/* ── Placard résumé ── */
+.overview { gap: var(--space-3); }
+
+.overview-head,
+.closet-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.overview-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: 0;
+  list-style: none;
+}
+
+.overview-list li {
+  display: grid;
+  grid-template-columns: 100px minmax(0, 1fr) 28px;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.overview-name {
+  font-size: var(--text-sm);
+  font-weight: 500;
+}
+
+.overview-bar {
+  height: 6px;
+  overflow: hidden;
+  border-radius: 3px;
+  background: var(--bg-overlay);
+}
+
+.overview-fill {
+  display: block;
+  height: 100%;
+  border-radius: 3px;
+  background: var(--tone);
+}
+
+.overview-count {
+  font-size: var(--text-xs);
+  font-weight: 600;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── Placard ── */
+.wardrobe {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-3);
+  align-items: start;
+}
+
+.add { gap: var(--space-3); }
+
+.closet {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  min-width: 0;
+}
+
+.category-title {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--text-lg);
+  font-weight: 600;
+}
+
+.sub-section { min-width: 0; }
+
+.sub-label {
+  padding: var(--space-2) 0 var(--space-1);
+  font-size: var(--text-2xs);
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.item-list {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  padding: 0;
+  list-style: none;
+}
+
+.item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-width: 0;
+  padding: var(--space-2) 0;
+  border-top: 1px solid var(--border-subtle);
+}
+
+.item-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  flex-shrink: 0;
+  border-radius: var(--radius-md);
+  background: var(--tone-dim);
+  color: var(--tone);
+}
+
+.item-icon--sm {
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-sm);
+}
+
+.item-info { flex: 1; min-width: 0; }
+
+.item-info .item-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.item-qty {
+  font-size: var(--text-xs);
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.item-actions {
+  display: flex;
+  flex-shrink: 0;
+}
+
+.icon-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 44px;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: none;
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+
+.icon-btn:hover { background: var(--bg-overlay); color: var(--text-primary); }
+
+/* ── Squelettes ── */
+@keyframes shimmer {
+  0%   { background-position: -200% 0; }
+  100% { background-position:  200% 0; }
+}
+
+.skeleton {
+  border-radius: var(--radius-sm);
+  background: linear-gradient(90deg, var(--bg-overlay) 25%, var(--bg-muted) 50%, var(--bg-overlay) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.6s ease-in-out infinite;
+}
+
+.skeleton--line { height: 16px; }
+.skeleton--line:nth-child(3n) { width: 70%; }
+.skeleton--list { height: 320px; border-radius: var(--radius-lg); }
+
+/* ── Tablette ── */
+@media (min-width: 768px) {
+  .view-head {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .view-break { display: none; }
+
+  .view-title {
+    font-size: var(--text-3xl);
+    font-weight: 700;
+    letter-spacing: -0.03em;
+    line-height: 1.1;
+  }
+
+  .segmented { flex-shrink: 0; width: 280px; }
+  .banner { padding: var(--space-6); }
+  .card { padding: 20px; }
+  .generator { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .result { grid-column: 1 / -1; grid-row: 2; }
+  .wardrobe { grid-template-columns: 340px minmax(0, 1fr); }
+  .add { position: sticky; top: 0; }
+  .item-list { grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: var(--space-5); }
+}
+
+/* ── Desktop ── */
+@media (min-width: 1100px) {
+  .dressing-view {
+    gap: var(--space-4);
+    min-height: calc(100dvh - 40px);
+  }
+
+  .generator {
+    flex: 1;
+    grid-template-columns: 400px minmax(0, 1fr) 340px;
+    gap: var(--space-4);
+  }
+
+  .result { grid-column: auto; grid-row: auto; padding: var(--space-6); }
+  .card-title { font-size: var(--text-xl); }
+  .banner { padding: 28px; }
+  .banner-title { max-width: none; }
+  .wardrobe { gap: var(--space-4); }
+  .closet { gap: var(--space-4); }
+
+  .orb--a { top: auto; right: -40px; bottom: -60px; width: 250px; height: 250px; }
+  .orb--b { top: auto; right: auto; left: 64px; bottom: 40px; width: 130px; height: 130px; }
+  .orb--c { display: block; right: 40px; bottom: 210px; width: 70px; height: 70px; background: var(--orb-peche); }
+}
 </style>

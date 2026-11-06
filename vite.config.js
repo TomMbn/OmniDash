@@ -20,8 +20,8 @@ export default defineConfig({
         name: 'OmniDash',
         short_name: 'OmniDash',
         description: 'OmniDash - Votre tableau de bord fitness tout-en-un',
-        theme_color: '#0f172a',
-        background_color: '#0f172a',
+        theme_color: '#EDEEF2',
+        background_color: '#EDEEF2',
         icons: [
           {
             src: 'pwa-192x192.png',

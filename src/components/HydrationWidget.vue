@@ -1,66 +1,32 @@
 <template>
-  <div class="hydration-widget">
-    <div class="hydration-header">
-      <div class="hydration-icon">
-        <Droplets :size="16" stroke-width="1.75" />
-      </div>
-      <div>
-        <h3 class="hydration-title">Hydratation</h3>
+  <section class="hydration-widget" aria-label="Hydratation">
+    <div class="hydration-head">
+      <span class="hydration-icon" aria-hidden="true">
+        <Droplets :size="20" stroke-width="1.75" />
+      </span>
+      <div class="hydration-text">
+        <h2 class="hydration-title">Hydratation</h2>
         <p class="hydration-sub">Besoin estimé</p>
       </div>
-    </div>
-
-    <div class="hydration-display">
-      <div class="hydration-value">
-        <span class="hydration-number">{{ dailyWaterNeeds }}</span>
-        <span class="hydration-unit">L</span>
-      </div>
-      <div class="hydration-live-badge">
-        <span class="live-dot" />
-        <span>En temps réel</span>
-      </div>
+      <p class="hydration-value">{{ dailyWaterNeeds }}<span class="hydration-unit"> L</span></p>
     </div>
 
     <div class="hydration-controls">
-      <div class="field-group">
-        <label class="field-label" for="hyd-weight">Poids (kg)</label>
-        <div class="weight-input-wrap">
-          <input
-            id="hyd-weight"
-            v-model.number="weight"
-            type="number"
-            step="0.5"
-            class="field-input"
-          />
-          <span class="weight-suffix">kg</span>
-        </div>
-      </div>
-
-      <div class="toggle-grid">
-        <label class="toggle-card" :class="{ 'toggle-card--on': isTrainingDay }">
-          <div>
-            <span class="toggle-label">Sport ?</span>
-            <span class="toggle-bonus">+0.5L</span>
-          </div>
-          <div class="toggle-switch" :class="{ 'toggle-switch--on': isTrainingDay }">
-            <input type="checkbox" v-model="isTrainingDay" class="sr-only" />
-            <div class="toggle-thumb" />
-          </div>
-        </label>
-
-        <label class="toggle-card" :class="{ 'toggle-card--on': takesCreatine }">
-          <div>
-            <span class="toggle-label">Créatine ?</span>
-            <span class="toggle-bonus">+0.5L</span>
-          </div>
-          <div class="toggle-switch" :class="{ 'toggle-switch--on': takesCreatine }">
-            <input type="checkbox" v-model="takesCreatine" class="sr-only" />
-            <div class="toggle-thumb" />
-          </div>
-        </label>
-      </div>
+      <label class="weight-field">
+        <span>Poids</span>
+        <input v-model.number="weight" type="number" inputmode="decimal" step="0.5" class="weight-input" />
+        <span>kg</span>
+      </label>
+      <label class="toggle-chip" :class="{ 'toggle-chip--on': isTrainingDay }">
+        <input v-model="isTrainingDay" type="checkbox" class="sr-only" />
+        Sport, +0,5 L
+      </label>
+      <label class="toggle-chip" :class="{ 'toggle-chip--on': takesCreatine }">
+        <input v-model="takesCreatine" type="checkbox" class="sr-only" />
+        Créatine, +0,5 L
+      </label>
     </div>
-  </div>
+  </section>
 </template>
 
 <script setup>
@@ -81,227 +47,113 @@ const dailyWaterNeeds = computed(() => {
   const base = (weight.value || 0) * 35
   const activity = isTrainingDay.value ? 500 : 0
   const supplement = takesCreatine.value ? 500 : 0
-  return ((base + activity + supplement) / 1000).toFixed(1)
+  return ((base + activity + supplement) / 1000).toLocaleString('fr-FR', {
+    minimumFractionDigits: 1,
+    maximumFractionDigits: 1
+  })
 })
 </script>
 
 <style scoped>
 .hydration-widget {
-  background: var(--bg-raised);
-  border: 1px solid var(--border-subtle);
-  border-top-color: rgba(122, 145, 184, 0.2);
-  border-radius: var(--radius-xl);
-  padding: 22px 20px;
   display: flex;
   flex-direction: column;
-  gap: 18px;
+  gap: var(--space-3);
+  min-width: 0;
+  padding: var(--space-4);
+  border-radius: var(--radius-lg);
+  background: var(--bg-raised);
 }
 
-.hydration-header {
+.hydration-head {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: var(--space-3);
 }
 
 .hydration-icon {
-  width: 34px;
-  height: 34px;
-  flex-shrink: 0;
-  border-radius: var(--radius-sm);
-  background: rgba(122, 145, 184, 0.10);
-  border: 1px solid rgba(122, 145, 184, 0.18);
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #7A91B8;
+  width: 44px;
+  height: 44px;
+  flex-shrink: 0;
+  border-radius: var(--radius-md);
+  background: var(--module-sleep-dim);
+  color: var(--module-sleep);
 }
 
+.hydration-text { flex: 1; min-width: 0; }
+
 .hydration-title {
-  font-family: var(--font-serif);
-  font-size: var(--text-md);
-  font-weight: 400;
-  color: var(--text-primary);
-  margin: 0;
+  font-size: var(--text-lg);
+  font-weight: 600;
+  letter-spacing: -0.01em;
 }
 
 .hydration-sub {
-  font-size: 9px;
+  font-size: var(--text-2xs);
   font-weight: 500;
-  text-transform: uppercase;
-  letter-spacing: 0.12em;
-  color: var(--text-muted);
-  margin-top: 1px;
-}
-
-.hydration-display {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 8px;
-  padding: 10px 0 4px;
+  color: var(--text-secondary);
 }
 
 .hydration-value {
-  display: flex;
-  align-items: baseline;
-  gap: 6px;
-}
-
-.hydration-number {
-  font-family: var(--font-serif);
-  font-size: 3.5rem;
-  font-weight: 400;
-  color: var(--text-primary);
-  line-height: 1;
+  font-size: var(--text-2xl);
+  font-weight: 600;
   letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
 }
 
 .hydration-unit {
-  font-size: var(--text-xl);
-  color: #7A91B8;
-  font-weight: 400;
-}
-
-.hydration-live-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 4px 10px;
-  background: rgba(122, 145, 184, 0.08);
-  border: 1px solid rgba(122, 145, 184, 0.14);
-  border-radius: var(--radius-pill);
-  font-size: 9px;
+  font-size: var(--text-xs);
   font-weight: 500;
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-  color: #7A91B8;
-}
-
-.live-dot {
-  width: 5px;
-  height: 5px;
-  border-radius: 50%;
-  background: #7A91B8;
-  animation: pulse 2s ease-in-out infinite;
-}
-
-@keyframes pulse {
-  0%, 100% { opacity: 1; }
-  50%       { opacity: 0.3; }
+  color: var(--text-secondary);
 }
 
 .hydration-controls {
   display: flex;
-  flex-direction: column;
-  gap: 12px;
+  flex-wrap: wrap;
+  gap: var(--space-2);
 }
 
-.field-group { display: flex; flex-direction: column; gap: 6px; }
-
-.field-label {
-  font-size: 10px;
-  font-weight: 500;
-  text-transform: uppercase;
-  letter-spacing: 0.12em;
-  color: var(--text-muted);
-}
-
-.weight-input-wrap { position: relative; }
-
-.field-input {
-  width: 100%;
-  padding: 11px 40px 11px 14px;
-  background: var(--bg-subtle);
-  border: 1px solid var(--border-default);
-  border-radius: var(--radius-md);
-  font-family: var(--font-sans);
-  font-size: var(--text-sm);
-  color: var(--text-primary);
-  outline: none;
-  transition: border-color var(--dur-fast) var(--ease-out), box-shadow var(--dur-fast) var(--ease-out);
-}
-
-.field-input:focus {
-  border-color: rgba(122, 145, 184, 0.35);
-  box-shadow: 0 0 0 3px rgba(122, 145, 184, 0.08);
-}
-
-.weight-suffix {
-  position: absolute;
-  right: 14px;
-  top: 50%;
-  transform: translateY(-50%);
-  font-size: var(--text-xs);
-  color: var(--text-muted);
-  pointer-events: none;
-}
-
-.toggle-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 8px;
-}
-
-.toggle-card {
-  display: flex;
+.weight-field,
+.toggle-chip {
+  display: inline-flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  padding: 12px 14px;
+  gap: var(--space-1);
+  min-height: 44px;
+  padding: 0 var(--space-3);
+  border-radius: var(--radius-pill);
   background: var(--bg-overlay);
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-md);
+  font-size: var(--text-xs);
+  font-weight: 500;
   cursor: pointer;
-  transition: border-color var(--dur-fast) var(--ease-out);
-  user-select: none;
+  transition:
+    background var(--dur-fast) var(--ease-out),
+    color var(--dur-fast) var(--ease-out);
 }
 
-.toggle-card:hover { border-color: var(--border-default); }
-.toggle-card--on { border-color: rgba(122, 145, 184, 0.25); }
+.weight-field { color: var(--text-secondary); cursor: text; }
 
-.toggle-label {
-  display: block;
-  font-size: 11px;
-  font-weight: 500;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  color: var(--text-secondary);
+.weight-input {
+  width: 52px;
+  min-height: 32px;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: var(--bg-raised);
+  font-family: var(--font-sans);
+  font-size: var(--text-md);
+  color: var(--text-primary);
+  text-align: center;
 }
 
-.toggle-bonus {
-  display: block;
-  font-size: 9px;
-  font-weight: 500;
-  color: #7A91B8;
-  margin-top: 2px;
+.toggle-chip--on {
+  background: var(--module-sleep-dim);
+  color: var(--module-sleep);
 }
 
-.toggle-switch {
-  position: relative;
-  width: 36px;
-  height: 20px;
-  background: var(--bg-muted);
-  border-radius: 999px;
-  flex-shrink: 0;
-  transition: background var(--dur-fast) var(--ease-out);
+.toggle-chip:focus-within {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
 }
-
-.toggle-switch--on { background: #7A91B8; }
-
-.toggle-thumb {
-  position: absolute;
-  top: 2px;
-  left: 2px;
-  width: 16px;
-  height: 16px;
-  background: var(--text-primary);
-  border-radius: 50%;
-  transition: transform var(--dur-fast) var(--ease-out);
-}
-
-.toggle-switch--on .toggle-thumb { transform: translateX(16px); }
-
-input::-webkit-outer-spin-button,
-input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
-input[type=number] { -moz-appearance: textfield; appearance: textfield; }
 </style>
