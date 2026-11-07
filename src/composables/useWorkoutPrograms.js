@@ -1,5 +1,7 @@
-import { computed, ref, watch } from 'vue'
+import { computed, nextTick, ref, watch } from 'vue'
 import { localDay, mondayOf } from '@/utils/date'
+import { supabase } from '@/supabase'
+import { useAuth } from '@/composables/useAuth'
 
 // ══════════════════════════════════════
 // PLANNING HEBDOMADAIRES
@@ -130,91 +132,130 @@ const DEFAULT_TEMPLATES = {
 }
 
 // ══════════════════════════════════════
-// PERSISTENCE (localStorage)
+// PERSISTANCE
+// Le compte (table user_settings) fait foi pour partager entre les appareils.
+// Le navigateur garde une copie pour l'affichage immédiat et le hors-ligne.
 // ══════════════════════════════════════
 
 const STORAGE_KEY = 'omnidash_workout_templates_v3'
+const PLANNING_KEY = 'omnidash_planning_mode'
 
-function loadTemplates() {
-    try {
-        const saved = localStorage.getItem(STORAGE_KEY)
-        if (saved) {
-            const parsed = JSON.parse(saved)
-            const merged = JSON.parse(JSON.stringify(DEFAULT_TEMPLATES))
-            for (const key of Object.keys(merged)) {
-                if (parsed[key]?.exercises) {
-                    merged[key].exercises = merged[key].exercises.map((ex, i) => {
-                        const savedEx = parsed[key].exercises[i]
-                        if (savedEx) return { ...ex, ...savedEx }
-                        return ex
-                    })
-                }
-            }
-            return merged
-        }
-    } catch (e) {
-        console.warn('Failed to load templates from localStorage:', e)
-    }
-    return JSON.parse(JSON.stringify(DEFAULT_TEMPLATES))
-}
-
-function saveTemplates(templates) {
-    try {
-        const toSave = {}
-        for (const key of Object.keys(templates)) {
-            if (templates[key].exercises?.length > 0) {
-                toSave[key] = {
-                    exercises: templates[key].exercises.map(ex => ({
-                        name: ex.name,
-                        sets: ex.sets,
-                        repsRange: ex.repsRange,
-                        targetWeight: ex.targetWeight,
-                        restTime: ex.restTime,
-                        note: ex.note,
-                        section: ex.section,
-                        focus: ex.focus
-                    }))
-                }
+// Ne garde que ce que l'utilisateur peut modifier
+function serializeTemplates(templates) {
+    const out = {}
+    for (const key of Object.keys(templates)) {
+        if (templates[key].exercises?.length > 0) {
+            out[key] = {
+                exercises: templates[key].exercises.map(ex => ({
+                    name: ex.name,
+                    sets: ex.sets,
+                    repsRange: ex.repsRange,
+                    targetWeight: ex.targetWeight,
+                    restTime: ex.restTime,
+                    note: ex.note,
+                    section: ex.section,
+                    focus: ex.focus
+                }))
             }
         }
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(toSave))
-    } catch (e) {
-        console.warn('Failed to save templates to localStorage:', e)
     }
+    return out
 }
+
+// Applique une sauvegarde sur les modèles par défaut
+function mergeTemplates(saved) {
+    const merged = JSON.parse(JSON.stringify(DEFAULT_TEMPLATES))
+    if (!saved) return merged
+    for (const key of Object.keys(merged)) {
+        if (saved[key]?.exercises) {
+            merged[key].exercises = merged[key].exercises.map((ex, i) => {
+                const savedEx = saved[key].exercises[i]
+                return savedEx ? { ...ex, ...savedEx } : ex
+            })
+        }
+    }
+    return merged
+}
+
+const readLocal = (key) => {
+    try { return JSON.parse(localStorage.getItem(key) || 'null') } catch (e) { return null }
+}
+
+const writeLocal = (key, value) => {
+    try { localStorage.setItem(key, JSON.stringify(value)) } catch (e) {}
+}
+
+const currentWeek = () => localDay(mondayOf())
+
+// La semaine de match ne vaut que pour la semaine où elle a été choisie
+const modeFor = (mode, week) => (mode === 'match' && week === currentWeek() ? 'match' : 'standard')
+
+const localPlanning = readLocal(PLANNING_KEY)
+const planningMode = ref(modeFor(localPlanning?.mode, localPlanning?.week))
+const templates = ref(mergeTemplates(readLocal(STORAGE_KEY)))
+
+// ── Synchronisation avec le compte ──
+let syncedUserId = null
+let applyingRemote = false
+let templatesTimer = null
+
+const saveRemote = async (fields) => {
+    if (!syncedUserId) return
+    const { error } = await supabase.from('user_settings').upsert({ user_id: syncedUserId, ...fields }, { onConflict: 'user_id' })
+    if (error) console.warn('Synchronisation du programme impossible :', error.message)
+}
+
+const loadRemote = async (userId) => {
+    const { data, error } = await supabase
+        .from('user_settings')
+        .select('planning_mode, planning_week, workout_templates')
+        .eq('user_id', userId)
+        .maybeSingle()
+    // Colonnes absentes ou réseau coupé : on reste sur la copie locale
+    if (error) {
+        console.warn('Programme non synchronisé :', error.message)
+        return
+    }
+    syncedUserId = userId
+    applyingRemote = true
+    if (data?.planning_week) planningMode.value = modeFor(data.planning_mode, data.planning_week)
+    if (data?.workout_templates) templates.value = mergeTemplates(data.workout_templates)
+    // Les watchers passent au tick suivant : on attend avant de réactiver l'envoi
+    await nextTick()
+    applyingRemote = false
+    // Première synchronisation : le compte reprend ce que cet appareil avait en local
+    const fields = {}
+    if (!data?.workout_templates && readLocal(STORAGE_KEY)) fields.workout_templates = serializeTemplates(templates.value)
+    if (!data?.planning_week && planningMode.value === 'match') Object.assign(fields, { planning_mode: 'match', planning_week: currentWeek() })
+    if (Object.keys(fields).length) await saveRemote(fields)
+}
+
+watch(planningMode, (mode) => {
+    const week = currentWeek()
+    writeLocal(PLANNING_KEY, { mode, week })
+    if (!applyingRemote) saveRemote({ planning_mode: mode, planning_week: week })
+})
+
+watch(templates, (val) => {
+    const saved = serializeTemplates(val)
+    writeLocal(STORAGE_KEY, saved)
+    if (applyingRemote) return
+    clearTimeout(templatesTimer)
+    templatesTimer = setTimeout(() => saveRemote({ workout_templates: saved }), 800)
+}, { deep: true })
+
+const { user } = useAuth()
+watch(user, (u) => {
+    if (u?.id && u.id !== syncedUserId) loadRemote(u.id)
+    if (!u) syncedUserId = null
+}, { immediate: true })
 
 // ══════════════════════════════════════
 // COMPOSABLE
 // ══════════════════════════════════════
 
-// ══════════════════════════════════════
-// SEMAINE DE MATCH
-// Choisie pour la semaine en cours seulement : la semaine suivante repart en standard.
-// ══════════════════════════════════════
-
-const PLANNING_KEY = 'omnidash_planning_mode'
-
-const loadPlanningMode = () => {
-    try {
-        const saved = JSON.parse(localStorage.getItem(PLANNING_KEY) || 'null')
-        if (saved?.mode === 'match' && saved.week === localDay(mondayOf())) return 'match'
-    } catch (e) {}
-    return 'standard'
-}
-
-const planningMode = ref(loadPlanningMode())
-
-watch(planningMode, (mode) => {
-    try {
-        localStorage.setItem(PLANNING_KEY, JSON.stringify({ mode, week: localDay(mondayOf()) }))
-    } catch (e) {}
-})
-
 export function useWorkoutPrograms() {
     const selectedDayIndex = ref(new Date().getDay())
-    const templates = ref(loadTemplates())
-
-    watch(templates, (val) => saveTemplates(val), { deep: true })
 
     const currentPlanning = computed(() => {
         return planningMode.value === 'standard' ? STANDARD_WEEK : MATCH_WEEK
