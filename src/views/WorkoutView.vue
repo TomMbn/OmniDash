@@ -92,6 +92,11 @@
           <button class="link-btn" @click="showPlan = true">Programme</button>
         </div>
 
+        <p v-if="pendingSets" class="sync-status" :class="{ 'sync-status--offline': !syncOnline }" role="status">
+          <span class="sync-dot" aria-hidden="true" />
+          {{ syncOnline ? 'Envoi' : 'Hors ligne' }}, {{ pendingSets }} série{{ pendingSets > 1 ? 's' : '' }} en attente
+        </p>
+
         <div v-if="workoutBlocks.length" class="live-progress">
           <button
             v-for="(block, index) in workoutBlocks"
@@ -553,11 +558,12 @@ import { supabase } from '@/supabase'
 import { useAuth } from '@/composables/useAuth'
 import { useWorkoutStats } from '@/composables/useWorkoutStats'
 import { useWorkoutPrograms } from '@/composables/useWorkoutPrograms'
-import { localDay, localDayRange, mondayOf } from '@/utils/date'
+import { localDay, mondayOf } from '@/utils/date'
 import { useProgressiveOverload } from '@/composables/useProgressiveOverload'
 import { useExerciseSetup } from '@/composables/useExerciseSetup'
 import { useFocusMode } from '@/composables/useFocusMode'
 import { useRestTimer, parseRest } from '@/composables/useRestTimer'
+import { useSyncQueue, newId } from '@/composables/useSyncQueue'
 import {
   Dumbbell, Plus, Minus, Trash2, Play, ChevronLeft, ChevronRight,
   Check, X, Trophy, Moon, Heart, SlidersHorizontal, TrendingUp, Pencil
@@ -675,38 +681,25 @@ const loadCardioForDay = async (userId, day) => {
   }
 }
 
-const startCardio = async () => {
-  loading.value.workout = true
-  const { data } = await supabase.from('workouts').insert({
-    date: sessionTimestamp(),
-    user_id: user.value.id
-  }).select()
-  if (data) currentWorkout.value = data[0]
-  loading.value.workout = false
+const startCardio = () => {
+  createWorkout()
 }
 
 const saveCardioLog = async () => {
   const todayStr = localDay(selectedDate.value)
   const localPayload = JSON.stringify({ ...cardioLog.value, date: todayStr })
 
-  cardioSaved.value = true // optimistic — UI responds immediately
-
-  try {
-    const { error } = await supabase.from('cardio_sessions').insert({
-      user_id: user.value.id,
-      date: todayStr,
-      activity: cardioLog.value.activity,
-      duration_minutes: cardioLog.value.duration ?? null,
-      avg_hr: cardioLog.value.avgHR ?? null,
-      zone: cardioLog.value.zone ?? null
-    })
-    if (error) throw error
-    // Keep localStorage in sync so loadCardioLog can restore state after refresh
-    localStorage.setItem(CARDIO_LOG_KEY, localPayload)
-  } catch (e) {
-    console.error('[cardio] Supabase insert failed, falling back to localStorage:', e)
-    localStorage.setItem(CARDIO_LOG_KEY, localPayload)
-  }
+  cardioSaved.value = true
+  sync.insert('cardio_sessions', {
+    id: newId(),
+    user_id: user.value.id,
+    date: todayStr,
+    activity: cardioLog.value.activity || 'Cardio',
+    duration_minutes: cardioLog.value.duration ?? null,
+    avg_hr: cardioLog.value.avgHR ?? null,
+    zone: cardioLog.value.zone ?? null
+  })
+  try { localStorage.setItem(CARDIO_LOG_KEY, localPayload) } catch (e) {}
 }
 
 const updateTemplateField = (sessionKey, exerciseIndex, field, value) => {
@@ -806,13 +799,36 @@ const selectedDate = computed(() => {
 const isSelectedPast = computed(() => localDay(selectedDate.value) < localDay())
 const canLogSelected = computed(() => isSelectedToday.value || isSelectedPast.value)
 
-// Horodatage d'une séance : maintenant, ou 18 h le jour rattrapé
-const sessionTimestamp = () => {
-  if (isSelectedToday.value) return new Date().toISOString()
-  const date = new Date(selectedDate.value)
-  date.setHours(18, 0, 0, 0)
-  return date.toISOString()
+// workouts.date est une date sans heure : on envoie le jour local
+const sessionDate = () => localDay(selectedDate.value)
+
+// ── Écritures de séance : gardées sur l'appareil puis envoyées dès que possible ──
+const sync = useSyncQueue()
+const { pendingSets, online: syncOnline } = sync
+
+const createWorkout = () => {
+  const workout = { id: newId(), date: sessionDate(), user_id: user.value.id }
+  sync.insert('workouts', workout)
+  currentWorkout.value = workout
+  return workout
 }
+
+// Copie locale de la séance du jour noté, pour la reprendre sans réseau
+const SNAPSHOT_KEY = 'omnidash_session_snapshot'
+const readSnapshot = (day) => {
+  try {
+    const saved = JSON.parse(localStorage.getItem(SNAPSHOT_KEY) || 'null')
+    return saved?.day === day ? saved : null
+  } catch (e) {
+    return null
+  }
+}
+watch([currentWorkout, workoutBlocks], () => {
+  if (!currentWorkout.value) return
+  try {
+    localStorage.setItem(SNAPSHOT_KEY, JSON.stringify({ day: currentWorkout.value.date, workout: currentWorkout.value, blocks: workoutBlocks.value }))
+  } catch (e) {}
+}, { deep: true })
 
 const focusMode = computed(() =>
   !!currentWorkout.value && canLogSelected.value && !isCardioSession.value && !showPlan.value
@@ -999,6 +1015,8 @@ onMounted(async () => {
   }
 })
 
+const EXERCISES_CACHE_KEY = 'omnidash_exercises_cache'
+
 const loadData = async (userId) => {
   loading.value.data = true
   try {
@@ -1007,9 +1025,16 @@ const loadData = async (userId) => {
       supabase.from('exercises').select('*')
     ])
     if (mgResponse.data) muscleGroups.value = mgResponse.data
-    if (exResponse.data) exercises.value = exResponse.data
+    if (exResponse.data?.length) {
+      exercises.value = exResponse.data
+      try { localStorage.setItem(EXERCISES_CACHE_KEY, JSON.stringify(exResponse.data)) } catch (e) {}
+    }
   } catch (err) {
     console.error('Error loading exercises:', err)
+  }
+  // Sans réseau : la dernière liste connue
+  if (!exercises.value.length) {
+    try { exercises.value = JSON.parse(localStorage.getItem(EXERCISES_CACHE_KEY) || '[]') } catch (e) {}
   }
   // L'historique sert à préremplir les charges : on le charge avant la séance
   await fetchHistoryForPlan(selectedPlan.value)
@@ -1051,15 +1076,28 @@ const loadSelectedDay = async () => {
   if (!userId || !canLogSelected.value) return
   const day = selectedDate.value
   loading.value.day = true
+  const dayStr = localDay(day)
+  // Ce qui attend sur l'appareil part d'abord, pour que la base soit à jour
+  await sync.flush()
+  const snapshot = readSnapshot(dayStr)
+  const useSnapshot = () => {
+    currentWorkout.value = snapshot.workout
+    workoutBlocks.value = snapshot.blocks
+    resumeAtFirstOpenSet()
+  }
   try {
-    const range = localDayRange(day)
-    const { data: w } = await supabase.from('workouts')
+    // Hors ligne ou envois en attente : la copie locale est la plus récente
+    if (snapshot && (sync.pendingCount.value > 0 || !navigator.onLine)) return useSnapshot()
+
+    const { data: w, error } = await supabase.from('workouts')
       .select('*').eq('user_id', userId)
-      .gte('date', range.start)
-      .lt('date', range.end)
-      .order('date', { ascending: true })
+      .eq('date', dayStr)
       .limit(1).maybeSingle()
-    if (localDay(selectedDate.value) !== localDay(day)) return
+    if (error) {
+      if (snapshot) useSnapshot()
+      return
+    }
+    if (localDay(selectedDate.value) !== dayStr) return
 
     if (isCardioSession.value) {
       await loadCardioForDay(userId, day)
@@ -1099,10 +1137,7 @@ const startFromTemplate = async () => {
   if (!selectedPlan.value || isRestDay.value || !canLogSelected.value) return
   loading.value.workout = true
   try {
-    const { data, error } = await supabase.from('workouts').insert({ date: sessionTimestamp(), user_id: user.value.id }).select()
-    if (error) throw error
-    if (!data?.length) return
-    currentWorkout.value = data[0]
+    createWorkout()
     const template = selectedPlan.value.template
     await ensureTemplateExercises(template)
     workoutBlocks.value = buildTemplateBlocks(template)
@@ -1130,13 +1165,8 @@ const addExercise = async () => {
 
 const startWorkout = async () => {
   if (!canLogSelected.value) return
-  loading.value.workout = true
-  const { data } = await supabase.from('workouts').insert({ date: sessionTimestamp(), user_id: user.value.id }).select()
-  if (data) {
-    currentWorkout.value = data[0]
-    showPlan.value = false
-  }
-  loading.value.workout = false
+  createWorkout()
+  showPlan.value = false
 }
 
 const addBlock = () => {
@@ -1165,27 +1195,25 @@ const addSet = (block) => {
 
 const saveSet = async (set, exercise_id) => {
   if (!exercise_id || set.weight == null || !set.reps) return
-  try {
-    if (set.id) {
-      await supabase.from('workout_sets').update({ weight: set.weight, reps: set.reps, rpe: set.rpe || null }).eq('id', set.id)
-    } else {
-      const { data } = await supabase.from('workout_sets').insert({ workout_id: currentWorkout.value.id, exercise_id, weight: set.weight, reps: set.reps, rpe: set.rpe || null, user_id: user.value.id }).select()
-      if (data?.length > 0) set.id = data[0].id
-    }
-  } catch(e) { console.error('Save set error:', e) }
+  if (set.id) {
+    sync.update('workout_sets', set.id, { weight: set.weight, reps: set.reps, rpe: set.rpe || null })
+  } else {
+    const id = newId()
+    sync.insert('workout_sets', { id, workout_id: currentWorkout.value.id, exercise_id, weight: set.weight, reps: set.reps, rpe: set.rpe || null, user_id: user.value.id })
+    set.id = id
+  }
 }
 
 const removeBlock = async (bIndex) => {
   const block = workoutBlocks.value[bIndex]
-  const setIds = block.sets.filter(s => s.id).map(s => s.id)
-  if (setIds.length > 0) await supabase.from('workout_sets').delete().in('id', setIds)
+  block.sets.filter(s => s.id).forEach(s => sync.remove('workout_sets', s.id))
   workoutBlocks.value.splice(bIndex, 1)
   goToBlock(Math.min(bIndex, workoutBlocks.value.length - 1))
 }
 
 const removeSet = async (block, sIndex) => {
   const set = block.sets[sIndex]
-  if (set.id) await supabase.from('workout_sets').delete().eq('id', set.id)
+  if (set.id) sync.remove('workout_sets', set.id)
   block.sets.splice(sIndex, 1)
   if (block.sets.length === 0) block.sets.push({ weight: null, reps: null, rpe: null })
   activeSetIndex.value = Math.min(activeSetIndex.value, block.sets.length - 1)
@@ -2027,6 +2055,25 @@ const removeSet = async (block, sIndex) => {
   bottom: calc(var(--space-3) + env(safe-area-inset-bottom, 0px));
   z-index: var(--z-raised);
 }
+
+.sync-status {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--text-2xs);
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+
+.sync-dot {
+  width: 8px;
+  height: 8px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: var(--accent);
+}
+
+.sync-status--offline .sync-dot { background: var(--status-warning); }
 
 .rest {
   position: relative;

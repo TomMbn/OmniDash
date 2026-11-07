@@ -196,7 +196,7 @@ import { ref, computed, onMounted } from 'vue'
 import { supabase } from '@/supabase'
 import { useAuth } from '@/composables/useAuth'
 import { useWorkoutPrograms } from '@/composables/useWorkoutPrograms'
-import { localDay, localDayRange, mondayOf } from '@/utils/date'
+import { localDay, mondayOf } from '@/utils/date'
 import { useProgressiveOverload } from '@/composables/useProgressiveOverload'
 import { smoothPath } from '@/composables/useChartPath'
 import { calorieState } from '@/composables/useCalorieStatus'
@@ -483,7 +483,7 @@ const fetchData = async (userId) => {
         .eq('user_id', userId)
         .gte('date', dayStr(sleepStart))
         .order('date', { ascending: true }),
-      supabase.from('workouts').select('date').eq('user_id', userId).gte('date', localDayRange(sixtyDaysAgo).start),
+      supabase.from('workouts').select('date').eq('user_id', userId).gte('date', dayStr(sixtyDaysAgo)),
       supabase.from('exercises').select('id, name'),
       supabase.from('cardio_sessions').select('date').eq('user_id', userId).gte('date', weekStart).lte('date', dayStr(weekEndDate))
     ])
@@ -494,7 +494,7 @@ const fetchData = async (userId) => {
     }
 
     if (workoutsRes.data) {
-      workoutDatesAll.value = new Set(workoutsRes.data.map(w => localDay(new Date(w.date))))
+      workoutDatesAll.value = new Set(workoutsRes.data.map(w => String(w.date).slice(0, 10)))
     }
 
     if (cardioRes.data?.length) {

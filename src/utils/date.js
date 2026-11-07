@@ -7,14 +7,6 @@ const pad = (n) => String(n).padStart(2, '0')
 export const localDay = (date = new Date()) =>
   `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`
 
-// Début et fin du jour local, en ISO, pour filtrer une colonne horodatée
-export const localDayRange = (date = new Date()) => {
-  const start = new Date(date.getFullYear(), date.getMonth(), date.getDate())
-  const end = new Date(start)
-  end.setDate(end.getDate() + 1)
-  return { start: start.toISOString(), end: end.toISOString() }
-}
-
 // Lundi de la semaine locale, à minuit
 export const mondayOf = (date = new Date()) => {
   const monday = new Date(date.getFullYear(), date.getMonth(), date.getDate())
