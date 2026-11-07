@@ -165,6 +165,8 @@ async function doLoad() {
     holdingValues.value = hold.data
     await ensureDefaultCategories()
     await refreshAutoClassification()
+    // La détection s'améliore avec le code : on la rejoue aussi sur ce qui est déjà importé
+    await refreshSubscriptions()
   } catch (err) {
     fail('Chargement des finances impossible', err)
   } finally {
