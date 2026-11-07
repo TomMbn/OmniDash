@@ -268,8 +268,21 @@
               </div>
               <!-- Action principale -->
               <div class="live-action">
+                <div v-if="restActive" class="rest" role="timer" aria-label="Temps de repos restant">
+                  <span class="rest-bar" :style="{ transform: `scaleX(${restProgress})` }" aria-hidden="true" />
+                  <div class="rest-text">
+                    <span class="rest-caption">Repos</span>
+                    <span class="rest-time">{{ restLabel }}</span>
+                    <span v-if="restNext" class="rest-next">Ensuite {{ restNext }}</span>
+                  </div>
+                  <div class="rest-actions">
+                    <button class="rest-btn" aria-label="Retirer 15 secondes" @click="adjustRest(-15)">−15</button>
+                    <button class="rest-btn" aria-label="Ajouter 15 secondes" @click="adjustRest(15)">+15</button>
+                    <button class="rest-btn rest-btn--skip" @click="skipRest">Passer</button>
+                  </div>
+                </div>
                 <button
-                  v-if="activeBlock.exercise_id && activeSet && !activeSet.id"
+                  v-else-if="activeBlock.exercise_id && activeSet && !activeSet.id"
                   class="btn btn--dark btn--wide btn--tall"
                   :disabled="validating || !canValidate"
                   @click="validateSet"
@@ -541,6 +554,7 @@ import { localDay, localDayRange } from '@/utils/date'
 import { useProgressiveOverload } from '@/composables/useProgressiveOverload'
 import { useExerciseSetup } from '@/composables/useExerciseSetup'
 import { useFocusMode } from '@/composables/useFocusMode'
+import { useRestTimer, parseRest } from '@/composables/useRestTimer'
 import {
   Dumbbell, Plus, Minus, Trash2, Play, ChevronLeft, ChevronRight,
   Check, X, Trophy, Moon, Heart, SlidersHorizontal, TrendingUp
@@ -857,6 +871,8 @@ const validateSet = async () => {
   if (!block || !set || !canValidate.value || validating.value) return
   validating.value = true
   saveError.value = ''
+  const isNewSet = !set.id
+  const restSeconds = parseRest(activeTemplate.value?.restTime)
   await saveSet(set, block.exercise_id)
   validating.value = false
 
@@ -871,11 +887,54 @@ const validateSet = async () => {
   const nextSet = block.sets.findIndex(s => !s.id)
   if (nextSet !== -1) {
     activeSetIndex.value = nextSet
+    if (isNewSet) startRest(restSeconds)
     return
   }
   const nextBlock = workoutBlocks.value.findIndex((b, i) => i > activeBlockIndex.value && !isBlockDone(b))
-  if (nextBlock !== -1) goToBlock(nextBlock)
+  if (nextBlock !== -1) {
+    goToBlock(nextBlock)
+    if (isNewSet) startRest(restSeconds)
+  }
 }
+
+// ── Repos entre les séries ──
+const {
+  active: restActive,
+  label: restLabel,
+  progress: restProgress,
+  start: startRest,
+  adjust: adjustRest,
+  skip: skipRest
+} = useRestTimer()
+
+const restNext = computed(() => {
+  if (!activeBlock.value?.exercise_id || !activeSet.value) return ''
+  const load = activeSet.value.weight != null && activeSet.value.reps ? `, ${activeSet.value.weight} kg × ${activeSet.value.reps}` : ''
+  // Nouvel exercice : on le nomme, sinon le numéro de série suffit
+  if (activeSetIndex.value === 0) return `${exerciseName(activeBlock.value.exercise_id)}${load}`
+  return `série ${activeSetIndex.value + 1}${load}`
+})
+
+// L'écran reste allumé pendant la séance
+let wakeLock = null
+const lockScreen = async () => {
+  try {
+    if (focusMode.value && document.visibilityState === 'visible' && !wakeLock) {
+      wakeLock = await navigator.wakeLock?.request('screen')
+      wakeLock?.addEventListener('release', () => { wakeLock = null })
+    }
+  } catch (e) {}
+}
+const unlockScreen = () => {
+  wakeLock?.release().catch(() => {})
+  wakeLock = null
+}
+watch(focusMode, (active) => (active ? lockScreen() : unlockScreen()), { immediate: true })
+document.addEventListener('visibilitychange', lockScreen)
+onBeforeUnmount(() => {
+  document.removeEventListener('visibilitychange', lockScreen)
+  unlockScreen()
+})
 
 const headSubtitle = computed(() => {
   if (focusMode.value) return 'séance en cours'
@@ -1902,6 +1961,92 @@ const removeSet = async (block, sIndex) => {
   position: sticky;
   bottom: calc(var(--space-3) + env(safe-area-inset-bottom, 0px));
   z-index: var(--z-raised);
+}
+
+.rest {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  min-height: 60px;
+  padding: var(--space-3) var(--space-3) var(--space-3) var(--space-5);
+  overflow: hidden;
+  border-radius: var(--radius-lg);
+  background: var(--rail);
+  color: var(--on-rail);
+  box-shadow: var(--shadow-lg);
+}
+
+.rest-bar {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: 100%;
+  height: 4px;
+  background: var(--accent);
+  transform-origin: left;
+  transition: transform 250ms linear;
+}
+
+.rest-text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.rest-caption,
+.rest-next {
+  font-size: var(--text-2xs);
+  font-weight: 500;
+  color: var(--on-rail-dim);
+}
+
+.rest-next {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.rest-time {
+  font-size: var(--text-2xl);
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  line-height: 1.15;
+  font-variant-numeric: tabular-nums;
+}
+
+.rest-actions {
+  display: flex;
+  gap: var(--space-1);
+  flex-shrink: 0;
+}
+
+.rest-btn {
+  min-width: 44px;
+  min-height: 44px;
+  padding: 0 var(--space-2);
+  border: none;
+  border-radius: var(--radius-pill);
+  background: color-mix(in srgb, var(--on-rail) 12%, transparent);
+  font-family: var(--font-sans);
+  font-size: var(--text-xs);
+  font-weight: 600;
+  color: var(--on-rail);
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+}
+
+.rest-btn--skip {
+  padding: 0 var(--space-4);
+  background: var(--on-rail);
+  color: var(--on-rail-active-text);
+}
+
+.rest-btn:active { transform: scale(0.96); }
+
+@media (prefers-reduced-motion: reduce) {
+  .rest-bar { transition: none; }
 }
 
 .live-next {
