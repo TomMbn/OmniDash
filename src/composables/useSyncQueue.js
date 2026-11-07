@@ -16,6 +16,8 @@ const queue = ref(read())
 const syncing = ref(false)
 const online = ref(typeof navigator === 'undefined' ? true : navigator.onLine)
 const lastError = ref('')
+// Dernière écriture refusée par la base, pour que l'écran concerné puisse se recaler
+const lastFailure = ref(null)
 let retryTimer = null
 
 const persist = () => {
@@ -61,6 +63,7 @@ const flush = async () => {
       if (error && error.code !== '23505') {
         console.warn('Écriture abandonnée :', op.table, op.type, error.message)
         lastError.value = error.message
+        lastFailure.value = { table: op.table, type: op.type, message: error.message, at: Date.now() }
       }
       queue.value.shift()
       persist()
@@ -100,6 +103,8 @@ export function useSyncQueue() {
     syncing,
     online,
     lastError,
+    lastFailure,
+    pendingFor: (table) => computed(() => queue.value.filter(q => q.table === table).length),
     flush,
     insert: (table, row) => enqueue({ type: 'insert', table, row }),
     update: (table, id, changes) => enqueue({ type: 'update', table, id, changes }),

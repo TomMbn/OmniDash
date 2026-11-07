@@ -37,6 +37,11 @@
       </button>
     </nav>
 
+    <p v-if="pendingMeals" class="sync-status" :class="{ 'sync-status--offline': !syncOnline }" role="status">
+      <span class="sync-dot" aria-hidden="true" />
+      {{ syncOnline ? 'Envoi' : 'Hors ligne' }}, {{ pendingMeals }} repas en attente
+    </p>
+
     <p v-if="notice" class="notice notice--toast" :class="`notice--${notice.type}`" :role="notice.type === 'error' ? 'alert' : 'status'">{{ notice.text }}</p>
 
     <!-- ── Chargement ── -->
@@ -533,6 +538,7 @@ import { useAuth } from '@/composables/useAuth'
 import { useConfirm } from '@/composables/useConfirm'
 import { localDay } from '@/utils/date'
 import { calorieState } from '@/composables/useCalorieStatus'
+import { useSyncQueue, newId } from '@/composables/useSyncQueue'
 import {
   ArrowUp, Calendar, Check, CheckCircle2, ChevronLeft, ChevronRight, Circle,
   Archive, Pencil, Plus, Repeat, Save, Settings, Trash2, Utensils, X
@@ -541,6 +547,9 @@ import HydrationWidget from '@/components/HydrationWidget.vue'
 
 const { user } = useAuth()
 const { askConfirm } = useConfirm()
+const sync = useSyncQueue()
+const { online: syncOnline } = sync
+const pendingMeals = sync.pendingFor('nutrition_logs')
 
 const touchStart = ref(0)
 const handleTouchStart = (e) => { touchStart.value = e.touches[0].clientX }
@@ -702,6 +711,29 @@ const showNotice = (text, type = 'good') => {
   noticeTimer = setTimeout(() => { notice.value = null }, 4000)
 }
 
+// ── Copie locale du journal, pour réafficher un jour sans réseau ──
+const SNAPSHOT_KEY = 'omnidash_nutrition_snapshot'
+const SNAPSHOT_DAYS = 30
+const readSnapshots = () => {
+  try { return JSON.parse(localStorage.getItem(SNAPSHOT_KEY) || '{}') || {} } catch (e) { return {} }
+}
+const readSnapshot = (dateStr) => readSnapshots()[dateStr] ?? null
+const writeSnapshot = (dateStr, meals) => {
+  try {
+    const all = readSnapshots()
+    all[dateStr] = meals
+    // On ne garde que les jours les plus récents
+    const kept = Object.keys(all).sort().slice(-SNAPSHOT_DAYS)
+    localStorage.setItem(SNAPSHOT_KEY, JSON.stringify(Object.fromEntries(kept.map(d => [d, all[d]]))))
+  } catch (e) {}
+}
+
+// Jour réellement affiché : todaysMeals lui appartient, même pendant un changement de date
+const loadedDate = ref(null)
+watch(todaysMeals, (meals) => { if (loadedDate.value) writeSnapshot(loadedDate.value, meals) }, { deep: true })
+
+const isOffline = () => typeof navigator !== 'undefined' && !navigator.onLine
+
 watch(currentDateStr, async (v) => {
   if (!user.value?.id) return
   await fetchTodaysMeals(user.value.id, v)
@@ -751,11 +783,50 @@ const saveUserSettings = async () => {
 
 const fetchTodaysMeals = async (userId, focusDateStr) => {
   loading.value = true
+  // Ce qui attend sur l'appareil part d'abord, pour que la base soit à jour
+  await sync.flush()
+  const snapshot = readSnapshot(focusDateStr)
+  const show = (meals) => {
+    if (focusDateStr !== currentDateStr.value) return
+    loadedDate.value = focusDateStr
+    todaysMeals.value = meals
+  }
   try {
-    const { data: logs } = await supabase.from('nutrition_logs').select('*').eq('user_id', userId).eq('date', focusDateStr).order('id', { ascending: false })
-    todaysMeals.value = logs || []
-  } catch(e) { console.error(e) } finally { loading.value = false }
+    // Hors ligne ou envois en attente : la copie locale est la plus récente
+    if (snapshot && (pendingMeals.value > 0 || isOffline())) return show(snapshot)
+    const { data: logs, error } = await supabase.from('nutrition_logs').select('*').eq('user_id', userId).eq('date', focusDateStr).order('id', { ascending: false })
+    if (error) throw error
+    show(logs || [])
+  } catch(e) {
+    console.error(e)
+    show(snapshot || [])
+  } finally { loading.value = false }
 }
+
+// Ajoute un repas au journal d'un jour : affiché tout de suite, envoyé par la file
+const queueMeal = (dateStr, fields) => {
+  const row = { id: newId(), user_id: user.value.id, date: dateStr, is_skipped: false, ...fields }
+  sync.insert('nutrition_logs', row)
+  if (dateStr === loadedDate.value) {
+    todaysMeals.value.unshift({ ...row })
+  } else {
+    const snapshot = readSnapshot(dateStr)
+    if (snapshot) writeSnapshot(dateStr, [{ ...row }, ...snapshot])
+  }
+  return row
+}
+
+// Écriture refusée par la base (pas le réseau) : on le dit et on recharge le jour
+watch(() => sync.lastFailure.value, (failure) => {
+  if (!failure || failure.table !== 'nutrition_logs') return
+  const messages = {
+    insert: 'Repas non enregistré, réessaie.',
+    update: 'Modification non enregistrée, réessaie.',
+    delete: 'Suppression impossible, réessaie.'
+  }
+  showNotice(messages[failure.type] || 'Modification non enregistrée, réessaie.', 'error')
+  if (user.value?.id) fetchTodaysMeals(user.value.id, currentDateStr.value)
+})
 
 // Ajoute les habitudes au jour affiché, seulement à la demande
 const addingHabits = ref(false)
@@ -764,11 +835,7 @@ const addHabitsToDay = async () => {
   addingHabits.value = true
   const dateStr = currentDateStr.value
   try {
-    const payloads = recurringMeals.value.map(h => ({ user_id: user.value.id, date: dateStr, ...mealFields(h), is_skipped: false }))
-    const { data: insertedLogs, error } = await supabase.from('nutrition_logs').insert(payloads).select()
-    if (error) throw error
-    if (insertedLogs && dateStr === currentDateStr.value) todaysMeals.value = insertedLogs.sort((a, b) => b.id - a.id)
-    await fetchWeek(user.value.id)
+    recurringMeals.value.forEach(h => queueMeal(dateStr, mealFields(h)))
   } catch (e) {
     console.error(e)
     showNotice('Habitudes non ajoutées, réessaie.', 'error')
@@ -804,26 +871,34 @@ const openEditModal = (meal) => { editingMeal.value = { ...meal }; showEditModal
 const updateMeal = async () => {
   if (!editingMeal.value) return
   const { is_exceptional_meal, ...fields } = mealFields(editingMeal.value)
-  const { data, error } = await supabase.from('nutrition_logs').update(fields).eq('id', editingMeal.value.id).select()
-  if (error) { console.error(error); showNotice('Modification non enregistrée, réessaie.', 'error'); return }
-  if (data?.[0]) { const idx = todaysMeals.value.findIndex(m => m.id === editingMeal.value.id); if (idx !== -1) todaysMeals.value[idx] = data[0]; showEditModal.value = false }
+  const id = editingMeal.value.id
+  sync.update('nutrition_logs', id, fields)
+  const meal = todaysMeals.value.find(m => m.id === id)
+  if (meal) Object.assign(meal, fields)
+  showEditModal.value = false
 }
 
 const analyzeWithAI = async () => {
   if (!mealText.value.trim()) return
+  // L'analyse passe par le serveur : sans réseau, on le dit simplement
+  const offlineMessage = 'Analyse indisponible hors ligne. Ton texte est gardé, relance une fois connecté.'
+  if (isOffline()) { showNotice(offlineMessage, 'error'); return }
   analyzing.value = true; analyzedMeal.value = null
   try {
-    const { data: { session } } = await supabase.auth.refreshSession()
+    const { data: { session }, error: authError } = await supabase.auth.refreshSession()
+    if (authError?.name === 'AuthRetryableFetchError') throw Object.assign(new Error(authError.message), { offline: true })
     if (!session) throw new Error("Non authentifié.")
     const response = await supabase.functions.invoke('analyze-nutrition', {
       body: { text: `Objectif: ${calculatedGoals.value.calories}kcal, ${calculatedGoals.value.protein}g prot, ${calculatedGoals.value.carbs}g gluc, ${calculatedGoals.value.fats}g lip.\n\n${mealText.value}` }
     })
+    if (response.error?.name === 'FunctionsFetchError') throw Object.assign(new Error(response.error.message), { offline: true })
     if (response.error) throw new Error(response.error.context?.error || response.error.message)
     if (!response.data) throw new Error("Aucune donnée.")
     analyzedMeal.value = response.data
   } catch (e) {
     console.error(e)
-    showNotice(`Analyse impossible : ${e.message}`, 'error')
+    if (e.offline || isOffline()) showNotice(offlineMessage, 'error')
+    else showNotice(`Analyse impossible : ${e.message}`, 'error')
   } finally {
     analyzing.value = false
   }
@@ -833,11 +908,8 @@ const saveAnalyzedMeal = async () => {
   if (!user.value || !analyzedMeal.value) return
   savingMeal.value = true
   try {
-    const { data, error } = await supabase.from('nutrition_logs').insert({
-      user_id: user.value.id, date: currentDateStr.value, ...mealFields(analyzedMeal.value)
-    }).select()
-    if (error) throw error
-    if (data?.[0]) { todaysMeals.value.unshift(data[0]); mealText.value = ''; analyzedMeal.value = null }
+    queueMeal(currentDateStr.value, mealFields(analyzedMeal.value))
+    mealText.value = ''; analyzedMeal.value = null
   } catch(e) {
     console.error(e)
     showNotice('Repas non enregistré, réessaie.', 'error')
@@ -846,15 +918,14 @@ const saveAnalyzedMeal = async () => {
 
 const deleteMeal = async (id) => {
   if (!await askConfirm({ title: 'Supprimer ce repas ?', detail: 'Cette action est définitive.' })) return
-  const { error } = await supabase.from('nutrition_logs').delete().eq('id', id)
-  if (error) { console.error(error); showNotice('Suppression impossible, réessaie.', 'error'); return }
+  sync.remove('nutrition_logs', id)
   todaysMeals.value = todaysMeals.value.filter(m => m.id !== id)
 }
 
 const toggleSkipMeal = async (meal) => {
-  const { data, error } = await supabase.from('nutrition_logs').update({ is_skipped: !meal.is_skipped }).eq('id', meal.id).select()
-  if (error) { console.error(error); showNotice('Modification non enregistrée, réessaie.', 'error'); return }
-  if (data?.[0]) { const idx = todaysMeals.value.findIndex(m => m.id === meal.id); if (idx !== -1) todaysMeals.value[idx].is_skipped = data[0].is_skipped }
+  const is_skipped = !meal.is_skipped
+  sync.update('nutrition_logs', meal.id, { is_skipped })
+  meal.is_skipped = is_skipped
 }
 
 const fetchLibrary = async (userId) => {
@@ -884,16 +955,16 @@ const openPlanModal = (meal) => { planningMealPayload.value = meal; planningDate
 
 const dispatchPlannedMeals = async () => {
   if (!planningMealPayload.value || !planningDatesSelection.value.length) return
-  const payloads = planningDatesSelection.value.map(dateStr => ({ user_id: user.value.id, date: dateStr, ...mealFields(planningMealPayload.value) }))
-  const { error } = await supabase.from('nutrition_logs').insert(payloads)
-  if (error) {
-    console.error(error)
+  try {
+    const fields = mealFields(planningMealPayload.value)
+    planningDatesSelection.value.forEach(dateStr => queueMeal(dateStr, fields))
+  } catch (e) {
+    console.error(e)
     showNotice('Planification impossible, réessaie.', 'error')
     return
   }
   showNotice('Repas planifié.')
   showPlanningModal.value = false
-  if (planningDatesSelection.value.includes(currentDateStr.value)) await fetchTodaysMeals(user.value.id, currentDateStr.value)
 }
 
 const deleteSavedMeal = async (id) => {
@@ -1009,6 +1080,27 @@ watch(isAnyModalOpen, (open) => { document.body.style.overflow = open ? 'hidden'
   font-size: var(--text-xs);
   font-weight: 600;
 }
+
+/* ── Envois en attente ── */
+.sync-status {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  font-size: var(--text-2xs);
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+
+.sync-dot {
+  width: 8px;
+  height: 8px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: var(--accent);
+}
+
+.sync-status--offline .sync-dot { background: var(--status-warning); }
 
 /* ── Messages ── */
 .notice {
