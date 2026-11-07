@@ -99,6 +99,22 @@
           {{ isLoading ? 'Génération en cours…' : 'Générer mon voyage' }}
         </button>
       </form>
+
+      <section v-if="savedTrips.length" class="trips" aria-labelledby="trips-title">
+        <h2 id="trips-title" class="trips-title">Mes voyages</h2>
+        <div class="trips-grid">
+          <article v-for="trip in savedTrips" :key="trip.id" class="card trip">
+            <button class="trip-open" @click="openTrip(trip)">
+              <span class="trip-name">{{ trip.destination }}</span>
+              <span class="card-sub">{{ formatRange(trip.start_date, trip.end_date) }}</span>
+              <span v-if="trip.total_budget" class="trip-budget">{{ Number(trip.total_budget).toLocaleString('fr-FR') }} € estimés</span>
+            </button>
+            <button class="trip-delete" :aria-label="`Supprimer le voyage ${trip.destination}`" @click="deleteTrip(trip)">
+              <Trash2 :size="16" stroke-width="1.75" />
+            </button>
+          </article>
+        </div>
+      </section>
     </div>
 
     <!-- ══ Suggestions ══ -->
@@ -137,6 +153,10 @@
           {{ form.destination }},<br />
           <span class="banner-title-soft">{{ dateRange }}</span>
         </h2>
+        <p v-if="currentTripId" class="trip-saved">
+          <Check :size="14" stroke-width="2.5" />
+          Enregistré dans Mes voyages
+        </p>
         <p class="banner-meta">
           <template v-if="tripDuration">{{ tripDuration }} jour{{ tripDuration > 1 ? 's' : '' }}, </template>{{ totalBudget.toLocaleString('fr-FR') }} € estimés
         </p>
@@ -196,9 +216,14 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { supabase } from '@/supabase'
-import { ArrowLeft, Loader2, X } from 'lucide-vue-next'
+import { useAuth } from '@/composables/useAuth'
+import { useConfirm } from '@/composables/useConfirm'
+import { ArrowLeft, Check, Loader2, Trash2, X } from 'lucide-vue-next'
+
+const { user } = useAuth()
+const { askConfirm } = useConfirm()
 
 // ── Step State ──
 const currentStep = ref('form') // 'form' | 'suggestions' | 'planner'
@@ -264,14 +289,17 @@ const tripDuration = computed(() => {
 const formatDayMonth = (date) =>
   new Intl.DateTimeFormat('fr-FR', { day: 'numeric', month: 'long' }).format(new Date(date))
 
-const dateRange = computed(() => {
-  const start = new Date(form.value.dateDepart)
-  const end = new Date(form.value.dateRetour)
+const formatRange = (from, to) => {
+  if (!from || !to) return ''
+  const start = new Date(from)
+  const end = new Date(to)
   const sameMonth = start.getMonth() === end.getMonth() && start.getFullYear() === end.getFullYear()
   return sameMonth
     ? `${start.getDate()} au ${formatDayMonth(end)}`
     : `${formatDayMonth(start)} au ${formatDayMonth(end)}`
-})
+}
+
+const dateRange = computed(() => formatRange(form.value.dateDepart, form.value.dateRetour))
 
 const headSubtitle = computed(() => {
   if (currentStep.value === 'suggestions') return 'trois idées pour toi'
@@ -353,6 +381,74 @@ function applyPlannerData(data) {
   }))
 }
 
+// ── Voyages enregistrés ──
+const savedTrips = ref([])
+const currentTripId = ref(null)
+
+const fetchTrips = async () => {
+  if (!user.value?.id) return
+  const { data, error } = await supabase
+    .from('trips')
+    .select('*')
+    .eq('user_id', user.value.id)
+    .order('start_date', { ascending: false })
+  if (error) { console.error('Trips load error:', error); return }
+  savedTrips.value = data || []
+}
+
+// Chaque itinéraire généré est gardé : il ne disparaît plus en quittant la page
+const saveTrip = async (data) => {
+  currentTripId.value = null
+  if (!user.value?.id) return
+  const { data: rows, error } = await supabase.from('trips').insert({
+    user_id: user.value.id,
+    destination: form.value.destination || data.destination || 'Voyage',
+    start_date: form.value.dateDepart,
+    end_date: form.value.dateRetour,
+    total_budget: totalBudget.value || form.value.budget || null,
+    budget_breakdown: data.budget_breakdown || null,
+    itinerary: data.itinerary || null
+  }).select()
+  if (error) {
+    console.error('Trip save error:', error)
+    errorMessage.value = "Voyage généré mais non enregistré, il disparaîtra en quittant la page."
+    return
+  }
+  if (rows?.[0]) {
+    currentTripId.value = rows[0].id
+    savedTrips.value = [rows[0], ...savedTrips.value]
+  }
+}
+
+const openTrip = (trip) => {
+  errorMessage.value = null
+  form.value = {
+    destination: trip.destination,
+    dateDepart: trip.start_date,
+    dateRetour: trip.end_date,
+    budget: Number(trip.total_budget) || null
+  }
+  applyPlannerData({ budget_breakdown: trip.budget_breakdown, itinerary: trip.itinerary })
+  currentTripId.value = trip.id
+  cameFromSuggestions.value = false
+  activeTab.value = 'itinerary'
+  currentStep.value = 'planner'
+}
+
+const deleteTrip = async (trip) => {
+  if (!await askConfirm({ title: `Supprimer le voyage « ${trip.destination} » ?`, detail: 'Cette action est définitive.' })) return
+  const { error } = await supabase.from('trips').delete().eq('id', trip.id)
+  if (error) {
+    console.error('Trip delete error:', error)
+    errorMessage.value = 'Suppression impossible, réessaie.'
+    return
+  }
+  savedTrips.value = savedTrips.value.filter(t => t.id !== trip.id)
+}
+
+onMounted(fetchTrips)
+watch(() => user.value?.id, fetchTrips)
+
 // ── Actions ──
 const handleGenerate = async () => {
   if (!isFormValid.value) return
@@ -369,6 +465,7 @@ const handleGenerate = async () => {
       currentStep.value = 'suggestions'
     } else if (data.budget_breakdown) {
       applyPlannerData(data)
+      await saveTrip(data)
       cameFromSuggestions.value = false
       activeTab.value = 'itinerary'
       currentStep.value = 'planner'
@@ -392,6 +489,7 @@ const selectSuggestion = async (suggestion) => {
 
     if (data.budget_breakdown) {
       applyPlannerData(data)
+      await saveTrip(data)
       cameFromSuggestions.value = true
       activeTab.value = 'itinerary'
       currentStep.value = 'planner'
@@ -411,6 +509,7 @@ const goBack = () => {
   if (currentStep.value === 'planner') {
     budgetItems.value = []
     itineraryDays.value = []
+    currentTripId.value = null
 
     if (cameFromSuggestions.value) {
       form.value.destination = ''
@@ -714,6 +813,87 @@ const goBack = () => {
 .switch--on { background: var(--accent); }
 .switch--on .switch-thumb { transform: translateX(20px); }
 
+/* ── Mes voyages ── */
+.trips {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  min-width: 0;
+}
+
+.trips-title {
+  font-size: var(--text-lg);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.trips-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-3);
+}
+
+.trip {
+  flex-direction: row;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.trip-open {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  min-width: 0;
+  min-height: 44px;
+  padding: 0;
+  border: none;
+  background: none;
+  font-family: var(--font-sans);
+  color: var(--text-primary);
+  text-align: left;
+  cursor: pointer;
+}
+
+.trip-name {
+  max-width: 100%;
+  overflow: hidden;
+  font-size: var(--text-md);
+  font-weight: 600;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.trip-budget {
+  font-size: var(--text-2xs);
+  font-weight: 600;
+  color: var(--module-travel);
+}
+
+.trip-delete {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  flex-shrink: 0;
+  border: none;
+  border-radius: var(--radius-pill);
+  background: var(--bg-overlay);
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+
+.trip-saved {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: var(--text-2xs);
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
 /* ── Suggestions ── */
 .suggestions {
   display: flex;
@@ -902,6 +1082,7 @@ const goBack = () => {
   .banner { padding: var(--space-6) 28px; }
   .card { padding: 20px; }
   .suggestions-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .trips-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .days { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 
@@ -914,6 +1095,8 @@ const goBack = () => {
   }
 
   .form-layout .banner { align-self: stretch; min-height: 560px; justify-content: flex-start; }
+  .trips { grid-column: 1 / -1; }
+  .trips-grid { grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: var(--space-4); }
   .form-layout .orb--a { top: auto; right: -40px; bottom: -60px; width: 340px; height: 340px; }
   .form-layout .orb--b { top: auto; right: 280px; bottom: 60px; width: 150px; height: 150px; }
   .form-layout .orb--c { display: block; right: 60px; bottom: 300px; width: 80px; height: 80px; background: var(--orb-rose); }
