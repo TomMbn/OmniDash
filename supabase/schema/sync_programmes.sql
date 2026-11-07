@@ -11,3 +11,7 @@ alter table user_settings
 
 alter table user_settings
   add constraint user_settings_planning_mode_check check (planning_mode in ('standard', 'match'));
+
+-- Réglages de machine notés par exercice
+alter table user_settings
+  add column if not exists exercise_setups jsonb;
