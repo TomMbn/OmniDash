@@ -7,7 +7,6 @@ export default {
     theme: {
         extend: {
             fontFamily: {
-                serif: ['Onest', 'system-ui', 'sans-serif'],
                 sans:  ['Onest', 'system-ui', 'sans-serif'],
             },
             colors: {

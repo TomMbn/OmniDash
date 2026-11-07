@@ -328,6 +328,22 @@
           </button>
         </div>
 
+        <button
+          type="button"
+          role="switch"
+          class="week-mode"
+          :class="{ 'week-mode--on': planningMode === 'match' }"
+          :aria-checked="planningMode === 'match'"
+          @click="planningMode = planningMode === 'match' ? 'standard' : 'match'"
+        >
+          <Trophy :size="18" stroke-width="1.75" />
+          <span class="week-mode-text">
+            <span class="week-mode-title">Semaine de match</span>
+            <span class="week-mode-sub">{{ planningMode === 'match' ? 'Match mardi et mercredi, séances décalées' : 'Décale les séances autour du match' }}</span>
+          </span>
+          <span class="week-mode-switch" aria-hidden="true"><span /></span>
+        </button>
+
         <p v-if="lastSleepScore !== null && lastSleepScore < 60" class="notice notice--low">
           Récupération faible ({{ lastSleepScore }}/100), adapte ton intensité
         </p>
@@ -521,6 +537,7 @@ import { supabase } from '@/supabase'
 import { useAuth } from '@/composables/useAuth'
 import { useWorkoutStats } from '@/composables/useWorkoutStats'
 import { useWorkoutPrograms } from '@/composables/useWorkoutPrograms'
+import { localDay, localDayRange } from '@/utils/date'
 import { useProgressiveOverload } from '@/composables/useProgressiveOverload'
 import { useExerciseSetup } from '@/composables/useExerciseSetup'
 import { useFocusMode } from '@/composables/useFocusMode'
@@ -536,6 +553,7 @@ watch(showModals, (isOpen) => {
 
 const { user } = useAuth()
 const {
+  planningMode,
   selectedDayIndex,
   todayDayIndex,
   weekOverview,
@@ -613,7 +631,7 @@ const cardioLog = ref({ activity: '', duration: null, avgHR: null, zone: '2' })
 const cardioSaved = ref(false)
 
 const loadCardioLog = () => {
-  const todayStr = new Date().toISOString().split('T')[0]
+  const todayStr = localDay()
   try {
     const raw = localStorage.getItem(CARDIO_LOG_KEY)
     if (raw) {
@@ -637,7 +655,7 @@ const startCardio = async () => {
 }
 
 const saveCardioLog = async () => {
-  const todayStr = new Date().toISOString().split('T')[0]
+  const todayStr = localDay()
   const localPayload = JSON.stringify({ ...cardioLog.value, date: todayStr })
 
   cardioSaved.value = true // optimistic — UI responds immediately
@@ -898,11 +916,11 @@ const loadData = async (userId) => {
     if (mgResponse.data) muscleGroups.value = mgResponse.data
     if (exResponse.data) exercises.value = exResponse.data
 
-    const todayStr = new Date().toISOString().split('T')[0]
+    const todayStr = localDay()
     const { data: w } = await supabase.from('workouts')
       .select('*').eq('user_id', userId)
-      .gte('date', todayStr + 'T00:00:00.000Z')
-      .lte('date', todayStr + 'T23:59:59.999Z')
+      .gte('date', localDayRange().start)
+      .lt('date', localDayRange().end)
       .limit(1).single()
 
     if (w) {
@@ -1237,6 +1255,70 @@ const removeSet = async (block, sIndex) => {
   display: grid;
   grid-template-columns: repeat(7, minmax(0, 1fr));
   gap: var(--space-1);
+}
+
+.week-mode {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  width: 100%;
+  min-height: 56px;
+  padding: var(--space-2) var(--space-4);
+  border: none;
+  border-radius: var(--radius-md);
+  background: var(--bg-raised);
+  font-family: var(--font-sans);
+  color: var(--text-secondary);
+  text-align: left;
+  cursor: pointer;
+}
+
+.week-mode-text {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.week-mode-title {
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.week-mode-sub {
+  font-size: var(--text-2xs);
+  font-weight: 500;
+}
+
+.week-mode-switch {
+  display: flex;
+  align-items: center;
+  width: 44px;
+  height: 26px;
+  flex-shrink: 0;
+  padding: 0 3px;
+  border-radius: var(--radius-pill);
+  background: var(--bg-muted);
+  transition: background var(--dur-fast) var(--ease-out);
+}
+
+.week-mode-switch span {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--on-rail);
+  box-shadow: var(--shadow-sm);
+  transition: transform var(--dur-fast) var(--ease-out);
+}
+
+.week-mode--on { color: var(--accent); }
+.week-mode--on .week-mode-switch { background: var(--accent); }
+.week-mode--on .week-mode-switch span { transform: translateX(18px); }
+
+.week-mode:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
 }
 
 .day-btn {

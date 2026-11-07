@@ -1,4 +1,5 @@
 import { computed, ref, watch } from 'vue'
+import { localDay, mondayOf } from '@/utils/date'
 
 // ══════════════════════════════════════
 // PLANNING HEBDOMADAIRES
@@ -186,8 +187,30 @@ function saveTemplates(templates) {
 // COMPOSABLE
 // ══════════════════════════════════════
 
+// ══════════════════════════════════════
+// SEMAINE DE MATCH
+// Choisie pour la semaine en cours seulement : la semaine suivante repart en standard.
+// ══════════════════════════════════════
+
+const PLANNING_KEY = 'omnidash_planning_mode'
+
+const loadPlanningMode = () => {
+    try {
+        const saved = JSON.parse(localStorage.getItem(PLANNING_KEY) || 'null')
+        if (saved?.mode === 'match' && saved.week === localDay(mondayOf())) return 'match'
+    } catch (e) {}
+    return 'standard'
+}
+
+const planningMode = ref(loadPlanningMode())
+
+watch(planningMode, (mode) => {
+    try {
+        localStorage.setItem(PLANNING_KEY, JSON.stringify({ mode, week: localDay(mondayOf()) }))
+    } catch (e) {}
+})
+
 export function useWorkoutPrograms() {
-    const planningMode = ref('standard')
     const selectedDayIndex = ref(new Date().getDay())
     const templates = ref(loadTemplates())
 

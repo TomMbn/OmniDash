@@ -19,7 +19,4 @@
   .safe-area-pb {
     padding-bottom: env(safe-area-inset-bottom, 0px);
   }
-  .font-serif {
-    font-family: var(--font-serif);
-  }
 }

@@ -196,6 +196,7 @@ import { ref, computed, onMounted } from 'vue'
 import { supabase } from '@/supabase'
 import { useAuth } from '@/composables/useAuth'
 import { useWorkoutPrograms } from '@/composables/useWorkoutPrograms'
+import { localDay, localDayRange, mondayOf } from '@/utils/date'
 import { useProgressiveOverload } from '@/composables/useProgressiveOverload'
 import { smoothPath } from '@/composables/useChartPath'
 import { calorieState } from '@/composables/useCalorieStatus'
@@ -226,14 +227,8 @@ const nutritionLoaded = ref(false)
 const windowForecast = ref(null)
 
 // ── Dates ──
-const dayStr = (d) => d.toISOString().split('T')[0]
-
-const mondayOfWeek = () => {
-  const today = new Date()
-  const monday = new Date(today)
-  monday.setDate(today.getDate() - (today.getDay() === 0 ? 6 : today.getDay() - 1))
-  return monday
-}
+const dayStr = localDay
+const mondayOfWeek = () => mondayOf()
 
 // ── En-tête ──
 const firstName = computed(() => {
@@ -488,7 +483,7 @@ const fetchData = async (userId) => {
         .eq('user_id', userId)
         .gte('date', dayStr(sleepStart))
         .order('date', { ascending: true }),
-      supabase.from('workouts').select('date').eq('user_id', userId).gte('date', dayStr(sixtyDaysAgo) + 'T00:00:00.000Z'),
+      supabase.from('workouts').select('date').eq('user_id', userId).gte('date', localDayRange(sixtyDaysAgo).start),
       supabase.from('exercises').select('id, name'),
       supabase.from('cardio_sessions').select('date').eq('user_id', userId).gte('date', weekStart).lte('date', dayStr(weekEndDate))
     ])
@@ -499,7 +494,7 @@ const fetchData = async (userId) => {
     }
 
     if (workoutsRes.data) {
-      workoutDatesAll.value = new Set(workoutsRes.data.map(w => w.date.split('T')[0]))
+      workoutDatesAll.value = new Set(workoutsRes.data.map(w => localDay(new Date(w.date))))
     }
 
     if (cardioRes.data?.length) {

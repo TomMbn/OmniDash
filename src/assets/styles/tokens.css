@@ -93,7 +93,6 @@
 
   /* ── Typographie ── */
   --font-sans:  'Onest', system-ui, sans-serif;
-  --font-serif: var(--font-sans); /* alias conservé : retiré une fois les vues migrées */
 
   /* ── Type scale ── */
   --text-2xs:   0.75rem;    /* 12px — minimum de l'interface */

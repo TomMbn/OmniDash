@@ -143,6 +143,16 @@
         <div v-if="todaysMeals.length === 0" class="journal-empty">
           <p class="item-name">Aucun repas ce jour-là</p>
           <p class="card-sub">Décris ton repas ci-dessus pour l'ajouter.</p>
+          <button
+            v-if="recurringMeals.length"
+            class="btn btn--dark journal-habits"
+            :disabled="addingHabits"
+            @click="addHabitsToDay"
+          >
+            <span v-if="addingHabits" class="btn-spinner" />
+            <Repeat v-else :size="16" stroke-width="2" />
+            Ajouter mes habitudes ({{ recurringMeals.map(h => h.meal_name).join(', ') }})
+          </button>
         </div>
 
         <ul v-else class="meal-list">
@@ -521,6 +531,7 @@ import { ref, computed, onMounted, watch } from 'vue'
 import { supabase } from '@/supabase'
 import { useAuth } from '@/composables/useAuth'
 import { useConfirm } from '@/composables/useConfirm'
+import { localDay } from '@/utils/date'
 import { calorieState } from '@/composables/useCalorieStatus'
 import {
   ArrowUp, Calendar, Check, CheckCircle2, ChevronLeft, ChevronRight, Circle,
@@ -558,10 +569,7 @@ const fullDateLabel = computed(() =>
   currentDate.value.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })
 )
 
-const getLocalISOString = (date) => {
-  const offset = date.getTimezoneOffset()
-  return new Date(date.getTime() - (offset * 60 * 1000)).toISOString().split('T')[0]
-}
+const getLocalISOString = localDay
 
 const currentDateStr = computed(() => getLocalISOString(currentDate.value))
 const changeDate = (days) => { const d = new Date(currentDate.value); d.setDate(d.getDate() + days); currentDate.value = d }
@@ -728,20 +736,27 @@ const fetchTodaysMeals = async (userId, focusDateStr) => {
   loading.value = true
   try {
     const { data: logs } = await supabase.from('nutrition_logs').select('*').eq('user_id', userId).eq('date', focusDateStr).order('id', { ascending: false })
-    if (logs && logs.length > 0) { todaysMeals.value = logs }
-    else { todaysMeals.value = []; await checkAndInjectHabits(userId, focusDateStr) }
+    todaysMeals.value = logs || []
   } catch(e) { console.error(e) } finally { loading.value = false }
 }
 
-const checkAndInjectHabits = async (userId, dateStr) => {
+// Ajoute les habitudes au jour affiché, seulement à la demande
+const addingHabits = ref(false)
+const addHabitsToDay = async () => {
+  if (!user.value || !recurringMeals.value.length) return
+  addingHabits.value = true
+  const dateStr = currentDateStr.value
   try {
-    const { data: habits } = await supabase.from('recurring_meals').select('*').eq('user_id', userId)
-    if (habits?.length > 0) {
-      const payloads = habits.map(h => ({ user_id: userId, date: dateStr, meal_name: h.meal_name, calories: h.calories, protein: h.protein, carbs: h.carbs, fats: h.fats, is_exceptional_meal: h.is_exceptional_meal, is_skipped: false }))
-      const { data: insertedLogs } = await supabase.from('nutrition_logs').insert(payloads).select()
-      if (insertedLogs) todaysMeals.value = insertedLogs.sort((a,b) => b.id - a.id)
-    }
-  } catch(e) { console.error(e) }
+    const payloads = recurringMeals.value.map(h => ({ user_id: user.value.id, date: dateStr, meal_name: h.meal_name, calories: h.calories, protein: h.protein, carbs: h.carbs, fats: h.fats, is_exceptional_meal: h.is_exceptional_meal, is_skipped: false }))
+    const { data: insertedLogs, error } = await supabase.from('nutrition_logs').insert(payloads).select()
+    if (error) throw error
+    if (insertedLogs && dateStr === currentDateStr.value) todaysMeals.value = insertedLogs.sort((a, b) => b.id - a.id)
+    await fetchWeek(user.value.id)
+  } catch (e) {
+    console.error(e)
+  } finally {
+    addingHabits.value = false
+  }
 }
 
 const fetchHabits = async (userId) => {
@@ -865,8 +880,7 @@ const buildNextDays = () => {
   const dates = []
   for (let i = 0; i < 7; i++) {
     const d = new Date(); d.setDate(d.getDate() + i)
-    const dLocal = new Date(d.getTime() - (d.getTimezoneOffset()*60*1000))
-    dates.push({ dateStr: dLocal.toISOString().split('T')[0], label: d.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric' }) })
+    dates.push({ dateStr: localDay(d), label: d.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric' }) })
   }
   return dates
 }
@@ -1265,8 +1279,16 @@ watch(isAnyModalOpen, (open) => { document.body.style.overflow = open ? 'hidden'
 .journal-empty {
   display: flex;
   flex-direction: column;
+  align-items: flex-start;
   gap: 2px;
   padding: var(--space-5) 0;
+}
+
+.journal-habits {
+  max-width: 100%;
+  white-space: normal;
+  margin-top: var(--space-3);
+  text-align: left;
 }
 
 .meal-list {
