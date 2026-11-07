@@ -494,6 +494,7 @@ const updateQuantity = async (item, delta) => {
     item.quantity = newQuantity
   } catch (err) {
     console.error('Update quantity error:', err)
+    errorMessage.value = 'Quantité non enregistrée, réessaie.'
   }
 }
 
@@ -507,6 +508,7 @@ const deleteItem = async (id) => {
     await fetchWardrobe()
   } catch (err) {
     console.error('Delete item error:', err)
+    errorMessage.value = 'Suppression impossible, réessaie.'
   }
 }
 

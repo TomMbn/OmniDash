@@ -201,7 +201,8 @@ const setWallType = async (value) => {
   wallType.value = value
   const userId = user.value?.id
   if (userId) {
-    await supabase.from('user_settings').upsert({ user_id: userId, wall_type: value })
+    const { error } = await supabase.from('user_settings').upsert({ user_id: userId, wall_type: value }, { onConflict: 'user_id' })
+    if (error) console.error('Wall type not saved:', error)
   }
   refreshForecast()
 }
@@ -283,10 +284,11 @@ const onToggleNotifications = async () => {
     }
     const userId = user.value?.id
     if (!userId) return
-    await supabase.from('user_settings').upsert({
+    const { error } = await supabase.from('user_settings').upsert({
       user_id: userId,
       windows_notifications_enabled: notificationsEnabled.value
-    })
+    }, { onConflict: 'user_id' })
+    if (error) throw error
   } catch (e) {
     console.error('Push subscription error:', e)
     pushError.value = 'Erreur : ' + (e.message || String(e))

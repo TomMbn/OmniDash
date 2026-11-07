@@ -37,7 +37,7 @@
       </button>
     </nav>
 
-    <p v-if="notice" class="notice" :class="`notice--${notice.type}`" role="status">{{ notice.text }}</p>
+    <p v-if="notice" class="notice notice--toast" :class="`notice--${notice.type}`" :role="notice.type === 'error' ? 'alert' : 'status'">{{ notice.text }}</p>
 
     <!-- ── Chargement ── -->
     <div v-if="loading" class="layout">
@@ -685,6 +685,17 @@ const weekBars = computed(() => {
 const notice = ref(null)
 let noticeTimer = null
 
+// Colonnes entières côté base (calories partout, macros des habitudes et du meal prep)
+const toInt = (v) => Math.round(Number(v) || 0)
+const mealFields = (m, { integerMacros = false } = {}) => ({
+  meal_name: m.meal_name,
+  calories: toInt(m.calories),
+  protein: integerMacros ? toInt(m.protein) : Number(m.protein) || 0,
+  carbs: integerMacros ? toInt(m.carbs) : Number(m.carbs) || 0,
+  fats: integerMacros ? toInt(m.fats) : Number(m.fats) || 0,
+  is_exceptional_meal: !!m.is_exceptional_meal
+})
+
 const showNotice = (text, type = 'good') => {
   notice.value = { text, type }
   clearTimeout(noticeTimer)
@@ -720,16 +731,22 @@ const saveUserSettings = async () => {
   if (!user.value) return
   savingSettings.value = true
   try {
-    await supabase.from('user_settings').upsert({
-      user_id: user.value.id, ...userProfile.value,
-      calories_target: calculatedGoals.value.calories,
-      protein_target: calculatedGoals.value.protein,
-      carbs_target: calculatedGoals.value.carbs,
-      fats_target: calculatedGoals.value.fats,
+    // Seulement les champs de ce formulaire : la ligne porte aussi Musculation et Fenêtres
+    const { gender, age, weight, height, activity_level, goal_type } = userProfile.value
+    const { error } = await supabase.from('user_settings').upsert({
+      user_id: user.value.id, gender, age, weight, height, activity_level, goal_type,
+      calories_target: toInt(calculatedGoals.value.calories),
+      protein_target: toInt(calculatedGoals.value.protein),
+      carbs_target: toInt(calculatedGoals.value.carbs),
+      fats_target: toInt(calculatedGoals.value.fats),
       updated_at: new Date().toISOString()
     }, { onConflict: 'user_id' })
+    if (error) throw error
     showSettings.value = false
-  } catch(e) { console.error(e) } finally { savingSettings.value = false }
+  } catch(e) {
+    console.error(e)
+    showNotice('Réglages non enregistrés, réessaie.', 'error')
+  } finally { savingSettings.value = false }
 }
 
 const fetchTodaysMeals = async (userId, focusDateStr) => {
@@ -747,13 +764,14 @@ const addHabitsToDay = async () => {
   addingHabits.value = true
   const dateStr = currentDateStr.value
   try {
-    const payloads = recurringMeals.value.map(h => ({ user_id: user.value.id, date: dateStr, meal_name: h.meal_name, calories: h.calories, protein: h.protein, carbs: h.carbs, fats: h.fats, is_exceptional_meal: h.is_exceptional_meal, is_skipped: false }))
+    const payloads = recurringMeals.value.map(h => ({ user_id: user.value.id, date: dateStr, ...mealFields(h), is_skipped: false }))
     const { data: insertedLogs, error } = await supabase.from('nutrition_logs').insert(payloads).select()
     if (error) throw error
     if (insertedLogs && dateStr === currentDateStr.value) todaysMeals.value = insertedLogs.sort((a, b) => b.id - a.id)
     await fetchWeek(user.value.id)
   } catch (e) {
     console.error(e)
+    showNotice('Habitudes non ajoutées, réessaie.', 'error')
   } finally {
     addingHabits.value = false
   }
@@ -769,21 +787,25 @@ const fetchHabits = async (userId) => {
 
 const addHabit = async () => {
   if (!user.value || !newHabit.value.meal_name) return
-  const { data } = await supabase.from('recurring_meals').insert({ user_id: user.value.id, ...newHabit.value }).select()
+  const { data, error } = await supabase.from('recurring_meals').insert({ user_id: user.value.id, ...mealFields(newHabit.value, { integerMacros: true }) }).select()
+  if (error) { console.error(error); showNotice('Habitude non enregistrée, réessaie.', 'error'); return }
   if (data?.[0]) { recurringMeals.value.push(data[0]); newHabit.value = { meal_name: '', calories: 0, protein: 0, carbs: 0, fats: 0, is_exceptional_meal: false } }
 }
 
 const deleteHabit = async (id) => {
   if (!await askConfirm({ title: 'Supprimer cette habitude ?', detail: 'Cette action est définitive.' })) return
   const { error } = await supabase.from('recurring_meals').delete().eq('id', id)
-  if (!error) recurringMeals.value = recurringMeals.value.filter(h => h.id !== id)
+  if (error) { console.error(error); showNotice('Suppression impossible, réessaie.', 'error'); return }
+  recurringMeals.value = recurringMeals.value.filter(h => h.id !== id)
 }
 
 const openEditModal = (meal) => { editingMeal.value = { ...meal }; showEditModal.value = true }
 
 const updateMeal = async () => {
   if (!editingMeal.value) return
-  const { data } = await supabase.from('nutrition_logs').update({ meal_name: editingMeal.value.meal_name, calories: editingMeal.value.calories, protein: editingMeal.value.protein, carbs: editingMeal.value.carbs, fats: editingMeal.value.fats }).eq('id', editingMeal.value.id).select()
+  const { is_exceptional_meal, ...fields } = mealFields(editingMeal.value)
+  const { data, error } = await supabase.from('nutrition_logs').update(fields).eq('id', editingMeal.value.id).select()
+  if (error) { console.error(error); showNotice('Modification non enregistrée, réessaie.', 'error'); return }
   if (data?.[0]) { const idx = todaysMeals.value.findIndex(m => m.id === editingMeal.value.id); if (idx !== -1) todaysMeals.value[idx] = data[0]; showEditModal.value = false }
 }
 
@@ -811,24 +833,27 @@ const saveAnalyzedMeal = async () => {
   if (!user.value || !analyzedMeal.value) return
   savingMeal.value = true
   try {
-    const { data } = await supabase.from('nutrition_logs').insert({
-      user_id: user.value.id, date: currentDateStr.value,
-      meal_name: analyzedMeal.value.meal_name, calories: analyzedMeal.value.calories || 0,
-      protein: analyzedMeal.value.protein || 0, carbs: analyzedMeal.value.carbs || 0,
-      fats: analyzedMeal.value.fats || 0, is_exceptional_meal: analyzedMeal.value.is_exceptional_meal || false
+    const { data, error } = await supabase.from('nutrition_logs').insert({
+      user_id: user.value.id, date: currentDateStr.value, ...mealFields(analyzedMeal.value)
     }).select()
+    if (error) throw error
     if (data?.[0]) { todaysMeals.value.unshift(data[0]); mealText.value = ''; analyzedMeal.value = null }
-  } catch(e) { console.error(e) } finally { savingMeal.value = false }
+  } catch(e) {
+    console.error(e)
+    showNotice('Repas non enregistré, réessaie.', 'error')
+  } finally { savingMeal.value = false }
 }
 
 const deleteMeal = async (id) => {
   if (!await askConfirm({ title: 'Supprimer ce repas ?', detail: 'Cette action est définitive.' })) return
   const { error } = await supabase.from('nutrition_logs').delete().eq('id', id)
-  if (!error) todaysMeals.value = todaysMeals.value.filter(m => m.id !== id)
+  if (error) { console.error(error); showNotice('Suppression impossible, réessaie.', 'error'); return }
+  todaysMeals.value = todaysMeals.value.filter(m => m.id !== id)
 }
 
 const toggleSkipMeal = async (meal) => {
-  const { data } = await supabase.from('nutrition_logs').update({ is_skipped: !meal.is_skipped }).eq('id', meal.id).select()
+  const { data, error } = await supabase.from('nutrition_logs').update({ is_skipped: !meal.is_skipped }).eq('id', meal.id).select()
+  if (error) { console.error(error); showNotice('Modification non enregistrée, réessaie.', 'error'); return }
   if (data?.[0]) { const idx = todaysMeals.value.findIndex(m => m.id === meal.id); if (idx !== -1) todaysMeals.value[idx].is_skipped = data[0].is_skipped }
 }
 
@@ -842,8 +867,9 @@ const fetchLibrary = async (userId) => {
 
 const saveToLibrary = async (meal) => {
   if (!user.value) return
-  const payload = { ...meal, user_id: user.value.id, id: undefined, date: undefined, created_at: undefined }
-  const { data } = await supabase.from('saved_meals').insert(payload).select()
+  // La ligne du journal porte des colonnes absentes du meal prep (is_skipped, date) : on ne garde que le repas
+  const { data, error } = await supabase.from('saved_meals').insert({ user_id: user.value.id, ...mealFields(meal, { integerMacros: true }) }).select()
+  if (error) { console.error(error); showNotice('Repas non ajouté au meal prep, réessaie.', 'error'); return }
   if (data?.[0]) {
     savedMeals.value.unshift(data[0])
     showNotice('Repas ajouté au meal prep.')
@@ -858,7 +884,7 @@ const openPlanModal = (meal) => { planningMealPayload.value = meal; planningDate
 
 const dispatchPlannedMeals = async () => {
   if (!planningMealPayload.value || !planningDatesSelection.value.length) return
-  const payloads = planningDatesSelection.value.map(dateStr => ({ user_id: user.value.id, date: dateStr, meal_name: planningMealPayload.value.meal_name, calories: planningMealPayload.value.calories, protein: planningMealPayload.value.protein, carbs: planningMealPayload.value.carbs, fats: planningMealPayload.value.fats, is_exceptional_meal: planningMealPayload.value.is_exceptional_meal }))
+  const payloads = planningDatesSelection.value.map(dateStr => ({ user_id: user.value.id, date: dateStr, ...mealFields(planningMealPayload.value) }))
   const { error } = await supabase.from('nutrition_logs').insert(payloads)
   if (error) {
     console.error(error)
@@ -873,7 +899,8 @@ const dispatchPlannedMeals = async () => {
 const deleteSavedMeal = async (id) => {
   if (!await askConfirm({ title: 'Supprimer ce repas enregistré ?', detail: 'Cette action est définitive.' })) return
   const { error } = await supabase.from('saved_meals').delete().eq('id', id)
-  if (!error) savedMeals.value = savedMeals.value.filter(m => m.id !== id)
+  if (error) { console.error(error); showNotice('Suppression impossible, réessaie.', 'error'); return }
+  savedMeals.value = savedMeals.value.filter(m => m.id !== id)
 }
 
 const buildNextDays = () => {
@@ -989,6 +1016,22 @@ watch(isAnyModalOpen, (open) => { document.body.style.overflow = open ? 'hidden'
   border-radius: var(--radius-md);
   font-size: var(--text-xs);
   font-weight: 500;
+}
+
+/* Message flottant : visible même depuis une fenêtre ou en bas de page */
+.notice--toast {
+  position: fixed;
+  left: 50%;
+  bottom: calc(100px + env(safe-area-inset-bottom, 0px));
+  z-index: calc(var(--z-modal) + 1);
+  width: max-content;
+  max-width: calc(100% - 32px);
+  transform: translateX(-50%);
+  box-shadow: var(--shadow-lg);
+}
+
+@media (min-width: 768px) {
+  .notice--toast { bottom: var(--space-6); }
 }
 
 .notice--good  { background: var(--status-success-dim); color: var(--status-success); }

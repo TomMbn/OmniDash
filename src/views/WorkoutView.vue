@@ -27,6 +27,7 @@
 
     <!-- ═══ BIBLIOTHÈQUE ═══ -->
     <div v-if="activeTab === 'exercises'" class="library">
+      <p v-if="libraryError" class="error" role="alert">{{ libraryError }}</p>
       <section class="card">
         <h2 class="card-title">Nouveau groupe musculaire</h2>
         <div class="field-row">
@@ -1150,15 +1151,21 @@ const startFromTemplate = async () => {
   }
 }
 
+const libraryError = ref('')
+
 const handleAddMuscleGroup = async () => {
   if (!newMuscleGroup.value.trim()) return
-  const { data } = await supabase.from('muscle_groups').insert({ name: newMuscleGroup.value.trim(), category: 'Custom' }).select()
+  libraryError.value = ''
+  const { data, error } = await supabase.from('muscle_groups').insert({ name: newMuscleGroup.value.trim(), category: 'Custom' }).select()
+  if (error) { console.error(error); libraryError.value = 'Groupe non enregistré, réessaie.'; return }
   if (data) { muscleGroups.value.push(data[0]); newMuscleGroup.value = '' }
 }
 
 const addExercise = async () => {
   loading.value.exercises = true
-  const { data } = await supabase.from('exercises').insert({ name: newExercise.value.name, muscle_group_id: newExercise.value.muscle_group_id, type: 'custom' }).select()
+  libraryError.value = ''
+  const { data, error } = await supabase.from('exercises').insert({ name: newExercise.value.name, muscle_group_id: newExercise.value.muscle_group_id, type: 'custom' }).select()
+  if (error) { console.error(error); libraryError.value = 'Exercice non enregistré, réessaie.' }
   if (data) { exercises.value.push(data[0]); newExercise.value = { name: '', muscle_group_id: '' }; activeTab.value = 'workout' }
   loading.value.exercises = false
 }
