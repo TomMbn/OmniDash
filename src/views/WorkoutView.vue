@@ -379,22 +379,25 @@
               <p class="banner-meta">{{ selectedPlan.template.description }}</p>
             </div>
 
-            <template v-if="isSelectedToday && !isCardioSession && !isRestDay">
-              <button v-if="!currentWorkout" class="btn btn--dark" :disabled="loading.workout" @click="startFromTemplate">
+            <template v-if="canLogSelected && !isCardioSession && !isRestDay">
+              <button v-if="!currentWorkout" class="btn btn--dark" :disabled="loading.workout || loading.day" @click="startFromTemplate">
                 <span v-if="loading.workout" class="btn-spinner" />
-                <Play v-else :size="18" stroke-width="2" />
-                Démarrer la séance
+                <Play v-else-if="isSelectedToday" :size="18" stroke-width="2" />
+                <Pencil v-else :size="18" stroke-width="2" />
+                {{ isSelectedToday ? 'Démarrer la séance' : 'Noter cette séance' }}
               </button>
               <button v-else class="btn btn--dark" @click="showPlan = false">
-                <Play :size="18" stroke-width="2" />
-                Reprendre la séance
+                <Play v-if="isSelectedToday" :size="18" stroke-width="2" />
+                <Pencil v-else :size="18" stroke-width="2" />
+                {{ isSelectedToday ? 'Reprendre la séance' : 'Voir ou corriger la séance' }}
               </button>
             </template>
 
-            <button v-else-if="isSelectedToday && isCardioSession && !currentWorkout" class="btn btn--dark" :disabled="loading.workout" @click="startCardio">
+            <button v-else-if="canLogSelected && isCardioSession && !currentWorkout" class="btn btn--dark" :disabled="loading.workout || loading.day" @click="startCardio">
               <span v-if="loading.workout" class="btn-spinner" />
-              <Play v-else :size="18" stroke-width="2" />
-              Démarrer le cardio
+              <Play v-else-if="isSelectedToday" :size="18" stroke-width="2" />
+              <Pencil v-else :size="18" stroke-width="2" />
+              {{ isSelectedToday ? 'Démarrer le cardio' : 'Noter ce cardio' }}
             </button>
           </section>
 
@@ -411,7 +414,7 @@
               </li>
             </ul>
 
-            <form v-if="isSelectedToday && currentWorkout && !cardioSaved" class="cardio-form" @submit.prevent="saveCardioLog">
+            <form v-if="canLogSelected && currentWorkout && !cardioSaved" class="cardio-form" @submit.prevent="saveCardioLog">
               <div class="field-grid">
                 <div class="field-group">
                   <label class="field-label" for="cardio-activity">Activité</label>
@@ -440,7 +443,7 @@
               </button>
             </form>
 
-            <p v-else-if="isSelectedToday && currentWorkout && cardioSaved" class="hint">
+            <p v-else-if="canLogSelected && currentWorkout && cardioSaved" class="hint">
               <Check :size="16" stroke-width="2.5" />
               Cardio enregistré<template v-if="cardioLog.duration">, {{ cardioLog.activity || 'séance' }}, {{ cardioLog.duration }} min<template v-if="cardioLog.avgHR">, {{ cardioLog.avgHR }} bpm</template></template>
             </p>
@@ -498,8 +501,8 @@
           </section>
         </div>
 
-        <button v-if="!currentWorkout" class="link-btn free-start" :disabled="loading.workout" @click="startWorkout">
-          Démarrer une séance libre
+        <button v-if="!currentWorkout && canLogSelected" class="link-btn free-start" :disabled="loading.workout || loading.day" @click="startWorkout">
+          {{ isSelectedToday ? 'Démarrer une séance libre' : 'Noter une séance libre ce jour-là' }}
         </button>
       </template>
     </template>
@@ -550,14 +553,14 @@ import { supabase } from '@/supabase'
 import { useAuth } from '@/composables/useAuth'
 import { useWorkoutStats } from '@/composables/useWorkoutStats'
 import { useWorkoutPrograms } from '@/composables/useWorkoutPrograms'
-import { localDay, localDayRange } from '@/utils/date'
+import { localDay, localDayRange, mondayOf } from '@/utils/date'
 import { useProgressiveOverload } from '@/composables/useProgressiveOverload'
 import { useExerciseSetup } from '@/composables/useExerciseSetup'
 import { useFocusMode } from '@/composables/useFocusMode'
 import { useRestTimer, parseRest } from '@/composables/useRestTimer'
 import {
   Dumbbell, Plus, Minus, Trash2, Play, ChevronLeft, ChevronRight,
-  Check, X, Trophy, Moon, Heart, SlidersHorizontal, TrendingUp
+  Check, X, Trophy, Moon, Heart, SlidersHorizontal, TrendingUp, Pencil
 } from 'lucide-vue-next'
 
 const showModals = ref(false)
@@ -658,10 +661,24 @@ const loadCardioLog = () => {
   } catch (e) {}
 }
 
+// Cardio déjà noté pour le jour sélectionné
+const loadCardioForDay = async (userId, day) => {
+  cardioSaved.value = false
+  cardioLog.value = { activity: '', duration: null, avgHR: null, zone: '2' }
+  const { data } = await supabase.from('cardio_sessions')
+    .select('*').eq('user_id', userId).eq('date', localDay(day)).limit(1).maybeSingle()
+  if (data) {
+    cardioLog.value = { activity: data.activity || '', duration: data.duration_minutes, avgHR: data.avg_hr, zone: data.zone || '2' }
+    cardioSaved.value = true
+  } else if (localDay(day) === localDay()) {
+    loadCardioLog()
+  }
+}
+
 const startCardio = async () => {
   loading.value.workout = true
   const { data } = await supabase.from('workouts').insert({
-    date: new Date().toISOString(),
+    date: sessionTimestamp(),
     user_id: user.value.id
   }).select()
   if (data) currentWorkout.value = data[0]
@@ -669,7 +686,7 @@ const startCardio = async () => {
 }
 
 const saveCardioLog = async () => {
-  const todayStr = localDay()
+  const todayStr = localDay(selectedDate.value)
   const localPayload = JSON.stringify({ ...cardioLog.value, date: todayStr })
 
   cardioSaved.value = true // optimistic — UI responds immediately
@@ -700,7 +717,7 @@ const updateTemplateField = (sessionKey, exerciseIndex, field, value) => {
 }
 
 const activeTab = ref('workout')
-const loading = ref({ data: true, workout: false, exercises: false })
+const loading = ref({ data: true, workout: false, exercises: false, day: false })
 const muscleGroups = ref([])
 const exercises = ref([])
 const currentWorkout = ref(null)
@@ -780,8 +797,25 @@ const activeSetIndex = ref(0)
 const validating = ref(false)
 const saveError = ref('')
 
+// ── Jour noté : aujourd'hui ou un jour passé de la semaine (rattrapage) ──
+const selectedDate = computed(() => {
+  const date = mondayOf()
+  date.setDate(date.getDate() + (selectedDayIndex.value === 0 ? 6 : selectedDayIndex.value - 1))
+  return date
+})
+const isSelectedPast = computed(() => localDay(selectedDate.value) < localDay())
+const canLogSelected = computed(() => isSelectedToday.value || isSelectedPast.value)
+
+// Horodatage d'une séance : maintenant, ou 18 h le jour rattrapé
+const sessionTimestamp = () => {
+  if (isSelectedToday.value) return new Date().toISOString()
+  const date = new Date(selectedDate.value)
+  date.setHours(18, 0, 0, 0)
+  return date.toISOString()
+}
+
 const focusMode = computed(() =>
-  !!currentWorkout.value && isSelectedToday.value && !isCardioSession.value && !showPlan.value
+  !!currentWorkout.value && canLogSelected.value && !isCardioSession.value && !showPlan.value
 )
 
 const { focusModeActive } = useFocusMode()
@@ -887,13 +921,13 @@ const validateSet = async () => {
   const nextSet = block.sets.findIndex(s => !s.id)
   if (nextSet !== -1) {
     activeSetIndex.value = nextSet
-    if (isNewSet) startRest(restSeconds)
+    if (isNewSet && isSelectedToday.value) startRest(restSeconds)
     return
   }
   const nextBlock = workoutBlocks.value.findIndex((b, i) => i > activeBlockIndex.value && !isBlockDone(b))
   if (nextBlock !== -1) {
     goToBlock(nextBlock)
-    if (isNewSet) startRest(restSeconds)
+    if (isNewSet && isSelectedToday.value) startRest(restSeconds)
   }
 }
 
@@ -937,6 +971,7 @@ onBeforeUnmount(() => {
 })
 
 const headSubtitle = computed(() => {
+  if (focusMode.value && !isSelectedToday.value) return `séance de ${selectedDate.value.toLocaleDateString('fr-FR', { weekday: 'long' })}`
   if (focusMode.value) return 'séance en cours'
   return new Date().toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })
 })
@@ -951,7 +986,6 @@ onMounted(async () => {
   const { data: { session } } = await supabase.auth.getSession()
   const userId = session?.user?.id || user.value?.id
   if (userId) await loadData(userId)
-  if (isCardioSession.value) loadCardioLog()
 
   if (userId) {
     const { data: sleepData } = await supabase
@@ -974,46 +1008,80 @@ const loadData = async (userId) => {
     ])
     if (mgResponse.data) muscleGroups.value = mgResponse.data
     if (exResponse.data) exercises.value = exResponse.data
+  } catch (err) {
+    console.error('Error loading exercises:', err)
+  }
+  // L'historique sert à préremplir les charges : on le charge avant la séance
+  await fetchHistoryForPlan(selectedPlan.value)
+  await loadSelectedDay()
+  loading.value.data = false
+}
 
-    const todayStr = localDay()
+// Séries prévues par le programme, préremplies avec la dernière charge
+const buildTemplateBlocks = (template) => (template?.exercises || []).map(tplEx => {
+  const dbEx = exercises.value.find(e => e.name.trim().toLowerCase() === tplEx.name.trim().toLowerCase())
+  if (!dbEx) return null
+  const lastSession = getLastSession(dbEx.id)
+  const lastWeight = lastSession?.sets?.[0]?.weight ?? tplEx.targetWeight
+  const defaultReps = parseInt(tplEx.repsRange.split('-')[0]) || 10
+  return { exercise_id: dbEx.id, sets: Array.from({ length: tplEx.sets }, () => ({ weight: lastWeight, reps: defaultReps, rpe: null })) }
+}).filter(Boolean)
+
+// Remet les séries déjà enregistrées à leur place dans le programme.
+// Avant, une reprise ne montrait que les exercices commencés.
+const mergeSavedSets = (blocks, saved) => {
+  const byExercise = new Map()
+  for (const set of saved) {
+    if (!byExercise.has(set.exercise_id)) byExercise.set(set.exercise_id, [])
+    byExercise.get(set.exercise_id).push({ id: set.id, weight: set.weight, reps: set.reps, rpe: set.rpe })
+  }
+  for (const [exerciseId, sets] of byExercise) {
+    const block = blocks.find(b => b.exercise_id === exerciseId)
+    if (block) block.sets = [...sets, ...block.sets.slice(sets.length)]
+    else blocks.push({ exercise_id: exerciseId, sets })
+  }
+  return blocks
+}
+
+// Charge la séance du jour sélectionné, s'il y en a une
+const loadSelectedDay = async () => {
+  const userId = user.value?.id
+  currentWorkout.value = null
+  workoutBlocks.value = []
+  if (!userId || !canLogSelected.value) return
+  const day = selectedDate.value
+  loading.value.day = true
+  try {
+    const range = localDayRange(day)
     const { data: w } = await supabase.from('workouts')
       .select('*').eq('user_id', userId)
-      .gte('date', localDayRange().start)
-      .lt('date', localDayRange().end)
-      .limit(1).single()
+      .gte('date', range.start)
+      .lt('date', range.end)
+      .order('date', { ascending: true })
+      .limit(1).maybeSingle()
+    if (localDay(selectedDate.value) !== localDay(day)) return
 
-    if (w) {
-      currentWorkout.value = w
-      const { data: sets } = await supabase.from('workout_sets')
-        .select('*').eq('workout_id', w.id).order('id', { ascending: true })
-
-      if (sets && sets.length > 0) {
-        const blocksMap = new Map()
-        sets.forEach(set => {
-          if (!blocksMap.has(set.exercise_id))
-            blocksMap.set(set.exercise_id, { exercise_id: set.exercise_id, sets: [] })
-          blocksMap.get(set.exercise_id).sets.push({ id: set.id, weight: set.weight, reps: set.reps, rpe: set.rpe })
-        })
-        workoutBlocks.value = Array.from(blocksMap.values())
-        resumeAtFirstOpenSet()
-      } else if (selectedPlan.value?.template?.exercises?.length) {
-        workoutBlocks.value = selectedPlan.value.template.exercises.map(tplEx => {
-          const dbEx = exercises.value.find(e => e.name.trim().toLowerCase() === tplEx.name.trim().toLowerCase())
-          if (!dbEx) return null
-          const defaultReps = parseInt(tplEx.repsRange.split('-')[0]) || 10
-          const lastSession = getLastSession(dbEx.id)
-          const lastWeight = lastSession?.sets?.[0]?.weight ?? tplEx.targetWeight
-          return { exercise_id: dbEx.id, sets: Array.from({ length: tplEx.sets }, () => ({ weight: lastWeight, reps: defaultReps, rpe: null })) }
-        }).filter(Boolean)
-      }
+    if (isCardioSession.value) {
+      await loadCardioForDay(userId, day)
     }
+    if (!w) return
+    currentWorkout.value = w
+    const { data: sets } = await supabase.from('workout_sets')
+      .select('*').eq('workout_id', w.id).order('id', { ascending: true })
+    workoutBlocks.value = mergeSavedSets(buildTemplateBlocks(selectedPlan.value?.template), sets || [])
+    resumeAtFirstOpenSet()
   } catch (err) {
-    console.error('Error loading workout data:', err)
+    console.error('Error loading day workout:', err)
   } finally {
-    loading.value.data = false
+    loading.value.day = false
   }
-  await fetchHistoryForPlan(selectedPlan.value)
 }
+
+watch(selectedDayIndex, () => {
+  // Un jour passé s'ouvre sur le programme : on entre dans la séance à la demande
+  if (!isSelectedToday.value) showPlan.value = true
+  loadSelectedDay()
+})
 
 watch(selectedDayIndex, () => fetchHistoryForPlan(selectedPlan.value))
 
@@ -1028,23 +1096,16 @@ const ensureTemplateExercises = async (template) => {
 }
 
 const startFromTemplate = async () => {
-  if (!selectedPlan.value || isRestDay.value || !isSelectedToday.value) return
+  if (!selectedPlan.value || isRestDay.value || !canLogSelected.value) return
   loading.value.workout = true
   try {
-    const { data, error } = await supabase.from('workouts').insert({ date: new Date().toISOString(), user_id: user.value.id }).select()
+    const { data, error } = await supabase.from('workouts').insert({ date: sessionTimestamp(), user_id: user.value.id }).select()
     if (error) throw error
     if (!data?.length) return
     currentWorkout.value = data[0]
     const template = selectedPlan.value.template
     await ensureTemplateExercises(template)
-    workoutBlocks.value = template.exercises.map(tplEx => {
-      const dbEx = exercises.value.find(e => e.name.trim().toLowerCase() === tplEx.name.trim().toLowerCase())
-      if (!dbEx) return null
-      const lastSession = getLastSession(dbEx.id)
-      const lastWeight = lastSession?.sets?.[0]?.weight ?? tplEx.targetWeight
-      const defaultReps = parseInt(tplEx.repsRange.split('-')[0]) || 10
-      return { exercise_id: dbEx.id, sets: Array.from({ length: tplEx.sets }, () => ({ weight: lastWeight, reps: defaultReps, rpe: null })) }
-    }).filter(Boolean)
+    workoutBlocks.value = buildTemplateBlocks(template)
     showPlan.value = false
     resumeAtFirstOpenSet()
   } catch (e) {
@@ -1068,9 +1129,13 @@ const addExercise = async () => {
 }
 
 const startWorkout = async () => {
+  if (!canLogSelected.value) return
   loading.value.workout = true
-  const { data } = await supabase.from('workouts').insert({ date: new Date().toISOString(), user_id: user.value.id }).select()
-  if (data) currentWorkout.value = data[0]
+  const { data } = await supabase.from('workouts').insert({ date: sessionTimestamp(), user_id: user.value.id }).select()
+  if (data) {
+    currentWorkout.value = data[0]
+    showPlan.value = false
+  }
   loading.value.workout = false
 }
 
