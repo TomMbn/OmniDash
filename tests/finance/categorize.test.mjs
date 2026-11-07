@@ -90,3 +90,29 @@ test('résultat IA : sous le seuil reste à vérifier', () => {
   const unsure = applyAiResult(base, { label: 'ZORGLUB', category: 'Shopping', kind: 'depense', confidence: 0.5 }, categories)
   assert.equal(unsure.status, 'verifier')
 })
+
+test('un virement vers ou depuis son propre nom est un virement interne', () => {
+  const owner = ['JEANNE', 'DURAND']
+  const out = categorize({ label_raw: 'VIR. VERS JEANNE DURAND', amount: -400 }, { categories, owner })
+  assert.equal(out.kind, 'interne')
+  assert.equal(out.status, 'auto')
+  const inbound = categorize({ label_raw: 'VIREMENT VERS MME DURAND JEANNE', amount: 150 }, { categories, owner })
+  assert.equal(inbound.kind, 'interne')
+  const friend = categorize({ label_raw: 'VIR INST MR PAUL MARTIN', amount: 20 }, { categories, owner })
+  assert.equal(friend.kind, 'remboursement')
+})
+
+test('les enseignes ajoutées au dictionnaire sont reconnues', () => {
+  const cases = [
+    ['CB EASYJET AB12CD FACT 010126', 'Voyages'],
+    ['CB NETFLIX.COM FACT 010126', 'Abonnements'],
+    ['CB SNIPES FACT 010126', 'Shopping'],
+    ['CB UBER TRIP FACT 010126', 'Transport'],
+    ['CB STEAMPOWERED FACT 010126', 'Sorties'],
+    ['CB CENTRE MEDICAL FACT 010126', 'Santé'],
+  ]
+  for (const [label, expected] of cases) {
+    const out = categorize({ label_raw: label, amount: -10 }, { categories })
+    assert.equal(out.category_id, id(expected), label)
+  }
+})

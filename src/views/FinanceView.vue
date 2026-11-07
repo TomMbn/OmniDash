@@ -76,7 +76,7 @@
           <span class="chip">{{ period.label }}</span>
           <h2 class="banner-title">
             {{ euro(Math.abs(totals.remaining)) }}<br />
-            <span class="banner-title-soft">{{ totals.remaining < 0 ? 'au-delà du budget' : 'reste à vivre' }}</span>
+            <span class="banner-title-soft">{{ totals.remaining >= 0 ? 'reste à vivre' : totals.budget > 0 ? 'au-delà du budget' : 'de plus que tes revenus' }}</span>
           </h2>
           <p class="banner-meta">
             {{ euro(totals.spent) }} dépensés{{ totals.budget > 0 ? ` sur ${euro(totals.budget)}` : '' }}

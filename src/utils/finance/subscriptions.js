@@ -1,4 +1,5 @@
-// Abonnements : prélèvements au même libellé normalisé, montant proche (±10 %), au moins deux mois d'affilée.
+// Abonnements : même libellé normalisé, montant proche (±10 %), au moins deux mois d'affilée.
+// Paiement par carte d'un service inconnu : trois mois d'affilée au même prix.
 
 import { displayLabel, normalizeLabel } from './normalize.js'
 import { diffDays, fromDay, toDay } from './period.js'
@@ -15,8 +16,8 @@ const raised = (amount, previous) => amount > previous && amount <= previous * 1
 
 // Prélèvement, ou paiement par carte d'un service connu pour être un abonnement.
 // Un resto ou une enseigne fréquentée chaque mois n'est pas un abonnement.
-const DEBIT_ORDER = /\b(PRLV|PRELEVEMENT|PRELEV|ECHEANCE)\b/
-const KNOWN_SERVICES = /\b(NETFLIX|SPOTIFY|DEEZER|DISNEY|CANAL|APPLE|ICLOUD|GOOGLE|YOUTUBE|AMAZON PRIME|PRIME VIDEO|AUDIBLE|FREE|SFR|ORANGE|BOUYGUES|SOSH|RED BY SFR|BASIC FIT|FITNESS PARK|NEONESS|ON AIR|UBER ONE|DEEPL|CHATGPT|OPENAI|NOTION|ADOBE|MICROSOFT|XBOX|PLAYSTATION|NINTENDO|TWITCH|DAZN|BEIN|MOLOTOV|LE MONDE|LIBERATION|MEDIAPART)\b/
+const DEBIT_ORDER = /\b(PRLV|PRELEVEMENT|PRELEV|ECHEANCE|COTISATION|ABONNEMENT)\b/
+const KNOWN_SERVICES = /\b(NETFLIX|SPOTIFY|DEEZER|DISNEY|CANAL|APPLE|ICLOUD|GOOGLE|YOUTUBE|AMAZON PRIME|PRIME VIDEO|AUDIBLE|FREE|SFR|ORANGE|BOUYGUES|SOSH|RED BY SFR|BASIC FIT|FITNESS PARK|NEONESS|ON AIR|UBER ONE|DEEPL|CHATGPT|OPENAI|NOTION|ADOBE|MICROSOFT|XBOX|PLAYSTATION|NINTENDO|TWITCH|DAZN|BEIN|MOLOTOV|LE MONDE|LIBERATION|MEDIAPART|PARAMOUNT|CRUNCHYROLL|MIDJOURNEY|PERPLEXITY|GITHUB|CURSOR|DROPBOX|CANVA|DUOLINGO|STRAVA)\b/
 const looksRecurring = (labelRaw) => {
   const text = String(labelRaw || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toUpperCase()
   return DEBIT_ORDER.test(text) || KNOWN_SERVICES.test(text)
@@ -29,11 +30,28 @@ export function detectSubscriptions(transactions = []) {
     const amount = Number(t.amount)
     if (!(amount < 0)) continue
     if (t.kind && t.kind !== 'depense') continue
-    if (!looksRecurring(t.label_raw)) continue
     const pattern = normalizeLabel(t.label_raw)
     if (!pattern) continue
     if (!groups.has(pattern)) groups.set(pattern, [])
     groups.get(pattern).push({ date: t.date, amount: Math.abs(amount), label_raw: t.label_raw })
+  }
+
+  // Un même libellé peut porter deux abonnements de prix différents (Apple : stockage et appli).
+  // On sépare alors les montants en groupes distincts, chacun avec son propre motif.
+  for (const [pattern, list] of [...groups]) {
+    const amounts = [...new Set(list.map((t) => t.amount))].sort((a, b) => a - b)
+    const clusters = []
+    for (const a of amounts) {
+      const last = clusters[clusters.length - 1]
+      if (last && a <= last[0] * 1.6) last.push(a)
+      else clusters.push([a])
+    }
+    if (clusters.length < 2) continue
+    groups.delete(pattern)
+    for (const c of clusters) {
+      const items = list.filter((t) => c.includes(t.amount))
+      groups.set(`${pattern} ${Math.round(c[0])}`, items)
+    }
   }
 
   const found = []
@@ -62,6 +80,12 @@ export function detectSubscriptions(transactions = []) {
       else chain = [t]
     }
     if (chain.length < 2) continue
+    // Hors prélèvement ou service connu, il faut 3 mois au même prix : un resto du mois ne passe pas
+    if (!looksRecurring(chain[0].label_raw)) {
+      const min = Math.min(...chain.map((t) => t.amount))
+      const max = Math.max(...chain.map((t) => t.amount))
+      if (chain.length < 3 || max > min * 1.02) continue
+    }
     const last = chain[chain.length - 1]
     const before = chain[chain.length - 2]
     found.push({

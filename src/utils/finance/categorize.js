@@ -20,6 +20,7 @@ export const KEYWORDS = {
     'BOULANGERIE', 'BOUCHERIE', 'PRIMEUR', 'FROMAGERIE', 'EPICERIE', 'MARIE BLACHERE', 'PAUL',
   ],
   Restaurants: [
+    'SELECTA', 'DISTRIBUTEUR', 'BURGER', 'CREPE', 
     'MCDONALDS', 'MC DONALDS', 'MCDO', 'BURGER KING', 'KFC', 'QUICK', 'SUBWAY', 'FIVE GUYS', 'O TACOS', 'DOMINOS',
     'PIZZA HUT', 'PIZZA', 'SUSHI', 'SUSHI SHOP', 'PLANET SUSHI', 'STARBUCKS', 'COLUMBUS', 'PRET A MANGER', 'EXKI',
     'BAGELSTEIN', 'POKAWA', 'BIG FERNAND', 'BRIOCHE DOREE', 'LA CROISSANTERIE', 'FLUNCH', 'BUFFALO GRILL',
@@ -27,6 +28,7 @@ export const KEYWORDS = {
     'BRASSERIE', 'BISTROT', 'CAFE', 'CAFETERIA', 'TRAITEUR', 'KEBAB', 'BURGER', 'CREPERIE', 'SNACK', 'CROUS',
   ],
   Transport: [
+    'UBER TRIP', 'ZITY', 'CITIZ', 
     'SNCF', 'SNCF CONNECT', 'OUIGO', 'TGV', 'TER', 'RATP', 'NAVIGO', 'TRANSILIEN', 'UBER', 'BOLT', 'HEETCH', 'G7',
     'FREENOW', 'FREE NOW', 'BLABLACAR', 'LIME', 'DOTT', 'VELIB', 'TOTAL', 'TOTALENERGIES', 'ESSO', 'SHELL',
     'BP', 'AVIA', 'STATION', 'CARBURANT', 'PEAGE', 'VINCI AUTOROUTES', 'SANEF', 'APRR', 'ASF', 'AUTOROUTE', 'PARKING',
@@ -39,16 +41,19 @@ export const KEYWORDS = {
     'CONFORAMA', 'MAISONS DU MONDE',
   ],
   Sorties: [
+    'STEAM', 'STEAMPOWERED', 'EPIC GAMES', 'G2A', 'ENEBA', 'FEVER', 'SEETICKETS', 'DIGITICK', 
     'UGC', 'PATHE', 'GAUMONT', 'MK2', 'CGR', 'CINEMA', 'FNAC SPECTACLES', 'TICKETMASTER', 'DICE', 'SHOTGUN', 'BILLETREDUC',
     'THEATRE', 'CONCERT', 'MUSEE', 'BAR', 'PUB', 'CLUB', 'BOWLING', 'ESCAPE', 'KARAOKE', 'PMU', 'FDJ', 'LE PERCOLATEUR',
   ],
   Shopping: [
+    'DECIMAS', 'SNIPES', 'FOOT LOCKER', 'COURIR', 'JD SPORTS', 
     'AMAZON', 'AMZN', 'AMAZON PAYMENTS', 'FNAC', 'DARTY', 'BOULANGER', 'CDISCOUNT', 'ZARA', 'H&M', 'H M', 'UNIQLO',
     'PRIMARK', 'KIABI', 'CELIO', 'JULES', 'BERSHKA', 'PULL&BEAR', 'PULL BEAR', 'MANGO', 'ZALANDO', 'VINTED', 'SHEIN',
     'ASOS', 'NIKE', 'ADIDAS', 'SEPHORA', 'NOCIBE', 'MARIONNAUD', 'ACTION', 'GIFI', 'HEMA', 'ALIEXPRESS', 'TEMU',
     'APPLE STORE', 'LEBONCOIN', 'GALERIES LAFAYETTE', 'PRINTEMPS', 'BHV', 'NATURE & DECOUVERTES', 'CULTURA', 'RAKUTEN',
   ],
   'Santé': [
+    'DOCT', 'CENTRE MEDICAL', 'SOS MEDECINS', 
     'PHARMACIE', 'PHARMA', 'PARAPHARMACIE', 'MEDECIN', 'DOCTEUR', 'DOCTOLIB', 'DENTISTE', 'CABINET DENTAIRE',
     'KINE', 'KINESITHERAPEUTE', 'OSTEOPATHE', 'OSTEO', 'OPTICIEN', 'OPTIC', 'AFFLELOU', 'KRYS', 'ATOL', 'GRANDOPTICAL',
     'LABORATOIRE', 'LABO', 'BIOGROUP', 'CERBALLIANCE', 'HOPITAL', 'CLINIQUE', 'MUTUELLE', 'ALAN', 'PSYCHOLOGUE',
@@ -59,6 +64,7 @@ export const KEYWORDS = {
     'ARKOSE', 'STRAVA', 'MYPROTEIN', 'NUTRIMUSCLE', 'FOOTBALL', 'TENNIS', 'PADEL',
   ],
   Abonnements: [
+    'APPLE MUSIC', 'TIDAL', 
     'NETFLIX', 'SPOTIFY', 'DEEZER', 'DISNEY', 'DISNEY PLUS', 'CANAL', 'CANAL+', 'MOLOTOV', 'PRIME VIDEO', 'AMAZON PRIME',
     'YOUTUBE', 'YOUTUBE PREMIUM', 'GOOGLE STORAGE', 'GOOGLE ONE', 'APPLE COM BILL', 'APPLE COM', 'ITUNES', 'ICLOUD',
     'MICROSOFT', 'XBOX', 'PLAYSTATION', 'PSN', 'NINTENDO', 'ADOBE', 'CHATGPT', 'OPENAI', 'ANTHROPIC', 'NOTION', 'DROPBOX',
@@ -67,12 +73,14 @@ export const KEYWORDS = {
     'TWITCH', 'PATREON', 'CRUNCHYROLL', 'PARAMOUNT', 'HBO MAX', 'DAZN', 'BEIN',
   ],
   Voyages: [
+    'TIQETS', 'GETYOURGUIDE', 'CIVITATIS', 'HOSTELWORLD', 
     'AIRBNB', 'BOOKING', 'BOOKING COM', 'HOTELS COM', 'EXPEDIA', 'ABRITEL', 'HOTEL', 'IBIS', 'NOVOTEL', 'MERCURE',
     'ACCOR', 'B&B HOTEL', 'CAMPANILE', 'AIR FRANCE', 'EASYJET', 'RYANAIR', 'TRANSAVIA', 'VUELING', 'VOLOTEA',
     'LUFTHANSA', 'KLM', 'AEROPORT', 'AIRPORT', 'EUROSTAR', 'HERTZ', 'AVIS', 'EUROPCAR', 'SIXT', 'GETAROUND', 'OPODO',
     'LASTMINUTE', 'CLUB MED', 'PIERRE ET VACANCES', 'CENTER PARCS',
   ],
   Divers: [
+    'BARBIER', 'COIFFURE', 'SALON', 'ASSURANCE', 
     'RETRAIT', 'RETRAIT DAB', 'DAB', 'FRAIS', 'COTISATION', 'COMMISSION', 'AGIOS', 'DGFIP', 'IMPOT', 'IMPOTS',
     'AMENDE', 'ANTAI', 'LA POSTE', 'COIFFEUR', 'PRESSING', 'TABAC',
   ],
@@ -134,13 +142,19 @@ function looksLikePerson(label) {
 }
 
 // Renvoie { kind, confidence } ; null si rien de particulier (dépense ou revenu standard)
-export function detectKind(labelRaw, amount, detail = '') {
+// Le libellé contient le nom du titulaire : virement entre ses propres comptes
+const isOwnTransfer = (text, owner = []) => {
+  const words = owner.filter((w) => w && w.length >= 3)
+  return words.length > 0 && words.every((w) => containsWords(text, w))
+}
+
+export function detectKind(labelRaw, amount, detail = '', owner = []) {
   const text = searchText(labelRaw, detail)
   const transfer = isTransfer(text)
   if ((transfer || isDebitOrder(text)) && SAVINGS_WORDS.some((w) => containsWords(text, w))) {
     return { kind: 'epargne', confidence: CONFIDENCE.kind }
   }
-  if (transfer && INTERNAL_WORDS.some((w) => containsWords(text, w))) {
+  if (transfer && (INTERNAL_WORDS.some((w) => containsWords(text, w)) || isOwnTransfer(text, owner))) {
     return { kind: 'interne', confidence: CONFIDENCE.kind }
   }
   if (amount > 0) {
@@ -185,18 +199,18 @@ export function categoryIdByName(categories = []) {
 
 // tx : { label_raw, amount, detail?, bank_category? }
 // Renvoie { label, kind, category_id, status, source, confidence }
-export function categorize(tx, { rules = [], categories = [] } = {}) {
+export function categorize(tx, { rules = [], categories = [], owner = [] } = {}) {
   const idOf = categoryIdByName(categories)
   const label = normalizeLabel(tx.label_raw)
   const base = { label, kind: 'depense', category_id: null, status: 'verifier', source: null, confidence: 0 }
 
   const rule = matchRule(tx.label_raw, rules)
   if (rule) {
-    const kind = rule.kind || detectKind(tx.label_raw, tx.amount, tx.detail).kind
+    const kind = rule.kind || detectKind(tx.label_raw, tx.amount, tx.detail, owner).kind
     return { ...base, kind, category_id: rule.category_id ?? null, status: 'auto', source: 'regle', confidence: CONFIDENCE.rule }
   }
 
-  const { kind, confidence: kindConfidence } = detectKind(tx.label_raw, tx.amount, tx.detail)
+  const { kind, confidence: kindConfidence } = detectKind(tx.label_raw, tx.amount, tx.detail, owner)
   if (kind === 'epargne' || kind === 'interne' || kind === 'revenu') {
     return { ...base, kind, status: 'auto', source: 'nature', confidence: kindConfidence }
   }

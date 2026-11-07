@@ -102,6 +102,36 @@ async function ensureDefaultCategories() {
   allCategories.value = data
 }
 
+// Nom du titulaire, tiré du compte, pour reconnaître ses virements entre ses propres comptes
+function ownerWords() {
+  const { user } = useAuth()
+  const meta = user.value?.user_metadata || {}
+  const source = meta.full_name || meta.name || String(user.value?.email || '').split('@')[0]
+  return String(source).normalize('NFD').replace(/[\u0300-\u036f]/g, '').toUpperCase().split(/[^A-Z]+/).filter((w) => w.length >= 3)
+}
+
+// Un dictionnaire enrichi ou une nouvelle règle profite aussi aux opérations déjà importées.
+// On ne touche jamais à ce que l'utilisateur a confirmé.
+async function refreshAutoClassification() {
+  const owner = ownerWords()
+  const changes = []
+  for (const t of transactions.value) {
+    if (t.status === 'confirme' || t.linked_id) continue
+    const res = categorize({ label_raw: t.label_raw, amount: Number(t.amount) }, { rules: rules.value, categories: categories.value, owner })
+    const settled = t.status === 'verifier' && res.status === 'auto'
+    const transfer = res.kind !== t.kind && (res.kind === 'interne' || res.kind === 'epargne')
+    if (!settled && !transfer) continue
+    changes.push({ id: t.id, kind: res.kind, category_id: res.category_id, status: res.status })
+  }
+  for (let i = 0; i < changes.length; i += 20) {
+    const batch = changes.slice(i, i + 20)
+    const results = await Promise.all(batch.map(({ id, ...fields }) => supabase.from('finance_transactions').update(fields).eq('id', id)))
+    const failed = results.find((res) => res.error)
+    if (failed) return fail('Reclassement impossible', failed.error)
+    for (const c of batch) Object.assign(transactions.value.find((t) => t.id === c.id), c)
+  }
+}
+
 async function doLoad() {
   loading.value = true
   error.value = null
@@ -134,6 +164,7 @@ async function doLoad() {
     subscriptions.value = sub.data
     holdingValues.value = hold.data
     await ensureDefaultCategories()
+    await refreshAutoClassification()
   } catch (err) {
     fail('Chargement des finances impossible', err)
   } finally {
@@ -326,7 +357,7 @@ async function importRows(parsed, { fileName } = {}) {
 
   // Classement : règles, dictionnaire, puis IA sur les dépenses restées sans catégorie
   const cats = categories.value
-  const classified = rows.map((r) => ({ row: r, result: categorize(r, { rules: rules.value, categories: cats }) }))
+  const classified = rows.map((r) => ({ row: r, result: categorize(r, { rules: rules.value, categories: cats, owner: ownerWords() }) }))
   const uncertain = classified.filter((c) => c.result.status === 'verifier' && c.result.kind === 'depense')
   const labels = [...new Set(uncertain.map((c) => c.result.label))]
   const ai = await aiCategorize(labels)
