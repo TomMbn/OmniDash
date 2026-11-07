@@ -14,14 +14,36 @@ function valueAt(values, month) {
   return best ? Number(best.value) : null
 }
 
+// Dernier montant versé connu à ce mois ou avant (les saisies sans versé sont ignorées)
+function investedAt(values, month) {
+  let best = null
+  for (const v of values) {
+    if (v.invested === null || v.invested === undefined || v.invested === '') continue
+    if (v.month <= month && (!best || v.month > best.month)) best = v
+  }
+  return best ? Number(best.invested) : null
+}
+
+// Plus-value d'un compte : gain en euros et en pourcentage du versé
+export function gainOf(value, invested) {
+  if (value === null || value === undefined || invested === null || invested === undefined) {
+    return { gain: null, gainPct: null }
+  }
+  const gain = round2(Number(value) - Number(invested))
+  const gainPct = Number(invested) > 0 ? Math.round((gain / Number(invested)) * 1000) / 10 : null
+  return { gain, gainPct }
+}
+
 export function computePatrimoine(accounts = [], holdingValues = [], today = new Date()) {
   const todayDay = typeof today === 'string' ? today : toDay(today)
   const values = holdingValues.map((v) => ({ ...v, month: monthStart(v.month) }))
-  const empty = { total: 0, previousTotal: 0, deltaPct: null, lastUpdate: null, byAccount: [], history: [] }
+  const empty = { total: 0, previousTotal: 0, deltaPct: null, lastUpdate: null, byAccount: [], history: [], investedTotal: 0, gainTotal: 0 }
   if (!values.length) {
     return {
       ...empty,
-      byAccount: accounts.filter((a) => a.kind !== 'courant').map((account) => ({ account, value: null, previous: null })),
+      byAccount: accounts
+        .filter((a) => a.kind !== 'courant')
+        .map((account) => ({ account, value: null, previous: null, invested: null, gain: null, gainPct: null })),
     }
   }
 
@@ -62,8 +84,21 @@ export function computePatrimoine(accounts = [], holdingValues = [], today = new
     .filter((a) => a.kind !== 'courant' || byAccountId.has(a.id))
     .map((account) => {
       const list = byAccountId.get(account.id) || []
-      return { account, value: valueAt(list, lastMonth), previous: valueAt(list, prevMonth) }
+      const value = valueAt(list, lastMonth)
+      const invested = investedAt(list, lastMonth)
+      return { account, value, previous: valueAt(list, prevMonth), invested, ...gainOf(value, invested) }
     })
+
+  // Totaux sur les seuls comptes dont le versé est connu
+  let investedTotal = 0
+  let gainTotal = 0
+  for (const item of byAccount) {
+    if (item.invested === null || item.value === null) continue
+    investedTotal += item.invested
+    gainTotal += item.gain
+  }
+  investedTotal = round2(investedTotal)
+  gainTotal = round2(gainTotal)
 
   // Six derniers mois jusqu'au mois courant, à partir de la première saisie
   const currentMonth = monthStart(todayDay)
@@ -75,5 +110,5 @@ export function computePatrimoine(accounts = [], holdingValues = [], today = new
     if (t !== null) history.push({ month, total: t })
   }
 
-  return { total, previousTotal, deltaPct, lastUpdate, byAccount, history }
+  return { total, previousTotal, deltaPct, lastUpdate, byAccount, history, investedTotal, gainTotal }
 }

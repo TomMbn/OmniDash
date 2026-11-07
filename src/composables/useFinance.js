@@ -14,6 +14,7 @@ import {
   suggestBudgets as suggestBudgetsFrom,
 } from '@/utils/finance/budgets'
 import { computePatrimoine } from '@/utils/finance/patrimoine'
+import { compareToPrevious, lastPeriods, spendingHistory as historyFrom } from '@/utils/finance/history'
 
 // ── État partagé ──
 
@@ -261,6 +262,17 @@ const subscriptionsTotal = computed(() =>
 const patrimoine = computed(() => computePatrimoine(accounts.value, holdingValues.value, today.value))
 
 const hasData = computed(() => transactions.value.length > 0)
+
+// Dépenses des 6 dernières périodes, la dernière étant la période en cours
+const spendingHistory = computed(() =>
+  historyFrom(transactions.value, categories.value, lastPeriods(periodFull.value, 6)),
+)
+
+// Période en cours face à la précédente, au même nombre de jours écoulés
+const spendingComparison = computed(() => {
+  const previous = previousPeriods(periodFull.value, 1)[0]
+  return compareToPrevious(transactions.value, categories.value, period.value, previous, today.value)
+})
 
 // ── Import ──
 
@@ -572,23 +584,39 @@ async function addAccount({ name, kind = 'autre' } = {}) {
   return { ok: true, account: data }
 }
 
+const toAmount = (v) => (v === '' || v === null || v === undefined || !Number.isFinite(Number(v)) ? null : Math.round(Number(v) * 100) / 100)
+
+// Colonne invested absente tant que finance_v2.sql n'a pas été exécuté
+const isMissingInvested = (err) =>
+  !!err && (err.code === 'PGRST204' || err.code === '42703' || /invested/i.test(`${err.message || ''} ${err.details || ''}`))
+
 async function saveHoldingValues(month, list = []) {
   if (!user.value?.id) return { ok: false, error: 'Connexion requise.' }
   const m = monthStart(month || localDay())
-  const payload = list
-    .filter((v) => v.accountId && v.value !== '' && v.value !== null && v.value !== undefined && Number.isFinite(Number(v.value)))
-    .map((v) => ({ user_id: user.value.id, account_id: v.accountId, month: m, value: Math.round(Number(v.value) * 100) / 100 }))
-  if (!payload.length) return { ok: true }
-  const { data, error: err } = await supabase
-    .from('finance_holding_values')
-    .upsert(payload, { onConflict: 'account_id,month' })
-    .select()
+  const rows = list.filter((v) => v.accountId && toAmount(v.value) !== null)
+  if (!rows.length) return { ok: true }
+  const withInvested = rows.some((v) => v.invested !== undefined)
+  const build = (includeInvested) =>
+    rows.map((v) => {
+      const row = { user_id: user.value.id, account_id: v.accountId, month: m, value: toAmount(v.value) }
+      if (includeInvested) row.invested = toAmount(v.invested)
+      return row
+    })
+  const upsert = (payload) =>
+    supabase.from('finance_holding_values').upsert(payload, { onConflict: 'account_id,month' }).select()
+
+  let warning = null
+  let { data, error: err } = await upsert(build(withInvested))
+  if (err && withInvested && isMissingInvested(err)) {
+    ;({ data, error: err } = await upsert(build(false)))
+    if (!err) warning = 'Le montant versé sera enregistré une fois la base mise à jour.'
+  }
   if (err) return { ok: false, error: fail('Enregistrement des valeurs impossible', err) }
   const key = (v) => `${v.account_id}|${monthStart(v.month)}`
   const map = new Map(holdingValues.value.map((v) => [key(v), v]))
   for (const v of data) map.set(key(v), v)
   holdingValues.value = [...map.values()].sort((a, b) => (a.month < b.month ? -1 : 1))
-  return { ok: true }
+  return warning ? { ok: true, warning } : { ok: true }
 }
 
 // ── Composable ──
@@ -612,6 +640,8 @@ export function useFinance() {
     subscriptionsNew,
     subscriptionsTotal,
     patrimoine,
+    spendingHistory,
+    spendingComparison,
     hasData,
     load,
     parseFile,

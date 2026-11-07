@@ -7,13 +7,13 @@
         Finance,{{ ' ' }}<br class="view-break" />
         <span class="view-title-soft">{{ headSubtitle }}</span>
       </h1>
-      <button v-if="ready && hasData" class="btn btn--dark head-import" @click="openImport()">
+      <button v-if="ready && hasData && !importOpen" class="btn btn--dark head-import" @click="openImport()">
         <Upload :size="16" stroke-width="2" />
         Importer le relevé
       </button>
     </header>
 
-    <div v-if="ready" class="segmented tabs" role="group" aria-label="Sections Finance">
+    <div v-if="ready && !importOpen" class="segmented tabs" role="group" aria-label="Sections Finance">
       <button
         v-for="option in tabOptions"
         :key="option.value"
@@ -51,167 +51,13 @@
       </p>
     </section>
 
-    <!-- ══ Vue du mois ══ -->
-    <template v-else-if="tab === 'mois'">
-      <!-- État vide -->
-      <section v-if="!hasData" class="card welcome">
-        <span class="welcome-icon" aria-hidden="true"><Wallet :size="22" stroke-width="1.75" /></span>
-        <h2 class="card-title">Commence par ton relevé</h2>
-        <p class="card-text">
-          Depuis ton espace client Caisse d'Épargne, exporte le relevé de ton compte courant
-          au format CSV ou OFX, sur les 3 derniers mois. Tes dépenses seront classées et
-          des budgets te seront proposés.
-        </p>
-        <button class="btn btn--dark" @click="openImport()">
-          <Upload :size="16" stroke-width="2" />
-          Importer le relevé
-        </button>
-      </section>
-
-      <div v-else class="month-grid">
-        <!-- Bannière du mois -->
-        <section class="banner banner--finance" aria-label="Reste à vivre">
-          <span class="orb orb--a" aria-hidden="true" />
-          <span class="orb orb--b" aria-hidden="true" />
-          <span class="chip">{{ period.label }}</span>
-          <h2 class="banner-title">
-            {{ euro(Math.abs(totals.remaining)) }}<br />
-            <span class="banner-title-soft">{{ totals.remaining >= 0 ? 'reste à vivre' : totals.budget > 0 ? 'au-delà du budget' : 'de plus que tes revenus' }}</span>
-          </h2>
-          <p class="banner-meta">
-            {{ euro(totals.spent) }} dépensés{{ totals.budget > 0 ? ` sur ${euro(totals.budget)}` : '' }}
-          </p>
-          <button class="btn btn--dark banner-import" @click="openImport()">
-            <Upload :size="16" stroke-width="2" />
-            Importer le relevé
-          </button>
-        </section>
-
-        <div class="side">
-          <div class="tiles">
-            <section class="card tile">
-              <p class="card-label">Épargné ce mois</p>
-              <p class="tile-value">{{ euro(totals.saved) }}</p>
-            </section>
-            <section class="card tile">
-              <p class="card-label">Abonnements</p>
-              <p class="tile-value">{{ euro(subscriptionsTotal) }}</p>
-              <p class="card-sub">{{ subscriptionsSummary }}</p>
-            </section>
-          </div>
-
-          <button v-if="toReview.length" class="review-alert" @click="openImport()">
-            <span>{{ toReview.length }} {{ toReview.length > 1 ? 'opérations' : 'opération' }} à vérifier</span>
-            <ChevronRight :size="18" stroke-width="2" />
-          </button>
-        </div>
-
-        <!-- Budgets -->
-        <section class="card budgets" aria-labelledby="budgets-title">
-          <div class="card-head">
-            <h2 id="budgets-title" class="card-title">Budgets</h2>
-            <button v-if="!adjusting" class="link-btn" @click="startAdjust">Ajuster</button>
-            <button v-else class="link-btn" @click="adjusting = false">Annuler</button>
-          </div>
-
-          <template v-if="!adjusting">
-            <ul v-if="visibleCategories.length" class="budget-list">
-              <li v-for="row in visibleCategories" :key="row.category?.id ?? 'sans'" class="budget-row">
-                <div class="budget-line">
-                  <span class="budget-name">{{ row.category?.name ?? 'Sans catégorie' }}</span>
-                  <span class="budget-amounts">
-                    <span :class="{ 'amount--over': row.state === 'rate' }">{{ euro(row.spent) }}</span>
-                    <template v-if="row.budget"> / {{ euro(row.budget) }}</template>
-                  </span>
-                </div>
-                <div
-                  v-if="row.budget"
-                  class="gauge"
-                  role="progressbar"
-                  :aria-valuenow="Math.round((row.ratio || 0) * 100)"
-                  aria-valuemin="0"
-                  aria-valuemax="100"
-                  :aria-label="`Budget ${row.category?.name ?? ''}`"
-                >
-                  <span class="gauge-fill" :class="`gauge-fill--${row.state}`" :style="{ width: gaugeWidth(row.ratio) }" />
-                </div>
-              </li>
-            </ul>
-            <p v-else class="card-sub">Aucune dépense classée sur cette période.</p>
-          </template>
-
-          <!-- Mode ajustement -->
-          <template v-else>
-            <ul class="adjust-list">
-              <li v-for="cat in adjustCategories" :key="cat.id" class="adjust-row">
-                <input
-                  v-model="drafts[cat.id].name"
-                  class="field-input"
-                  type="text"
-                  :aria-label="`Nom de la catégorie ${cat.name}`"
-                />
-                <div class="euro-field">
-                  <input
-                    v-model="drafts[cat.id].budget"
-                    class="field-input field-input--amount"
-                    type="number"
-                    inputmode="decimal"
-                    min="0"
-                    step="10"
-                    placeholder="Aucun"
-                    :aria-label="`Budget ${cat.name}`"
-                  />
-                  <span class="euro-suffix" aria-hidden="true">€</span>
-                </div>
-                <button class="icon-btn" :aria-label="`Archiver ${cat.name}`" @click="onArchiveCategory(cat)">
-                  <Archive :size="18" stroke-width="1.75" />
-                </button>
-              </li>
-            </ul>
-
-            <form class="add-row" @submit.prevent="onAddCategory">
-              <input v-model="newCategoryName" class="field-input" type="text" placeholder="Nouvelle catégorie" aria-label="Nouvelle catégorie" />
-              <button class="btn btn--soft" type="submit" :disabled="!newCategoryName.trim() || busy">
-                <Plus :size="16" stroke-width="2" />
-                Ajouter
-              </button>
-            </form>
-
-            <div class="adjust-actions">
-              <button class="btn btn--soft" :disabled="busy" @click="onSuggest">Proposer d'après 3 mois</button>
-              <button class="btn btn--dark" :disabled="busy" @click="onSaveBudgets">Enregistrer</button>
-            </div>
-          </template>
-        </section>
-
-        <!-- Patrimoine -->
-        <section class="card wealth" aria-labelledby="wealth-title">
-          <div class="card-head">
-            <h2 id="wealth-title" class="card-title">Patrimoine</h2>
-            <button class="link-btn" @click="tab = 'patrimoine'">Mettre à jour</button>
-          </div>
-          <template v-if="patrimoine.byAccount.length">
-            <div class="wealth-total">
-              <p class="tile-value">{{ euro(patrimoine.total) }}</p>
-              <span v-if="patrimoine.deltaPct != null" class="pill" :class="{ 'pill--down': patrimoine.deltaPct < 0 }">
-                {{ pct(patrimoine.deltaPct) }} ce mois
-              </span>
-            </div>
-            <ul class="account-list">
-              <li v-for="item in patrimoine.byAccount" :key="item.account.id" class="account-row">
-                <span>{{ item.account.name }}</span>
-                <span class="account-value">{{ euro(item.value) }}</span>
-              </li>
-            </ul>
-            <p v-if="patrimoine.lastUpdate" class="card-sub">Valeurs saisies le {{ longDate(patrimoine.lastUpdate) }}</p>
-          </template>
-          <p v-else class="card-sub">Ajoute ton PEA et tes livrets pour suivre leur valeur chaque mois.</p>
-        </section>
-      </div>
-    </template>
-
     <!-- ══ Import ══ -->
-    <div v-else-if="tab === 'import'" class="import-grid">
+    <template v-else-if="importOpen">
+    <button class="link-btn link-btn--start back-link" @click="closeImport">
+      <ChevronLeft :size="18" stroke-width="2" />
+      Retour
+    </button>
+    <div class="import-grid">
       <div class="import-side">
         <!-- Dépôt du fichier -->
         <section
@@ -347,8 +193,324 @@
         <button v-if="importResult || toReview.length" class="btn btn--dark btn--wide" @click="finishImport">Terminer</button>
       </section>
     </div>
+    </template>
 
-    <!-- ══ Patrimoine et abonnements ══ -->
+    <!-- ══ Vue du mois ══ -->
+    <template v-else-if="tab === 'mois'">
+      <!-- État vide -->
+      <section v-if="!hasData" class="card welcome">
+        <span class="welcome-icon" aria-hidden="true"><Wallet :size="22" stroke-width="1.75" /></span>
+        <h2 class="card-title">Commence par ton relevé</h2>
+        <p class="card-text">
+          Depuis ton espace client Caisse d'Épargne, exporte le relevé de ton compte courant
+          au format CSV ou OFX, sur les 3 derniers mois. Tes dépenses seront classées et
+          des budgets te seront proposés.
+        </p>
+        <button class="btn btn--dark" @click="openImport()">
+          <Upload :size="16" stroke-width="2" />
+          Importer le relevé
+        </button>
+      </section>
+
+      <div v-else class="month-grid">
+        <!-- Bannière du mois -->
+        <section class="banner banner--finance" aria-label="Reste à vivre">
+          <span class="orb orb--a" aria-hidden="true" />
+          <span class="orb orb--b" aria-hidden="true" />
+          <span class="chip">{{ period.label }}</span>
+          <h2 class="banner-title">
+            {{ euro(Math.abs(totals.remaining)) }}<br />
+            <span class="banner-title-soft">{{ totals.remaining >= 0 ? 'reste à vivre' : totals.budget > 0 ? 'au-delà du budget' : 'de plus que tes revenus' }}</span>
+          </h2>
+          <p class="banner-meta">
+            {{ euro(totals.spent) }} dépensés{{ totals.budget > 0 ? ` sur ${euro(totals.budget)}` : '' }}
+          </p>
+          <button class="btn btn--dark banner-import" @click="openImport()">
+            <Upload :size="16" stroke-width="2" />
+            Importer le relevé
+          </button>
+        </section>
+
+        <div class="side">
+          <div class="tiles">
+            <section class="card tile">
+              <p class="card-label">Épargné ce mois</p>
+              <p class="tile-value">{{ euro(totals.saved) }}</p>
+            </section>
+            <section class="card tile">
+              <p class="card-label">Abonnements</p>
+              <p class="tile-value">{{ euro(subscriptionsTotal) }}</p>
+              <p class="card-sub">{{ subscriptionsSummary }}</p>
+            </section>
+          </div>
+
+          <button v-if="toReview.length" class="review-alert" @click="openImport()">
+            <span>{{ toReview.length }} {{ toReview.length > 1 ? 'opérations' : 'opération' }} à vérifier</span>
+            <ChevronRight :size="18" stroke-width="2" />
+          </button>
+        </div>
+
+        <!-- Budgets -->
+        <section class="card budgets" aria-labelledby="budgets-title">
+          <div class="card-head">
+            <h2 id="budgets-title" class="card-title">Budgets</h2>
+            <button v-if="!adjusting" class="link-btn" @click="startAdjust">Ajuster</button>
+            <button v-else class="link-btn" @click="adjusting = false">Annuler</button>
+          </div>
+
+          <template v-if="!adjusting">
+            <ul v-if="visibleCategories.length" class="budget-list">
+              <li v-for="row in visibleCategories" :key="row.category?.id ?? 'sans'" class="budget-row">
+                <div class="budget-line">
+                  <span class="budget-name">{{ row.category?.name ?? 'Sans catégorie' }}</span>
+                  <span class="budget-amounts">
+                    <span :class="{ 'amount--over': row.state === 'rate' }">{{ euro(row.spent) }}</span>
+                    <template v-if="row.budget"> / {{ euro(row.budget) }}</template>
+                  </span>
+                </div>
+                <div
+                  v-if="row.budget"
+                  class="gauge"
+                  role="progressbar"
+                  :aria-valuenow="Math.round((row.ratio || 0) * 100)"
+                  aria-valuemin="0"
+                  aria-valuemax="100"
+                  :aria-label="`Budget ${row.category?.name ?? ''}`"
+                >
+                  <span class="gauge-fill" :class="`gauge-fill--${row.state}`" :style="{ width: gaugeWidth(row.ratio) }" />
+                </div>
+              </li>
+            </ul>
+            <p v-else class="card-sub">Aucune dépense classée sur cette période.</p>
+          </template>
+
+          <!-- Mode ajustement -->
+          <template v-else>
+            <ul class="adjust-list">
+              <li v-for="cat in adjustCategories" :key="cat.id" class="adjust-row">
+                <input
+                  v-model="drafts[cat.id].name"
+                  class="field-input"
+                  type="text"
+                  :aria-label="`Nom de la catégorie ${cat.name}`"
+                />
+                <div class="euro-field">
+                  <input
+                    v-model="drafts[cat.id].budget"
+                    class="field-input field-input--amount"
+                    type="number"
+                    inputmode="decimal"
+                    min="0"
+                    step="10"
+                    placeholder="Aucun"
+                    :aria-label="`Budget ${cat.name}`"
+                  />
+                  <span class="euro-suffix" aria-hidden="true">€</span>
+                </div>
+                <button class="icon-btn" :aria-label="`Archiver ${cat.name}`" @click="onArchiveCategory(cat)">
+                  <Archive :size="18" stroke-width="1.75" />
+                </button>
+              </li>
+            </ul>
+
+            <form class="add-row" @submit.prevent="onAddCategory">
+              <input v-model="newCategoryName" class="field-input" type="text" placeholder="Nouvelle catégorie" aria-label="Nouvelle catégorie" />
+              <button class="btn btn--soft" type="submit" :disabled="!newCategoryName.trim() || busy">
+                <Plus :size="16" stroke-width="2" />
+                Ajouter
+              </button>
+            </form>
+
+            <div class="adjust-actions">
+              <button class="btn btn--soft" :disabled="busy" @click="onSuggest">Proposer d'après 3 mois</button>
+              <button class="btn btn--dark" :disabled="busy" @click="onSaveBudgets">Enregistrer</button>
+            </div>
+          </template>
+        </section>
+
+        <!-- Dépenses sur 6 mois -->
+        <section class="card history" aria-labelledby="history-title">
+          <div class="card-head card-head--baseline">
+            <h2 id="history-title" class="card-title">Dépenses sur 6 mois</h2>
+            <span v-if="history.average != null" class="card-sub">moyenne {{ euro0(history.average) }}</span>
+          </div>
+
+          <template v-if="history.months.length >= 2">
+            <div class="bars">
+              <div
+                v-for="month in history.months"
+                :key="month.key"
+                class="bar-col"
+                :class="{ 'bar-col--current': month.current }"
+              >
+                <div class="bar-track">
+                  <div
+                    class="bar"
+                    role="img"
+                    :aria-label="`${month.name}, ${euro0(month.total)}`"
+                    :style="{ height: barHeight(month) }"
+                  >
+                    <span
+                      v-for="segment in segmentsOf(month)"
+                      :key="segment.id"
+                      class="bar-seg"
+                      :style="{ flexGrow: segment.amount, background: segment.color }"
+                    />
+                  </div>
+                </div>
+                <span class="bar-label">{{ month.label }}</span>
+              </div>
+            </div>
+
+            <ul class="legend">
+              <li v-for="serie in history.series" :key="serie.id" class="legend-item">
+                <span class="legend-dot" :style="{ background: `var(${serie.colorToken})` }" aria-hidden="true" />
+                {{ serie.name }}
+              </li>
+            </ul>
+
+            <p v-if="currentHistoryMonth" class="card-sub">{{ capitalize(currentHistoryMonth.name) }} en cours, barre pâle jusqu'à la fin de la période.</p>
+
+            <div v-if="spendingComparison.length && previousHistoryMonth" class="compare">
+              <p class="card-label">Face à {{ previousHistoryMonth.name }}, à date égale</p>
+              <ul class="compare-list">
+                <li v-for="row in spendingComparison" :key="row.category.id" class="compare-row">
+                  <span>{{ row.category.name }}</span>
+                  <span class="compare-delta" :class="row.delta > 0 ? 'compare-delta--up' : 'compare-delta--down'">{{ signedEuro0(row.delta) }}</span>
+                </li>
+              </ul>
+            </div>
+          </template>
+          <p v-else class="card-sub">L'historique apparaîtra après deux mois de relevés.</p>
+        </section>
+
+        <!-- Patrimoine -->
+        <section class="card wealth" aria-labelledby="wealth-title">
+          <div class="card-head">
+            <h2 id="wealth-title" class="card-title">Patrimoine</h2>
+            <button class="link-btn" @click="tab = 'patrimoine'">Mettre à jour</button>
+          </div>
+          <template v-if="patrimoine.byAccount.length">
+            <div class="wealth-total">
+              <p class="tile-value">{{ euro(patrimoine.total) }}</p>
+              <span v-if="patrimoine.deltaPct != null" class="pill" :class="{ 'pill--down': patrimoine.deltaPct < 0 }">
+                {{ pct(patrimoine.deltaPct) }} ce mois
+              </span>
+            </div>
+            <ul class="account-list">
+              <li v-for="item in patrimoine.byAccount" :key="item.account.id" class="account-row">
+                <span>{{ item.account.name }}</span>
+                <span class="account-value">{{ euro(item.value) }}</span>
+              </li>
+            </ul>
+            <p v-if="patrimoine.lastUpdate" class="card-sub">Valeurs saisies le {{ longDate(patrimoine.lastUpdate) }}</p>
+          </template>
+          <p v-else class="card-sub">Ajoute ton PEA et tes livrets pour suivre leur valeur chaque mois.</p>
+        </section>
+      </div>
+    </template>
+
+    <!-- ══ Abonnements ══ -->
+    <div v-else-if="tab === 'abonnements'" class="subs-grid">
+      <!-- Calendrier des prélèvements -->
+      <section class="card calendar" aria-labelledby="cal-title">
+        <div class="cal-head">
+          <button class="icon-btn icon-btn--plain" aria-label="Mois précédent" @click="moveCalendar(-1)">
+            <ChevronLeft :size="20" stroke-width="2" />
+          </button>
+          <h2 id="cal-title" class="card-title cal-title" aria-live="polite">{{ calendarTitle }}</h2>
+          <button class="icon-btn icon-btn--plain" aria-label="Mois suivant" @click="moveCalendar(1)">
+            <ChevronRight :size="20" stroke-width="2" />
+          </button>
+        </div>
+
+        <div class="cal-grid">
+          <span v-for="(letter, index) in weekLetters" :key="`l${index}`" class="cal-weekday" aria-hidden="true">{{ letter }}</span>
+          <template v-for="cell in calendarCells" :key="cell.key">
+            <span v-if="cell.empty" class="cal-cell cal-cell--empty" aria-hidden="true" />
+            <button
+              v-else-if="cell.subs.length"
+              class="cal-cell cal-cell--subs"
+              :class="{ 'cal-cell--past': cell.past, 'cal-cell--today': cell.today }"
+              :aria-label="`${longDate(cell.iso)} : ${cell.subs.map((sub) => sub.name).join(', ')}`"
+              @click="onDayClick(cell)"
+            >
+              <span class="cal-num">{{ cell.day }}</span>
+              <span class="cal-logos">
+                <ServiceLogo
+                  v-for="sub in cell.subs.slice(0, cell.subs.length > 2 ? 1 : 2)"
+                  :key="sub.id"
+                  :name="sub.name"
+                  :pattern="sub.pattern"
+                  :size="calendarLogoSize"
+                />
+                <span v-if="cell.subs.length > 2" class="cal-more">+{{ cell.subs.length - 1 }}</span>
+              </span>
+            </button>
+            <span
+              v-else
+              class="cal-cell"
+              :class="{ 'cal-cell--past': cell.past, 'cal-cell--today': cell.today }"
+            >
+              <span class="cal-num">{{ cell.day }}</span>
+            </span>
+          </template>
+        </div>
+      </section>
+
+      <div class="subs-side">
+        <!-- Prochains prélèvements -->
+        <section class="card upcoming" aria-labelledby="upcoming-title">
+          <h2 id="upcoming-title" class="card-title">Prochains prélèvements</h2>
+          <template v-if="upcoming.length">
+            <p class="upcoming-total"><strong>{{ euro(upcomingTotal) }}</strong> {{ payLabel }}</p>
+            <ul class="sub-list">
+              <li
+                v-for="item in upcoming"
+                :id="`sub-${item.sub.id}`"
+                :key="item.sub.id"
+                class="sub-row"
+                :class="{ 'sub-row--focus': highlighted.includes(item.sub.id) }"
+              >
+                <ServiceLogo :name="item.sub.name" :pattern="item.sub.pattern" :size="36" />
+                <div class="sub-text">
+                  <p class="sub-name">{{ item.sub.name }}</p>
+                  <p class="card-sub">{{ item.next ? `${longDate(item.next)}, ${relativeDay(item.next)}` : 'Prélèvement mensuel' }}</p>
+                </div>
+                <div class="sub-amount">
+                  <p>{{ euro(item.sub.amount) }}</p>
+                  <p v-if="item.sub.increased" class="sub-up">hausse de {{ euro(increaseOf(item.sub)) }}</p>
+                </div>
+              </li>
+            </ul>
+            <div class="debited">
+              <span>Déjà prélevés ce mois</span>
+              <span class="debited-value">{{ euro(debitedTotal) }}</span>
+            </div>
+          </template>
+          <p v-else class="card-sub">
+            {{ subscriptionsNew.length ? 'Confirme les abonnements détectés pour les voir ici.' : "Aucun abonnement détecté pour l'instant. Ils apparaissent après deux mois de prélèvements." }}
+          </p>
+        </section>
+
+        <!-- Abonnements détectés -->
+        <div v-for="sub in subscriptionsNew" :key="sub.id" class="sub-new">
+          <div class="sub-new-main">
+            <ServiceLogo :name="sub.name" :pattern="sub.pattern" :size="36" />
+            <div class="sub-new-text">
+              <p class="sub-name">Nouveau : {{ sub.name }}</p>
+              <p class="card-sub">{{ euro(sub.amount) }}{{ sub.day ? `, prélevé le ${sub.day} du mois` : '' }}</p>
+            </div>
+          </div>
+          <div class="sub-new-actions">
+            <button class="btn btn--light" :disabled="busy" @click="onIgnoreSub(sub)">Ignorer</button>
+            <button class="btn btn--dark" :disabled="busy" @click="onConfirmSub(sub)">Confirmer</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ Patrimoine ══ -->
     <div v-else class="wealth-grid">
       <section class="card chart-card" aria-labelledby="chart-title">
         <p class="card-label" id="chart-title">Patrimoine, 6 derniers mois</p>
@@ -365,26 +527,66 @@
         <p v-else class="card-sub">La courbe apparaîtra après deux mois de valeurs saisies.</p>
       </section>
 
+      <section class="card gains" aria-labelledby="gains-title">
+        <h2 id="gains-title" class="card-title">Investi et plus-value</h2>
+        <ul v-if="gainRows.length" class="gain-list">
+          <li v-for="item in gainRows" :key="item.account.id" class="gain-row">
+            <div class="gain-line">
+              <div class="gain-text">
+                <p class="sub-name">{{ item.account.name }}</p>
+                <p v-if="item.invested != null" class="card-sub">{{ euro(item.invested) }} versés</p>
+              </div>
+              <span class="account-value">{{ euro(item.value) }}</span>
+            </div>
+            <p v-if="item.gain != null" class="gain-figures" :class="item.gain >= 0 ? 'gain--up' : 'gain--down'">
+              <span>{{ signedEuro0(item.gain) }}</span>
+              <span v-if="item.account.kind === 'livret'">intérêts</span>
+              <span v-else-if="item.gainPct != null">{{ signedPct(item.gainPct) }}</span>
+            </p>
+          </li>
+        </ul>
+        <p v-else class="card-sub">Saisis la valeur de tes placements et le montant versé pour suivre ta plus-value.</p>
+      </section>
+
       <section class="card values" aria-labelledby="values-title">
         <h2 id="values-title" class="card-title">Valeurs de {{ currentMonthName }}</h2>
-        <ul v-if="holdingAccounts.length" class="values-list">
-          <li v-for="account in holdingAccounts" :key="account.id" class="field-group">
-            <label class="field-label" :for="`value-${account.id}`">{{ account.name }}</label>
+        <div v-if="holdingAccounts.length" class="values-table">
+          <div class="values-head" aria-hidden="true">
+            <span class="values-head-spacer" />
+            <span>Valeur</span>
+            <span>Versé</span>
+          </div>
+          <div v-for="account in holdingAccounts" :key="account.id" class="values-row">
+            <div class="values-name">
+              <p class="sub-name">{{ account.name }}</p>
+              <p class="card-sub">{{ previousValueText(account.id) }}</p>
+            </div>
             <div class="euro-field">
               <input
-                :id="`value-${account.id}`"
                 v-model="valueDrafts[account.id]"
                 class="field-input field-input--amount"
                 type="number"
                 inputmode="decimal"
                 min="0"
                 step="any"
+                :aria-label="`Valeur ${account.name}`"
               />
               <span class="euro-suffix" aria-hidden="true">€</span>
             </div>
-            <p class="card-sub">{{ previousValueText(account.id) }}</p>
-          </li>
-        </ul>
+            <div class="euro-field">
+              <input
+                v-model="investedDrafts[account.id]"
+                class="field-input field-input--amount"
+                type="number"
+                inputmode="decimal"
+                min="0"
+                step="any"
+                :aria-label="`Montant versé ${account.name}`"
+              />
+              <span class="euro-suffix" aria-hidden="true">€</span>
+            </div>
+          </div>
+        </div>
         <p v-else class="card-sub">Aucun placement pour l'instant.</p>
 
         <form v-if="addingAccount" class="add-account" @submit.prevent="onAddAccount">
@@ -415,38 +617,6 @@
         </button>
       </section>
 
-      <section class="card subs" aria-labelledby="subs-title">
-        <div class="card-head">
-          <h2 id="subs-title" class="card-title">Abonnements</h2>
-          <span class="subs-total">{{ euro(subscriptionsTotal) }} par mois</span>
-        </div>
-
-        <div v-for="sub in subscriptionsNew" :key="sub.id" class="sub-new">
-          <div class="sub-new-text">
-            <p class="sub-name">Nouveau : {{ sub.name }}</p>
-            <p class="card-sub">{{ euro(sub.amount) }}{{ sub.day ? `, prélevé le ${sub.day} du mois` : '' }}</p>
-          </div>
-          <div class="sub-new-actions">
-            <button class="btn btn--light" :disabled="busy" @click="onIgnoreSub(sub)">Ignorer</button>
-            <button class="btn btn--dark" :disabled="busy" @click="onConfirmSub(sub)">Confirmer</button>
-          </div>
-        </div>
-
-        <ul v-if="subscriptionsActive.length" class="sub-list">
-          <li v-for="sub in subscriptionsActive" :key="sub.id" class="sub-row">
-            <div class="sub-text">
-              <p class="sub-name">{{ sub.name }}</p>
-              <p class="card-sub">{{ sub.day ? `Prélevé le ${sub.day} du mois` : 'Prélèvement mensuel' }}</p>
-            </div>
-            <div class="sub-amount">
-              <p>{{ euro(sub.amount) }}</p>
-              <p v-if="sub.increased" class="sub-up">hausse de {{ euro(increaseOf(sub)) }}</p>
-            </div>
-          </li>
-        </ul>
-        <p v-else-if="!subscriptionsNew.length" class="card-sub">Aucun abonnement détecté pour l'instant. Ils apparaissent après deux mois de prélèvements.</p>
-      </section>
-
       <p class="disclaimer">Suivi chiffré seulement, sans conseil d'investissement.</p>
     </div>
 
@@ -455,18 +625,20 @@
 </template>
 
 <script setup>
-import { ref, reactive, computed, watch, onMounted } from 'vue'
+import { ref, reactive, computed, watch, onMounted, onBeforeUnmount, nextTick } from 'vue'
 import { useFinance } from '@/composables/useFinance'
 import { useConfirm } from '@/composables/useConfirm'
 import { smoothPath } from '@/composables/useChartPath'
-import { Upload, FileUp, ChevronRight, Plus, Archive, Wallet } from 'lucide-vue-next'
+import { addDays, diffDays, toDay } from '@/utils/finance/period'
+import ServiceLogo from '@/components/finance/ServiceLogo.vue'
+import { Upload, FileUp, ChevronLeft, ChevronRight, Plus, Archive, Wallet } from 'lucide-vue-next'
 
 const {
   loading, error, ready, hasData,
   accounts, categories, holdingValues,
   period, totals, byCategory, toReview,
   subscriptionsActive, subscriptionsNew, subscriptionsTotal,
-  patrimoine,
+  patrimoine, spendingHistory, spendingComparison,
   load, parseFile, importRows, classify, linkRefund, candidateExpensesFor,
   suggestBudgets, applyBudgets,
   addCategory, renameCategory, archiveCategory,
@@ -477,7 +649,7 @@ const { askConfirm } = useConfirm()
 
 const tabOptions = [
   { value: 'mois', label: 'Mois' },
-  { value: 'import', label: 'Import' },
+  { value: 'abonnements', label: 'Abonnements' },
   { value: 'patrimoine', label: 'Patrimoine' }
 ]
 const tab = ref('mois')
@@ -486,6 +658,11 @@ const tab = ref('mois')
 const NBSP = ' '
 const euro = (value) => `${Number(value || 0).toLocaleString('fr-FR', { maximumFractionDigits: 2 })}${NBSP}€`
 const signedEuro = (value) => (value > 0 ? `+${euro(value)}` : euro(value))
+const MINUS = '\u2212'
+const euro0 = (value) => `${Math.round(Number(value) || 0).toLocaleString('fr-FR')}${NBSP}€`
+const signedEuro0 = (value) => `${value > 0 ? '+' : value < 0 ? MINUS : ''}${euro0(Math.abs(value))}`
+const signedPct = (value) => `${value > 0 ? '+' : value < 0 ? MINUS : ''}${Math.abs(value).toLocaleString('fr-FR', { minimumFractionDigits: 1, maximumFractionDigits: 1 })}${NBSP}%`
+const capitalize = (text) => (text ? text.charAt(0).toUpperCase() + text.slice(1) : '')
 const pct = (value) => `${value >= 0 ? '+' : ''}${Number(value).toLocaleString('fr-FR', { minimumFractionDigits: 1, maximumFractionDigits: 1 })}${NBSP}%`
 
 // Date locale sans décalage de fuseau
@@ -631,7 +808,14 @@ const fileName = ref('')
 const importing = ref(false)
 const importResult = ref(null)
 
-const openImport = () => { tab.value = 'import' }
+const importOpen = ref(false)
+const openImport = () => { importOpen.value = true }
+
+// Retour sans import en cours : on repart d'un dépôt vierge la prochaine fois
+const closeImport = () => {
+  if (importResult.value) resetImport()
+  importOpen.value = false
+}
 
 const handleFile = async (file) => {
   if (!file) return
@@ -684,6 +868,7 @@ const onImport = async () => {
 
 const finishImport = () => {
   resetImport()
+  importOpen.value = false
   tab.value = 'mois'
 }
 
@@ -800,6 +985,7 @@ const accountKinds = [
 
 const pad = (n) => String(n).padStart(2, '0')
 const today = new Date()
+const todayIso = toDay(today)
 const currentMonth = `${today.getFullYear()}-${pad(today.getMonth() + 1)}-01`
 const currentMonthName = today.toLocaleDateString('fr-FR', { month: 'long' })
 
@@ -819,23 +1005,47 @@ watch([holdingAccounts, holdingValues], () => {
   }
 }, { immediate: true })
 
+const investedDrafts = reactive({})
+const lastInvested = (accountId) => {
+  const known = holdingValues.value
+    .filter((v) => v.account_id === accountId && v.invested != null && String(v.month).slice(0, 10) <= currentMonth)
+    .sort((a, b) => String(b.month).localeCompare(String(a.month)))[0]
+  return known ? known.invested : ''
+}
+
+watch([holdingAccounts, holdingValues], () => {
+  for (const account of holdingAccounts.value) {
+    if (investedDrafts[account.id] === undefined) investedDrafts[account.id] = lastInvested(account.id)
+  }
+}, { immediate: true })
+
 const previousValueText = (accountId) => {
   const previous = holdingValues.value
     .filter((v) => v.account_id === accountId && String(v.month).slice(0, 10) < currentMonth)
     .sort((a, b) => String(b.month).localeCompare(String(a.month)))[0]
   if (!previous) return 'Première valeur'
-  return `${euro(previous.value)} en ${toDate(previous.month).toLocaleDateString('fr-FR', { month: 'long' })}`
+  return `${euro(previous.value)} en ${toDate(previous.month).toLocaleDateString('fr-FR', { month: 'short' })}`
 }
+
+const gainRows = computed(() => patrimoine.value.byAccount.filter((item) => item.value != null))
 
 const onSaveValues = async () => {
   const list = holdingAccounts.value
     .filter((a) => valueDrafts[a.id] !== '' && valueDrafts[a.id] != null)
-    .map((a) => ({ accountId: a.id, value: Number(valueDrafts[a.id]) }))
+    .map((a) => {
+      const invested = investedDrafts[a.id]
+      return {
+        accountId: a.id,
+        value: Number(valueDrafts[a.id]),
+        invested: invested === '' || invested == null ? null : Number(invested)
+      }
+    })
   if (!list.length) {
     showNotice('Saisis au moins une valeur.', 'error')
     return
   }
-  await run(() => saveHoldingValues(currentMonth, list), 'Valeurs enregistrées.')
+  const result = await run(() => saveHoldingValues(currentMonth, list))
+  if (result) showNotice(result.warning || 'Valeurs enregistrées.', result.warning ? 'warn' : 'good')
 }
 
 const addingAccount = ref(false)
@@ -864,7 +1074,131 @@ const increaseOf = (sub) => Math.max(0, Number(sub.amount || 0) - Number(sub.pre
 const onConfirmSub = (sub) => run(() => confirmSubscription(sub.id), 'Abonnement confirmé.')
 const onIgnoreSub = (sub) => run(() => ignoreSubscription(sub.id))
 
+// ── Dépenses sur 6 mois ──
+const history = computed(() => spendingHistory.value)
+const historyMax = computed(() => Math.max(0, ...history.value.months.map((m) => m.total)))
+const barHeight = (month) => (historyMax.value > 0 ? `${(month.total / historyMax.value) * 100}%` : '0%')
+const segmentsOf = (month) =>
+  history.value.series
+    .filter((serie) => month.byCategory[serie.id] > 0)
+    .map((serie) => ({ id: serie.id, amount: month.byCategory[serie.id], color: `var(${serie.colorToken})` }))
+const currentHistoryMonth = computed(() => history.value.months.find((m) => m.current) ?? null)
+const previousHistoryMonth = computed(() => {
+  const months = history.value.months
+  return months.length >= 2 && months.at(-1).current ? months.at(-2) : null
+})
+
+// ── Calendrier des abonnements ──
+const weekLetters = ['L', 'M', 'M', 'J', 'V', 'S', 'D']
+const calendar = ref({ y: today.getFullYear(), m: today.getMonth() })
+
+const moveCalendar = (step) => {
+  const d = new Date(calendar.value.y, calendar.value.m + step, 1)
+  calendar.value = { y: d.getFullYear(), m: d.getMonth() }
+}
+
+const calendarTitle = computed(() =>
+  capitalize(new Date(calendar.value.y, calendar.value.m, 1).toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' }))
+)
+
+const daysIn = (y, m) => new Date(y, m + 1, 0).getDate()
+// Jour du prélèvement dans un mois donné : le dernier jour si le mois est plus court
+const debitDay = (sub, y, m) => Math.min(Number(sub.day), daysIn(y, m))
+const datedSubs = computed(() => subscriptionsActive.value.filter((sub) => Number(sub.day) > 0))
+
+const calendarCells = computed(() => {
+  const { y, m } = calendar.value
+  const offset = (new Date(y, m, 1).getDay() + 6) % 7
+  const cells = []
+  for (let i = 0; i < offset; i++) cells.push({ key: `vide-${i}`, empty: true })
+  for (let day = 1; day <= daysIn(y, m); day++) {
+    const iso = toDay(new Date(y, m, day))
+    cells.push({
+      key: iso,
+      iso,
+      day,
+      past: iso < todayIso,
+      today: iso === todayIso,
+      subs: datedSubs.value.filter((sub) => debitDay(sub, y, m) === day)
+    })
+  }
+  return cells
+})
+
+// Logos plus grands sur desktop, où les cases sont plus hautes
+const wide = ref(false)
+let wideQuery = null
+const syncWide = () => { wide.value = !!wideQuery?.matches }
+const calendarLogoSize = computed(() => (wide.value ? 28 : 20))
+
+// Mise en avant des abonnements d'un jour dans la liste
+const highlighted = ref([])
+let highlightTimer = null
+const onDayClick = async (cell) => {
+  highlighted.value = cell.subs.map((sub) => sub.id)
+  clearTimeout(highlightTimer)
+  highlightTimer = setTimeout(() => { highlighted.value = [] }, 2400)
+  await nextTick()
+  const target = document.getElementById(`sub-${cell.subs[0]?.id}`)
+  const reduce = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
+  target?.scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'nearest' })
+}
+
+// Prochaine date de prélèvement, aujourd'hui compris
+const nextDateOf = (sub) => {
+  if (!(Number(sub.day) > 0)) return null
+  const y = today.getFullYear()
+  const m = today.getMonth()
+  const thisMonth = toDay(new Date(y, m, debitDay(sub, y, m)))
+  if (thisMonth >= todayIso) return thisMonth
+  const next = new Date(y, m + 1, 1)
+  return toDay(new Date(next.getFullYear(), next.getMonth(), debitDay(sub, next.getFullYear(), next.getMonth())))
+}
+
+const upcoming = computed(() =>
+  subscriptionsActive.value
+    .map((sub) => ({ sub, next: nextDateOf(sub) }))
+    .sort((a, b) => {
+      if (!a.next || !b.next) return a.next ? -1 : b.next ? 1 : 0
+      return a.next < b.next ? -1 : a.next > b.next ? 1 : 0
+    })
+)
+
+const round2 = (n) => Math.round(n * 100) / 100
+
+// Somme des prélèvements entre demain et la fin de la période
+const upcomingTotal = computed(() =>
+  round2(upcoming.value
+    .filter((item) => item.next && item.next > todayIso && item.next <= period.value.end)
+    .reduce((sum, item) => sum + Number(item.sub.amount || 0), 0))
+)
+
+const debitedTotal = computed(() =>
+  round2(datedSubs.value
+    .filter((sub) => debitDay(sub, today.getFullYear(), today.getMonth()) < today.getDate())
+    .reduce((sum, sub) => sum + Number(sub.amount || 0), 0))
+)
+
+const payLabel = computed(() =>
+  period.value.basedOnIncome ? `d'ici ta paie du ${longDate(addDays(period.value.end, 1))}` : "d'ici la fin du mois"
+)
+
+const relativeDay = (iso) => {
+  const days = diffDays(todayIso, iso)
+  if (days === 0) return "aujourd'hui"
+  if (days === 1) return 'demain'
+  return `dans ${days} jours`
+}
+
+onBeforeUnmount(() => {
+  clearTimeout(highlightTimer)
+  wideQuery?.removeEventListener?.('change', syncWide)
+})
+
 onMounted(async () => {
+  wideQuery = window.matchMedia?.('(min-width: 1100px)') ?? null
+  syncWide()
+  wideQuery?.addEventListener?.('change', syncWide)
   try {
     await load()
   } finally {
@@ -935,6 +1269,7 @@ onMounted(async () => {
 }
 
 .link-btn--start { align-self: flex-start; }
+.back-link { margin-left: calc(-1 * var(--space-1)); }
 
 .icon-btn {
   display: flex;
@@ -949,6 +1284,8 @@ onMounted(async () => {
   color: var(--text-secondary);
   cursor: pointer;
 }
+
+.icon-btn--plain { background: none; color: var(--text-primary); }
 
 /* ── Messages ── */
 .notice {
@@ -971,6 +1308,7 @@ onMounted(async () => {
 
 .notice--good  { background: var(--status-success-dim); color: var(--status-success); }
 .notice--error { background: var(--status-error-dim);   color: var(--status-error); }
+.notice--warn  { background: var(--status-warning-dim); color: var(--status-warning); }
 
 /* ── Sélecteur ── */
 .segmented {
@@ -1082,6 +1420,8 @@ onMounted(async () => {
   gap: var(--space-3);
 }
 
+.card-head--baseline { align-items: baseline; flex-wrap: wrap; }
+
 .card-title {
   font-size: var(--text-lg);
   font-weight: 600;
@@ -1145,6 +1485,7 @@ onMounted(async () => {
     "banner"
     "side"
     "budgets"
+    "history"
     "wealth";
   gap: var(--space-3);
 }
@@ -1190,8 +1531,7 @@ onMounted(async () => {
 .budget-list,
 .account-list,
 .adjust-list,
-.sub-list,
-.values-list {
+.sub-list {
   display: flex;
   flex-direction: column;
   list-style: none;
@@ -1300,6 +1640,109 @@ onMounted(async () => {
   font-weight: 600;
   font-variant-numeric: tabular-nums;
 }
+
+/* ── Dépenses sur 6 mois ── */
+.history { grid-area: history; gap: var(--space-3); }
+
+.bars {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: var(--space-2);
+  margin-top: var(--space-2);
+}
+
+.bar-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+.bar-track {
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  width: 100%;
+  height: 150px;
+}
+
+.bar {
+  display: flex;
+  flex-direction: column-reverse;
+  gap: 2px;
+  width: 100%;
+  max-width: 44px;
+}
+
+.bar-seg {
+  flex-basis: 0;
+  min-height: 4px;
+  border-radius: 4px;
+}
+
+.bar-col--current .bar { opacity: 0.55; }
+
+.bar-label {
+  font-size: var(--text-2xs);
+  font-weight: 500;
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+
+.bar-col--current .bar-label { color: var(--text-primary); font-weight: 600; }
+
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2) var(--space-4);
+  list-style: none;
+}
+
+.legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: var(--text-xs);
+  font-weight: 500;
+}
+
+.legend-dot {
+  width: 10px;
+  height: 10px;
+  flex-shrink: 0;
+  border-radius: 50%;
+}
+
+.compare {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--border-subtle);
+}
+
+.compare-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  list-style: none;
+}
+
+.compare-row {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-3);
+  font-size: var(--text-sm);
+}
+
+.compare-delta {
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.compare-delta--up   { color: var(--status-error); }
+.compare-delta--down { color: var(--status-success); }
 
 /* ── Champs ── */
 .field-group {
@@ -1592,15 +2035,15 @@ onMounted(async () => {
   grid-template-columns: minmax(0, 1fr);
   grid-template-areas:
     "chart"
+    "gains"
     "values"
-    "subs"
     "note";
   gap: var(--space-3);
 }
 
 .chart-card { grid-area: chart; }
+.gains { grid-area: gains; gap: var(--space-3); }
 .values { grid-area: values; gap: var(--space-3); }
-.subs { grid-area: subs; gap: var(--space-3); }
 .disclaimer {
   grid-area: note;
   font-size: var(--text-2xs);
@@ -1632,18 +2075,68 @@ onMounted(async () => {
   color: var(--text-secondary);
 }
 
-.values-list { gap: var(--space-3); }
+.gain-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  list-style: none;
+}
+
+.gain-row {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.gain-line {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-3);
+  font-size: var(--text-sm);
+}
+
+.gain-text { min-width: 0; }
+
+.gain-figures {
+  display: flex;
+  gap: var(--space-2);
+  font-size: var(--text-xs);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.gain--up   { color: var(--status-success); }
+.gain--down { color: var(--status-error); }
+
+.values-table {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+/* Mobile : nom sur toute la largeur, les deux champs côte à côte */
+.values-head,
+.values-row {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-2);
+}
+
+.values-head {
+  font-size: var(--text-2xs);
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.values-head > span:not(.values-head-spacer) { text-align: right; padding-right: var(--space-3); }
+.values-head-spacer { display: none; }
+.values-name { grid-column: 1 / -1; min-width: 0; }
 
 .add-account {
   display: flex;
   flex-direction: column;
   gap: var(--space-2);
-}
-
-.subs-total {
-  font-size: var(--text-sm);
-  font-weight: 600;
-  font-variant-numeric: tabular-nums;
 }
 
 .sub-new {
@@ -1691,6 +2184,150 @@ onMounted(async () => {
   font-weight: 500;
   color: var(--status-warning);
 }
+
+/* ── Abonnements ── */
+.subs-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-3);
+}
+
+.subs-side {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  min-width: 0;
+}
+
+.cal-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
+.cal-title { text-align: center; }
+
+.cal-grid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 4px;
+}
+
+.cal-weekday {
+  padding: var(--space-1) 0;
+  font-size: var(--text-2xs);
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-align: center;
+}
+
+.cal-cell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 2px;
+  min-width: 0;
+  min-height: 52px;
+  padding: 4px 2px;
+  border: none;
+  border-radius: var(--radius-md);
+  background: none;
+  font-family: var(--font-sans);
+  color: var(--text-primary);
+}
+
+.cal-cell--empty { min-height: 0; }
+
+.cal-cell--subs {
+  background: var(--bg-overlay);
+  cursor: pointer;
+}
+
+.cal-cell--subs:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.cal-cell--past { opacity: 0.45; }
+.cal-cell--today { box-shadow: inset 0 0 0 1.5px var(--text-primary); }
+
+.cal-num {
+  font-size: var(--text-2xs);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.cal-logos {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Logos qui se chevauchent un peu pour tenir dans la case */
+.cal-logos > * + * { margin-left: -6px; }
+
+.cal-more {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 3px;
+  border-radius: var(--radius-pill);
+  background: var(--bg-raised);
+  font-size: var(--text-2xs);
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.upcoming { gap: var(--space-3); }
+.upcoming .sub-list { gap: var(--space-1); }
+
+.upcoming-total {
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+}
+
+.upcoming-total strong {
+  font-size: var(--text-lg);
+  font-weight: 600;
+  color: var(--module-finance);
+  font-variant-numeric: tabular-nums;
+}
+
+.sub-row {
+  align-items: center;
+  margin: 0 calc(-1 * var(--space-2));
+  padding: var(--space-2);
+  border-radius: var(--radius-md);
+  transition: background var(--dur-fast) var(--ease-out);
+}
+
+.sub-row .sub-text { flex: 1; }
+.sub-row--focus { background: var(--module-finance-dim); }
+
+.debited {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--border-subtle);
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+}
+
+.debited-value {
+  font-weight: 600;
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+}
+
+.sub-new-main {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-width: 0;
+}
+
+.sub-new-text { min-width: 0; }
 
 /* ── Squelettes ── */
 @keyframes shimmer {
@@ -1747,6 +2384,18 @@ onMounted(async () => {
   }
 
   .sub-new-actions .btn { flex: none; }
+
+  .values-head,
+  .values-row {
+    grid-template-columns: minmax(0, 1fr) 140px 140px;
+    align-items: center;
+  }
+
+  .values-head-spacer { display: block; }
+  .values-name { grid-column: auto; }
+
+  .bars { gap: var(--space-4); }
+  .bar-track { height: 180px; }
 }
 
 @media (min-width: 1100px) {
@@ -1756,7 +2405,8 @@ onMounted(async () => {
     grid-template-columns: minmax(0, 1fr) 420px;
     grid-template-areas:
       "banner  side"
-      "budgets wealth";
+      "budgets wealth"
+      "history wealth";
     align-items: start;
     gap: var(--space-4);
   }
@@ -1772,7 +2422,8 @@ onMounted(async () => {
   .orb--b { top: 120px; right: 10px; width: 110px; height: 110px; }
 
   .card-title { font-size: var(--text-xl); }
-  .budgets, .wealth { padding: var(--space-6); }
+  .budgets, .wealth, .history { padding: var(--space-6); }
+  .bar-track { height: 200px; }
 
   .import-grid {
     grid-template-columns: 420px minmax(0, 1fr);
@@ -1787,13 +2438,27 @@ onMounted(async () => {
     grid-template-columns: minmax(0, 1fr) 420px;
     grid-template-areas:
       "chart  values"
-      "subs   values"
+      "gains  values"
       "note   note";
     align-items: start;
     gap: var(--space-4);
   }
 
-  .chart-card, .values, .subs { padding: var(--space-6); }
+  .chart-card, .values, .gains { padding: var(--space-6); }
   .chart { height: 220px; }
+
+  .subs-grid {
+    grid-template-columns: minmax(0, 1fr) 420px;
+    align-items: start;
+    gap: var(--space-4);
+  }
+
+  .subs-side { gap: var(--space-4); }
+  .calendar, .upcoming { padding: var(--space-6); }
+  .cal-grid { gap: 6px; }
+  .cal-cell { min-height: 76px; padding: 6px 4px; gap: 6px; }
+  .cal-num { font-size: var(--text-xs); }
+  .cal-logos > * + * { margin-left: -4px; }
+  .cal-more { min-width: 28px; height: 28px; }
 }
 </style>
