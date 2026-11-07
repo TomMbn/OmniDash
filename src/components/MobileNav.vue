@@ -79,7 +79,7 @@ import { useAuth } from '@/composables/useAuth'
 import { useFocusMode } from '@/composables/useFocusMode'
 import {
   LayoutDashboard, Dumbbell, Utensils, Moon,
-  Plane, Shirt, ClipboardList, MoreHorizontal, Wind, LogOut
+  Plane, Shirt, ClipboardList, MoreHorizontal, Wind, Wallet, LogOut
 } from 'lucide-vue-next'
 
 const route = useRoute()
@@ -100,6 +100,7 @@ const secondaryLinks = [
   { to: '/travel',   label: 'Travel',   icon: Plane,         color: 'var(--module-travel)',  dim: 'var(--module-travel-dim)' },
   { to: '/dressing', label: 'Dressing', icon: Shirt,         color: 'var(--module-dress)',   dim: 'var(--module-dress-dim)' },
   { to: '/fenetres', label: 'Fenêtres', icon: Wind,          color: 'var(--module-windows)', dim: 'var(--module-windows-dim)' },
+  { to: '/finance',  label: 'Finance',  icon: Wallet,        color: 'var(--module-finance)', dim: 'var(--module-finance-dim)' },
 ]
 
 const secondaryPaths = secondaryLinks.map(l => l.to)

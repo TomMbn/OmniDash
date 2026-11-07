@@ -1,5 +1,5 @@
 <template>
-  <div class="dashboard">
+  <div class="dashboard" :class="{ 'dashboard--finance': showFinance }">
 
     <!-- ── En-tête ── -->
     <header class="dash-head">
@@ -131,6 +131,36 @@
       </div>
     </router-link>
 
+    <!-- ── Finance ── -->
+    <router-link v-if="showFinance" to="/finance" class="card card--finance">
+      <span class="finance-icon" aria-hidden="true">
+        <Wallet :size="20" stroke-width="1.75" />
+      </span>
+      <div class="finance-body">
+        <p class="card-label">Finance, {{ financeDaysText }}</p>
+        <p class="finance-title">
+          {{ financeEuro(Math.abs(financeTotals.remaining)) }} {{ financeTotals.remaining < 0 ? 'au-delà du budget' : 'pour finir le mois' }}
+        </p>
+        <div
+          v-if="financeTotals.budget > 0"
+          class="finance-gauge"
+          role="progressbar"
+          :aria-valuenow="financeGauge"
+          aria-valuemin="0"
+          aria-valuemax="100"
+          aria-label="Part du budget dépensée"
+        >
+          <span class="finance-gauge-fill" :style="{ width: `${financeGauge}%` }" />
+        </div>
+        <p class="finance-foot">
+          <span class="card-sub">
+            {{ financeEuro(financeTotals.spent) }}{{ financeTotals.budget > 0 ? ` sur ${financeEuro(financeTotals.budget)}` : ' dépensés' }}
+          </span>
+          <span v-if="financeOver" class="finance-over">{{ financeOver }} dépassé</span>
+        </p>
+      </div>
+    </router-link>
+
     <!-- ── Forme de la semaine ── -->
     <section class="card card--form" aria-labelledby="form-title">
       <div class="form-head">
@@ -200,8 +230,9 @@ import { localDay, mondayOf } from '@/utils/date'
 import { useProgressiveOverload } from '@/composables/useProgressiveOverload'
 import { smoothPath } from '@/composables/useChartPath'
 import { calorieState } from '@/composables/useCalorieStatus'
+import { useFinance } from '@/composables/useFinance'
 import {
-  ArrowRight, Check, ChevronRight, Play, Plus, TrendingUp, Wind
+  ArrowRight, Check, ChevronRight, Play, Plus, TrendingUp, Wallet, Wind
 } from 'lucide-vue-next'
 
 const SLEEP_NIGHTS = 14
@@ -225,6 +256,33 @@ const loadingNutrition = ref(true)
 const nutritionLoaded = ref(false)
 
 const windowForecast = ref(null)
+
+// ── Finance ──
+const {
+  ready: financeReady, hasData: financeHasData, period: financePeriod,
+  totals: financeTotals, byCategory: financeByCategory, load: loadFinance
+} = useFinance()
+
+const showFinance = computed(() => financeReady.value && financeHasData.value)
+
+const financeEuro = (value) =>
+  `${Number(value || 0).toLocaleString('fr-FR', { maximumFractionDigits: 2 })}\u00a0€`
+
+const financeDaysText = computed(() => {
+  const days = financePeriod.value?.daysLeft ?? 0
+  if (days <= 0) return 'dernier jour'
+  return `encore ${days} ${days > 1 ? 'jours' : 'jour'}`
+})
+
+const financeGauge = computed(() => {
+  const { spent, budget } = financeTotals.value
+  if (!budget) return 0
+  return Math.min(100, Math.round((spent / budget) * 100))
+})
+
+const financeOver = computed(() =>
+  financeByCategory.value.find((row) => row.state === 'rate')?.category?.name ?? ''
+)
 
 // ── Dates ──
 const dayStr = localDay
@@ -527,6 +585,7 @@ onMounted(async () => {
   }
   fetchNutrition(userId) // ne bloque pas le reste du tableau de bord
   fetchWindows(userId)
+  loadFinance() // carte affichée seulement si le module est prêt et a des données
   await fetchData(userId)
   loading.value = false
 })
@@ -927,6 +986,78 @@ a.card:active { transform: scale(0.985); }
 
 .windows-go { flex-shrink: 0; color: var(--text-secondary); }
 
+/* ── Finance ── */
+.dashboard--finance {
+  grid-template-areas:
+    "head    head"
+    "banner  banner"
+    "sleep   nutri"
+    "finance finance"
+    "form    form"
+    "windows windows";
+}
+
+.card--finance {
+  grid-area: finance;
+  flex-direction: row;
+  align-items: flex-start;
+  gap: var(--space-3);
+}
+
+.finance-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  flex-shrink: 0;
+  border-radius: var(--radius-md);
+  background: var(--module-finance-dim);
+  color: var(--module-finance);
+}
+
+.finance-body {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex: 1;
+  min-width: 0;
+}
+
+.finance-title {
+  font-size: var(--text-lg);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  font-variant-numeric: tabular-nums;
+}
+
+.finance-gauge {
+  height: 6px;
+  overflow: hidden;
+  border-radius: var(--radius-pill);
+  background: var(--bg-overlay);
+}
+
+.finance-gauge-fill {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--module-finance);
+}
+
+.finance-foot {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: var(--space-1) var(--space-3);
+}
+
+.finance-over {
+  font-size: var(--text-2xs);
+  font-weight: 600;
+  color: var(--status-warning);
+}
+
 /* ── Squelettes ── */
 @keyframes shimmer {
   0%   { background-position: -200% 0; }
@@ -1026,5 +1157,22 @@ a.card:active { transform: scale(0.985); }
 
   .windows-go { display: none; }
   .windows-title { font-size: var(--text-xl); }
+
+  .dashboard--finance {
+    grid-template-rows: auto auto 1fr auto 1fr;
+    grid-template-areas:
+      "head   head  head"
+      "banner nutri nutri"
+      "form   form  sleep"
+      "form   form  finance"
+      "form   form  windows";
+  }
+
+  .card--finance {
+    flex-direction: column;
+    gap: var(--space-2);
+  }
+
+  .finance-body { width: 100%; }
 }
 </style>
