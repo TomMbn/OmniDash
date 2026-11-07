@@ -958,6 +958,16 @@ const loadData = async (userId) => {
 
 watch(selectedDayIndex, () => fetchHistoryForPlan(selectedPlan.value))
 
+// Un exercice du programme absent de la base disparaissait de la séance : on le crée
+const ensureTemplateExercises = async (template) => {
+  const known = new Set(exercises.value.map(e => e.name.trim().toLowerCase()))
+  const missing = [...new Set(template.exercises.map(e => e.name.trim()))].filter(name => !known.has(name.toLowerCase()))
+  if (!missing.length) return
+  const { data, error } = await supabase.from('exercises').insert(missing.map(name => ({ name, type: 'custom' }))).select()
+  if (error) console.warn('Exercices du programme non créés :', error.message)
+  if (data?.length) exercises.value.push(...data)
+}
+
 const startFromTemplate = async () => {
   if (!selectedPlan.value || isRestDay.value || !isSelectedToday.value) return
   loading.value.workout = true
@@ -967,6 +977,7 @@ const startFromTemplate = async () => {
     if (!data?.length) return
     currentWorkout.value = data[0]
     const template = selectedPlan.value.template
+    await ensureTemplateExercises(template)
     workoutBlocks.value = template.exercises.map(tplEx => {
       const dbEx = exercises.value.find(e => e.name.trim().toLowerCase() === tplEx.name.trim().toLowerCase())
       if (!dbEx) return null
