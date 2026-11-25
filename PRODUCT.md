@@ -34,7 +34,7 @@ Tout en un seul endroit, fait pour une seule personne. Aucune app de muscu, de s
 
 ## Capabilities and Constraints
 
-Modules : Dashboard, Musculation, Nutrition, Sommeil, Travel, Dressing, Plan, Fenêtres.
+Modules : Dashboard, Musculation, Nutrition, Sommeil, Travel, Dressing, Plan, Fenêtres, Achats.
 
 Stack : Vue 3, Vite, Tailwind v3, Supabase, Chart.js, Lucide.
 

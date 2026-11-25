@@ -1,0 +1,66 @@
+/* Styles partagés du module Achats, préfixés shop- */
+
+.shop-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  min-height: 44px;
+  padding: 0 var(--space-5);
+  white-space: nowrap;
+  border: none;
+  border-radius: var(--radius-pill);
+  background: var(--bg-overlay);
+  font-family: var(--font-sans);
+  font-size: var(--text-xs);
+  font-weight: 600;
+  color: var(--text-primary);
+  cursor: pointer;
+}
+.shop-btn:hover { opacity: 0.88; }
+.shop-btn:active { transform: scale(0.97); }
+.shop-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.shop-btn--dark { background: var(--action); color: var(--on-action); }
+
+.shop-field { display: flex; flex-direction: column; gap: var(--space-1); min-width: 0; }
+.shop-field > span { font-size: var(--text-2xs); font-weight: 500; color: var(--text-secondary); }
+.shop-field small { font-size: var(--text-2xs); color: var(--text-secondary); line-height: 1.35; }
+
+.shop-input {
+  width: 100%;
+  min-height: 48px;
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  background: var(--bg-overlay);
+  font-family: var(--font-sans);
+  /* 16 px : évite le zoom automatique sur iPhone */
+  font-size: var(--text-md);
+  color: var(--text-primary);
+}
+.shop-input:focus { border-color: var(--accent); }
+
+.shop-dialog {
+  width: min(560px, calc(100vw - 24px));
+  max-height: min(88dvh, 820px);
+  margin: auto;
+  padding: 0;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  background: var(--bg-raised);
+  color: var(--text-primary);
+}
+.shop-dialog::backdrop { background: var(--scrim); }
+
+.shop-dialog form { display: flex; flex-direction: column; gap: var(--space-3); padding: var(--space-5); }
+.shop-dialog h2 { font-size: var(--text-lg); }
+.shop-dialog p { font-size: var(--text-xs); color: var(--text-secondary); }
+
+.shop-form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: var(--space-3);
+}
+.shop-form-grid .shop-field--wide { grid-column: 1 / -1; }
+
+.shop-dialog-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: var(--space-2); }

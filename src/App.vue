@@ -53,7 +53,7 @@ import { useAuth } from '@/composables/useAuth'
 import { runAutoSync } from '@/composables/useWithingsAutoSync'
 import {
   LayoutDashboard, Dumbbell, Utensils, Moon,
-  LogOut, Plane, Shirt, ClipboardList, Wind, Wallet
+  LogOut, Plane, Shirt, ClipboardList, Wind, Wallet, ShoppingBag
 } from 'lucide-vue-next'
 
 const router = useRouter()
@@ -69,6 +69,7 @@ const navLinks = [
   { to: '/dressing',    label: 'Dressing',    icon: Shirt },
   { to: '/fenetres',    label: 'Fenêtres',    icon: Wind },
   { to: '/finance',     label: 'Finance',     icon: Wallet },
+  { to: '/achats',      label: 'Achats',      icon: ShoppingBag },
 ]
 
 onMounted(() => {

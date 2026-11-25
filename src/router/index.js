@@ -61,6 +61,12 @@ const routes = [
         name: 'Finance',
         component: () => import('@/views/FinanceView.vue'),
         meta: { requiresAuth: true }
+    },
+    {
+        path: '/achats',
+        name: 'Shopping',
+        component: () => import('@/views/ShoppingView.vue'),
+        meta: { requiresAuth: true }
     }
 ]
 

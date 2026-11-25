@@ -12,3 +12,6 @@ plan_complet*
 .impeccable/
 supabase/.temp/
 .claude/
+
+# Imports SQL contenant des données personnelles
+supabase/seed_local/
