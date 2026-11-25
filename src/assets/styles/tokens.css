@@ -52,6 +52,7 @@
   --module-windows: #A84C18;
   --module-finance: #0E6B66;
   --module-shop:    #7A5200;
+  --module-routine: #A03A2E;
 
   --module-muscu-dim:      #E8E2FC;
   --module-muscu-border:   rgba(91, 63, 214, 0.22);
@@ -69,6 +70,8 @@
   --module-shop-dim:      #FAEBC6;
   --module-finance-border: rgba(14, 107, 102, 0.22);
   --module-shop-border:   rgba(122, 82, 0, 0.22);
+  --module-routine-dim:     #FBE0DB;
+  --module-routine-border:  rgba(160, 58, 46, 0.22);
 
   /* ── Statuts ── */
   --status-success:     #14603F;
@@ -89,6 +92,7 @@
   --aurore-match:     linear-gradient(120deg, #FDE7D9 0%, #F8DDED 60%, #E3DBFC 100%);
   --aurore-finance:   linear-gradient(120deg, #D4F1EC 0%, #E2EEFB 55%, #FDEBDD 100%);
   --aurore-shop:      linear-gradient(120deg, #FAEBC6 0%, #FDE7D9 55%, #E3DBFC 100%);
+  --aurore-routine:   linear-gradient(120deg, #FBE0DB 0%, #F8DDED 55%, #D3E8FB 100%);
 
   /* ── Sphères des bandeaux (jamais de texte dessus) ── */
   --orb-lilas: radial-gradient(circle at 45% 45%, #FFFFFF 0%, #E6DCFF 38%, #B9A6F5 72%, #8E78E8 100%);
@@ -196,6 +200,7 @@
     --module-windows: #F6B48B;
     --module-finance: #8EDDD4;
     --module-shop:    #EFC77A;
+    --module-routine: #F6A99C;
 
     --module-muscu-dim:      #2A2448;
     --module-muscu-border:   rgba(184, 169, 255, 0.28);
@@ -213,6 +218,8 @@
     --module-shop-dim:      #3A2C0E;
     --module-finance-border: rgba(142, 221, 212, 0.28);
     --module-shop-border:   rgba(239, 199, 122, 0.28);
+    --module-routine-dim:     #44201B;
+    --module-routine-border:  rgba(246, 169, 156, 0.28);
 
     --status-success:     #8FE0B8;
     --status-success-dim: #173A2B;
@@ -233,6 +240,7 @@
     --aurore-match:     linear-gradient(120deg, #41261A 0%, #3B1E3A 60%, #2A2448 100%);
     --aurore-finance:   linear-gradient(120deg, #14353A 0%, #1B2C47 55%, #41261A 100%);
     --aurore-shop:      linear-gradient(120deg, #3A2C0E 0%, #41261A 55%, #2A2448 100%);
+    --aurore-routine:   linear-gradient(120deg, #44201B 0%, #3B1E3A 55%, #1B2C47 100%);
 
     --shadow-sm:  0 1px 3px rgba(0, 0, 0, 0.4);
     --shadow-md:  0 6px 20px rgba(0, 0, 0, 0.45);
@@ -277,6 +285,7 @@
   --module-windows: #F6B48B;
   --module-finance: #8EDDD4;
   --module-shop:    #EFC77A;
+  --module-routine: #F6A99C;
 
   --module-muscu-dim:      #2A2448;
   --module-muscu-border:   rgba(184, 169, 255, 0.28);
@@ -294,6 +303,8 @@
   --module-shop-dim:      #3A2C0E;
   --module-finance-border: rgba(142, 221, 212, 0.28);
   --module-shop-border:   rgba(239, 199, 122, 0.28);
+  --module-routine-dim:     #44201B;
+  --module-routine-border:  rgba(246, 169, 156, 0.28);
 
   --status-success:     #8FE0B8;
   --status-success-dim: #173A2B;
@@ -314,6 +325,7 @@
   --aurore-match:     linear-gradient(120deg, #41261A 0%, #3B1E3A 60%, #2A2448 100%);
   --aurore-finance:   linear-gradient(120deg, #14353A 0%, #1B2C47 55%, #41261A 100%);
   --aurore-shop:      linear-gradient(120deg, #3A2C0E 0%, #41261A 55%, #2A2448 100%);
+  --aurore-routine:   linear-gradient(120deg, #44201B 0%, #3B1E3A 55%, #1B2C47 100%);
 
   --shadow-sm:  0 1px 3px rgba(0, 0, 0, 0.4);
   --shadow-md:  0 6px 20px rgba(0, 0, 0, 0.45);

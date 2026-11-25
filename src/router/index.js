@@ -67,6 +67,12 @@ const routes = [
         name: 'Shopping',
         component: () => import('@/views/ShoppingView.vue'),
         meta: { requiresAuth: true }
+    },
+    {
+        path: '/routines',
+        name: 'Routines',
+        component: () => import('@/views/RoutinesView.vue'),
+        meta: { requiresAuth: true }
     }
 ]
 

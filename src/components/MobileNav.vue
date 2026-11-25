@@ -79,7 +79,7 @@ import { useAuth } from '@/composables/useAuth'
 import { useFocusMode } from '@/composables/useFocusMode'
 import {
   LayoutDashboard, Dumbbell, Utensils, Moon,
-  Plane, Shirt, ClipboardList, MoreHorizontal, Wind, Wallet, LogOut, ShoppingBag
+  Plane, Shirt, ClipboardList, MoreHorizontal, Wind, Wallet, LogOut, ShoppingBag, ListChecks
 } from 'lucide-vue-next'
 
 const route = useRoute()
@@ -96,6 +96,7 @@ const primaryLinks = [
 ]
 
 const secondaryLinks = [
+  { to: '/routines', label: 'Routines', icon: ListChecks,    color: 'var(--module-routine)', dim: 'var(--module-routine-dim)' },
   { to: '/plan',     label: 'Plan',     icon: ClipboardList, color: 'var(--accent)',         dim: 'var(--accent-dim)' },
   { to: '/travel',   label: 'Travel',   icon: Plane,         color: 'var(--module-travel)',  dim: 'var(--module-travel-dim)' },
   { to: '/dressing', label: 'Dressing', icon: Shirt,         color: 'var(--module-dress)',   dim: 'var(--module-dress-dim)' },

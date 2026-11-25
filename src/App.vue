@@ -53,7 +53,7 @@ import { useAuth } from '@/composables/useAuth'
 import { runAutoSync } from '@/composables/useWithingsAutoSync'
 import {
   LayoutDashboard, Dumbbell, Utensils, Moon,
-  LogOut, Plane, Shirt, ClipboardList, Wind, Wallet, ShoppingBag
+  LogOut, Plane, Shirt, ClipboardList, Wind, Wallet, ShoppingBag, ListChecks
 } from 'lucide-vue-next'
 
 const router = useRouter()
@@ -62,6 +62,7 @@ const { user, logout } = useAuth()
 const navLinks = [
   { to: '/',            label: "Aujourd'hui", icon: LayoutDashboard },
   { to: '/plan',        label: 'Plan',        icon: ClipboardList },
+  { to: '/routines',    label: 'Routines',    icon: ListChecks },
   { to: '/musculation', label: 'Musculation', icon: Dumbbell },
   { to: '/nutrition',   label: 'Nutrition',   icon: Utensils },
   { to: '/sommeil',     label: 'Sommeil',     icon: Moon },
@@ -198,6 +199,14 @@ const handleLogout = async () => {
 .rail-link:focus-visible .rail-tip {
   opacity: 1;
   transform: translate(0, -50%);
+}
+
+/* Écrans peu hauts : le rail se resserre pour garder tous les liens */
+@media (max-height: 820px) {
+  .rail { gap: var(--space-2); padding: var(--space-3) 0; }
+  .rail-nav { gap: 2px; padding-top: 0; }
+  .rail-link { width: 42px; height: 42px; }
+  .rail-logo { width: 36px; height: 36px; }
 }
 
 /* ── Main ── */
