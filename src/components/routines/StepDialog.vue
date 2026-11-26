@@ -22,6 +22,14 @@
             <option v-for="c in CONDITIONS" :key="c.id" :value="c.id">{{ c.label }}</option>
           </select>
         </label>
+        <label v-if="uvReady" class="shop-field shop-field--wide">
+          <span>Selon l’indice UV</span>
+          <select v-model="draft.uv_min" class="shop-input">
+            <option :value="null">Sans condition</option>
+            <option :value="UV_THRESHOLD">Facultatif sous {{ UV_THRESHOLD }}</option>
+            <option v-if="otherThreshold" :value="otherThreshold">Facultatif sous {{ otherThreshold }}</option>
+          </select>
+        </label>
         <label class="shop-field shop-field--wide">
           <span>Produit</span>
           <input v-model="draft.product" class="shop-input" maxlength="140">
@@ -60,11 +68,12 @@
 
 <script setup>
 import { computed, onMounted, ref, watch } from 'vue'
-import { CONDITIONS, WEEKDAYS } from '@/utils/routines/routines'
+import { CONDITIONS, UV_THRESHOLD, WEEKDAYS } from '@/utils/routines/routines'
 
 const props = defineProps({
   item: { type: Object, default: null },
   saving: { type: Boolean, default: false },
+  uvReady: { type: Boolean, default: false },
 })
 const emit = defineEmits(['save', 'close'])
 
@@ -74,6 +83,12 @@ const draft = ref(null)
 const heading = computed(() => {
   if (draft.value?.id) return 'Modifier'
   return draft.value?.section === 'habitude' ? 'Nouvelle habitude' : 'Nouvelle étape'
+})
+
+// Un seuil réglé directement dans la base reste proposé.
+const otherThreshold = computed(() => {
+  const value = props.item?.uv_min
+  return value != null && value !== UV_THRESHOLD ? value : null
 })
 
 const sync = () => {
@@ -92,6 +107,7 @@ const sync = () => {
     detail: item.detail || '',
     days: [...(item.days || [])],
     optional: Boolean(item.optional),
+    uv_min: item.uv_min ?? null,
   }
   if (dialog.value && !dialog.value.open) dialog.value.showModal()
 }
@@ -114,6 +130,8 @@ const submit = () => {
     // Les sept jours cochés reviennent à « tous les jours ».
     days: d.days.length === 7 ? [] : [...d.days].sort((a, b) => a - b),
     optional: d.optional,
+    // La colonne n'existe qu'une fois la migration UV exécutée.
+    ...(props.uvReady ? { uv_min: d.uv_min } : {}),
   })
 }
 </script>

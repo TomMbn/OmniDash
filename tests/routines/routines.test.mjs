@@ -2,7 +2,7 @@ import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import {
   addDays, adherence, dayStats, doneSet, frequencyLabel, groupState, history, isScheduled,
-  itemsForDay, monthGrid, streak, weekdayOf,
+  itemsForDay, monthGrid, streak, weekdayOf, cleanserHint, parseUvForecast, statsFor,
 } from '../../src/utils/routines/routines.js'
 
 // Novembre 2026 : le 22 est un dimanche, le 25 un mercredi.
@@ -83,4 +83,50 @@ test('libellé de fréquence', () => {
   assert.equal(frequencyLabel(step('a')), 'Tous les jours')
   assert.equal(frequencyLabel(step('a', { days: [2, 5] })), 'mardi, vendredi')
   assert.equal(frequencyLabel(step('a', { condition: 'lavage' })), 'Jours de shampooing')
+})
+
+test('indice UV : facultatif sous le seuil, à faire au-dessus ou sans valeur', () => {
+  const items = [step('a'), step('spf', { uv_min: 3 })]
+  const total = (uv) => dayStats(items, new Set(), '2026-11-25', WASH, uv).total
+  assert.equal(total({ '2026-11-25': 1.2 }), 1)
+  assert.equal(total({ '2026-11-25': 2.4 }), 1)
+  assert.equal(total({ '2026-11-25': 2.6 }), 2) // arrondi à 3
+  assert.equal(total({ '2026-11-25': 6 }), 2)
+  assert.equal(total({}), 2)
+  assert.equal(total(undefined), 2)
+})
+
+test('indice UV : le réglage de l’étape n’est pas modifié', () => {
+  const spf = step('spf', { uv_min: 3 })
+  const [shown] = itemsForDay([spf], '2026-11-25', WASH, { '2026-11-25': 0 })
+  assert.equal(shown.uvSkipped, true)
+  assert.equal(shown.uvIndex, 0)
+  assert.equal(shown.optional, undefined)
+  assert.equal(spf.uvSkipped, undefined)
+  assert.equal(statsFor([shown], new Set(), '2026-11-25').total, 0)
+})
+
+test('indice UV : pris en compte dans les séries et la régularité', () => {
+  const group = [step('a', { start_day: '2026-11-23' }), step('spf', { uv_min: 3, start_day: '2026-11-23' })]
+  const done = doneSet(logs('a', '2026-11-23', '2026-11-24'))
+  const uv = { '2026-11-23': 1, '2026-11-24': 1 }
+  assert.equal(streak(group, done, '2026-11-25', WASH, uv), 2)
+  assert.equal(streak(group, done, '2026-11-25', WASH), 0)
+  assert.equal(adherence(group, done, '2026-11-25', WASH, 3, uv), 100)
+  assert.equal(groupState(group, done, '2026-11-24', WASH, '2026-11-25', uv), 'done')
+})
+
+test('lecture de la prévision UV', () => {
+  const json = { daily: { time: ['2026-11-24', '2026-11-25', '2026-11-26'], uv_index_max: [0.9, null, 1.35] } }
+  assert.deepEqual(parseUvForecast(json), [{ day: '2026-11-24', uv_max: 0.9 }, { day: '2026-11-26', uv_max: 1.35 }])
+  assert.deepEqual(parseUvForecast({}), [])
+  assert.deepEqual(parseUvForecast(null), [])
+})
+
+test('nettoyant du soir selon le SPF coché', () => {
+  const list = [step('m', { slug: 'matin-spf' }), step('s', { slug: 'soir-visage' })]
+  assert.match(cleanserHint(list[1], list, doneSet(logs('m', '2026-11-25')), '2026-11-25'), /huile micellaire/)
+  assert.match(cleanserHint(list[1], list, new Set(), '2026-11-25'), /gel moussant/)
+  assert.equal(cleanserHint(list[0], list, new Set(), '2026-11-25'), null)
+  assert.equal(cleanserHint(list[1], [list[1]], new Set(), '2026-11-25'), null)
 })

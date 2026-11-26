@@ -14,6 +14,7 @@
         :item="item"
         :checked="done.has(logKey(item.id, day))"
         :readonly="readonly"
+        :hint="readonly ? null : cleanserHint(item, section.all, done, day)"
         :can-up="i > 0"
         :can-down="i < section.items.length - 1"
         @toggle="emit('toggle', item, day, $event)"
@@ -29,23 +30,24 @@
 import { computed } from 'vue'
 import StepRow from '@/components/routines/StepRow.vue'
 import { SECTION_LOOKS, toneStyle } from '@/components/routines/looks'
-import { SECTIONS, itemsForDay, logKey, statsFor } from '@/utils/routines/routines'
+import { SECTIONS, cleanserHint, itemsForDay, logKey, statsFor } from '@/utils/routines/routines'
 
 const props = defineProps({
   day: { type: String, required: true },
   items: { type: Array, required: true },
   done: { type: Set, required: true },
   washDays: { type: Array, required: true },
+  uv: { type: Object, default: () => ({}) },
   readonly: { type: Boolean, default: false },
 })
 const emit = defineEmits(['toggle', 'edit', 'move', 'remove'])
 
 const sections = computed(() => {
-  const list = itemsForDay(props.items, props.day, props.washDays)
+  const list = itemsForDay(props.items, props.day, props.washDays, props.uv)
   return SECTIONS
     .map((s) => {
       const own = list.filter((item) => item.section === s.id)
-      return { ...s, ...SECTION_LOOKS[s.id], items: own, stats: statsFor(own, props.done, props.day) }
+      return { ...s, ...SECTION_LOOKS[s.id], all: list, items: own, stats: statsFor(own, props.done, props.day) }
     })
     .filter((s) => s.items.length)
 })

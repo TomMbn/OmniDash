@@ -19,6 +19,7 @@
       <button class="step-info" :aria-expanded="open" :aria-controls="panelId" @click="open = !open">
         <span class="step-name">{{ item.title }}</span>
         <span v-if="meta" class="step-meta">{{ meta }}</span>
+        <span v-if="hint" class="step-meta step-hint">{{ hint }}</span>
       </button>
 
       <ChevronDown class="chevron" :class="{ 'chevron--open': open }" :size="18" stroke-width="2" aria-hidden="true" />
@@ -27,6 +28,7 @@
     <div v-if="open" :id="panelId" class="panel">
       <p v-if="item.detail" class="detail">{{ item.detail }}</p>
       <p class="detail">Fréquence : {{ frequencyLabel(item).toLowerCase() }}</p>
+      <p v-if="item.uv_min != null" class="detail">Indice UV : facultatif sous {{ item.uv_min }}.</p>
       <div class="actions">
         <button class="shop-btn" @click="emit('edit')"><Pencil :size="16" stroke-width="1.75" /> Modifier</button>
         <button v-if="canUp" class="shop-btn" @click="emit('move', -1)"><ArrowUp :size="16" stroke-width="1.75" /> Monter</button>
@@ -46,6 +48,7 @@ const props = defineProps({
   item: { type: Object, required: true },
   checked: { type: Boolean, default: false },
   readonly: { type: Boolean, default: false },
+  hint: { type: String, default: null },
   canUp: { type: Boolean, default: false },
   canDown: { type: Boolean, default: false },
 })
@@ -53,7 +56,16 @@ const emit = defineEmits(['toggle', 'edit', 'move', 'remove'])
 
 const open = ref(false)
 const panelId = useId()
-const meta = computed(() => [props.item.optional ? 'Facultatif' : null, props.item.product].filter(Boolean).join(' · '))
+const uvText = computed(() => {
+  if (props.item.uv_min == null) return null
+  if (props.item.uvIndex == null) return 'Indice UV inconnu : à faire'
+  return `UV max ${props.item.uvIndex} : ${props.item.uvSkipped || props.item.optional ? 'facultatif' : 'à faire'}`
+})
+const meta = computed(() => [
+  uvText.value,
+  props.item.optional && !uvText.value ? 'Facultatif' : null,
+  props.item.product,
+].filter(Boolean).join(' · '))
 </script>
 
 <style scoped>
@@ -106,6 +118,8 @@ const meta = computed(() => [props.item.optional ? 'Facultatif' : null, props.it
 .step-name { font-size: var(--text-sm); font-weight: 500; overflow-wrap: anywhere; }
 .step--done .step-name { text-decoration: line-through; color: var(--text-secondary); }
 .step-meta { font-size: var(--text-2xs); font-weight: 500; color: var(--text-secondary); overflow-wrap: anywhere; }
+
+.step-hint { color: var(--tone); font-weight: 600; }
 
 .chevron { flex-shrink: 0; color: var(--text-secondary); transition: transform var(--dur-fast) var(--ease-out); }
 .chevron--open { transform: rotate(180deg); }

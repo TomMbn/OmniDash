@@ -65,10 +65,45 @@ export const isScheduled = (item, day, washDays) =>
   (!item.archived_on || day < item.archived_on) &&
   matchesRule(item, day, washDays)
 
+// Indice UV : une étape qui en dépend devient facultative quand l'indice maximal du jour
+// est connu et reste sous son seuil. Sans valeur, elle reste à faire par prudence.
+export const UV_THRESHOLD = 3
+
+// L'indice est arrondi à l'entier, comme sur les bulletins.
+export const uvIndexFor = (uv, day) => (uv?.[day] == null ? null : Math.round(Number(uv[day])))
+
+export const isUvSkipped = (item, day, uv) => {
+  const index = uvIndexFor(uv, day)
+  return item.uv_min != null && index !== null && index < item.uv_min
+}
+
+// On ajoute des champs à part : « optional » reste le réglage choisi dans la fiche de l'étape.
+const withUv = (item, day, uv) =>
+  item.uv_min == null ? item : { ...item, uvIndex: uvIndexFor(uv, day), uvSkipped: isUvSkipped(item, day, uv) }
+
+// Réponse Open-Meteo (champ daily) vers des lignes { day, uv_max }.
+export const parseUvForecast = (json) => {
+  const days = json?.daily?.time || []
+  const values = json?.daily?.uv_index_max || []
+  return days
+    .map((day, i) => ({ day, uv_max: values[i] }))
+    .filter((row) => typeof row.uv_max === 'number' && row.uv_max >= 0)
+}
+
+// Le soir, le nettoyant dépend de ce qui a été mis le matin, pas de la météo.
+export const cleanserHint = (item, list, done, day) => {
+  if (item.slug !== 'soir-visage') return null
+  const spf = list.find((i) => i.slug === 'matin-spf')
+  if (!spf) return null
+  return done.has(logKey(spf.id, day))
+    ? 'SPF coché le matin : huile micellaire.'
+    : 'Pas de SPF coché le matin : le gel moussant suffit.'
+}
+
 const byPosition = (a, b) => (a.position ?? 0) - (b.position ?? 0) || String(a.title).localeCompare(String(b.title), 'fr')
 
-export const itemsForDay = (items, day, washDays) =>
-  items.filter((item) => isScheduled(item, day, washDays)).sort(byPosition)
+export const itemsForDay = (items, day, washDays, uv = {}) =>
+  items.filter((item) => isScheduled(item, day, washDays)).sort(byPosition).map((item) => withUv(item, day, uv))
 
 export const logKey = (itemId, day) => `${itemId}|${day}`
 
@@ -76,7 +111,7 @@ export const doneSet = (logs) => new Set(logs.map((log) => logKey(log.item_id, l
 
 // Les étapes facultatives ne comptent ni dans l'avancement ni dans les séries.
 export const statsFor = (list, done, day) => {
-  const expected = list.filter((item) => !item.optional)
+  const expected = list.filter((item) => !item.optional && !item.uvSkipped)
   const count = expected.filter((item) => done.has(logKey(item.id, day))).length
   return {
     total: expected.length,
@@ -86,11 +121,12 @@ export const statsFor = (list, done, day) => {
   }
 }
 
-export const dayStats = (items, done, day, washDays) => statsFor(itemsForDay(items, day, washDays), done, day)
+export const dayStats = (items, done, day, washDays, uv = {}) =>
+  statsFor(itemsForDay(items, day, washDays, uv), done, day)
 
 // État d'un groupe d'étapes (une routine ou une habitude) sur un jour donné.
-export const groupState = (group, done, day, washDays, today) => {
-  const stats = dayStats(group, done, day, washDays)
+export const groupState = (group, done, day, washDays, today, uv = {}) => {
+  const stats = dayStats(group, done, day, washDays, uv)
   if (!stats.total) return 'off'
   if (stats.complete) return 'done'
   if (day >= today) return 'todo'
@@ -99,26 +135,26 @@ export const groupState = (group, done, day, washDays, today) => {
 
 // Jours consécutifs réussis. Les jours sans rien de prévu sont ignorés,
 // et la journée en cours ne casse pas la série tant qu'elle n'est pas finie.
-export const streak = (group, done, today, washDays, horizon = 400) => {
+export const streak = (group, done, today, washDays, uv = {}, horizon = 400) => {
   let count = 0
   for (let i = 0; i < horizon; i += 1) {
     const day = addDays(today, -i)
-    const state = groupState(group, done, day, washDays, today)
+    const state = groupState(group, done, day, washDays, today, uv)
     if (state === 'done') count += 1
     else if (state === 'missed' || state === 'partial') break
   }
   return count
 }
 
-export const history = (group, done, today, washDays, length = 14) =>
+export const history = (group, done, today, washDays, length = 14, uv = {}) =>
   Array.from({ length }, (_, i) => {
     const day = addDays(today, i - length + 1)
-    return { day, state: groupState(group, done, day, washDays, today) }
+    return { day, state: groupState(group, done, day, washDays, today, uv) }
   })
 
 // Part des jours prévus qui ont été réussis ; aujourd'hui ne compte que s'il est terminé.
-export const adherence = (group, done, today, washDays, length = 30) => {
-  const counted = history(group, done, today, washDays, length)
+export const adherence = (group, done, today, washDays, length = 30, uv = {}) => {
+  const counted = history(group, done, today, washDays, length, uv)
     .filter((d) => d.state !== 'off' && d.state !== 'todo')
   if (!counted.length) return null
   return Math.round((counted.filter((d) => d.state === 'done').length / counted.length) * 100)

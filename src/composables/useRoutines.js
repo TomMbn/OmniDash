@@ -2,7 +2,7 @@ import { ref } from 'vue'
 import { supabase } from '@/supabase'
 import { useAuth } from '@/composables/useAuth'
 import { localDay } from '@/utils/date'
-import { DEFAULT_WASH_DAYS, addDays, logKey, nextPosition } from '@/utils/routines/routines'
+import { DEFAULT_WASH_DAYS, addDays, logKey, nextPosition, parseUvForecast } from '@/utils/routines/routines'
 
 // Profondeur de l'historique chargé, la même que celle des séries.
 const HISTORY_DAYS = 400
@@ -15,6 +15,9 @@ const items = ref([])
 const done = ref(new Set())
 const washDays = ref([...DEFAULT_WASH_DAYS])
 const workoutDays = ref(new Set())
+// Indice UV maximal par jour ; uvReady passe à vrai quand la migration UV est en place.
+const uv = ref({})
+const uvReady = ref(false)
 const loading = ref(false)
 const error = ref(null)
 const ready = ref(true)
@@ -81,6 +84,40 @@ export function useRoutines() {
     workoutDays.value = new Set(results.flatMap((r) => (r.data || []).map((row) => String(row.date).slice(0, 10))))
   }
 
+  // L'indice UV allège la routine sans jamais la bloquer : en cas d'échec, tout reste à faire.
+  const loadUv = async (uid, since) => {
+    try {
+      const stored = await supabase.from('routine_uv').select('day, uv_max').eq('user_id', uid).gte('day', since)
+      if (stored.error) throw stored.error
+      uvReady.value = true
+      const values = Object.fromEntries((stored.data || []).map((row) => [row.day, Number(row.uv_max)]))
+      uv.value = { ...values }
+
+      // La position du domicile est celle réglée dans le module Fenêtres.
+      const { data: home } = await supabase
+        .from('user_settings').select('home_lat, home_lon').eq('user_id', uid).maybeSingle()
+      if (home?.home_lat == null || home?.home_lon == null) return
+
+      const response = await fetch(
+        `https://api.open-meteo.com/v1/forecast?latitude=${home.home_lat}&longitude=${home.home_lon}` +
+        '&daily=uv_index_max&past_days=7&forecast_days=1&timezone=Europe%2FParis')
+      if (!response.ok) throw new Error(`Open-Meteo ${response.status}`)
+
+      // La valeur du jour suit la prévision ; les jours passés déjà enregistrés ne bougent plus.
+      const today = localDay()
+      const rows = parseUvForecast(await response.json())
+        .filter((row) => row.day === today || (row.day < today && values[row.day] === undefined))
+      if (!rows.length) return
+      uv.value = { ...values, ...Object.fromEntries(rows.map((row) => [row.day, row.uv_max])) }
+      const saved = await supabase.from('routine_uv').upsert(
+        rows.map((row) => ({ ...row, user_id: uid, updated_at: new Date().toISOString() })),
+        { onConflict: 'user_id,day' })
+      if (saved.error) throw saved.error
+    } catch (err) {
+      console.warn('Indice UV indisponible', err)
+    }
+  }
+
   const load = async () => {
     const uid = await userId()
     if (!uid) return
@@ -89,6 +126,8 @@ export function useRoutines() {
       done.value = new Set()
       washDays.value = [...DEFAULT_WASH_DAYS]
       workoutDays.value = new Set()
+      uv.value = {}
+      uvReady.value = false
     }
     loading.value = true
     error.value = null
@@ -106,7 +145,7 @@ export function useRoutines() {
       washDays.value = settings.data?.wash_days || [...DEFAULT_WASH_DAYS]
       done.value = new Set(logs.map((l) => logKey(l.item_id, l.day)))
       loadedFor = uid
-      await loadWorkouts(uid, since)
+      await Promise.all([loadWorkouts(uid, since), loadUv(uid, since)])
     } catch (err) {
       fail('Impossible de charger les routines, réessaie.', err)
     } finally {
@@ -193,7 +232,7 @@ export function useRoutines() {
   }
 
   return {
-    items, done, washDays, workoutDays, loading, error, ready,
+    items, done, washDays, workoutDays, uv, uvReady, loading, error, ready,
     load, setDone, saveItem, archiveItem, swapPositions, saveWashDays,
   }
 }

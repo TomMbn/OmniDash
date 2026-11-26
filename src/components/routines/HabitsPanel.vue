@@ -73,15 +73,16 @@ const props = defineProps({
   items: { type: Array, required: true },
   done: { type: Set, required: true },
   washDays: { type: Array, required: true },
+  uv: { type: Object, default: () => ({}) },
   today: { type: String, required: true },
 })
 const emit = defineEmits(['toggle', 'edit', 'remove', 'add'])
 
 const measure = (group) => ({
-  state: groupState(group, props.done, props.today, props.washDays, props.today),
-  streak: streak(group, props.done, props.today, props.washDays),
-  adherence: adherence(group, props.done, props.today, props.washDays),
-  history: history(group, props.done, props.today, props.washDays),
+  state: groupState(group, props.done, props.today, props.washDays, props.today, props.uv),
+  streak: streak(group, props.done, props.today, props.washDays, props.uv),
+  adherence: adherence(group, props.done, props.today, props.washDays, 30, props.uv),
+  history: history(group, props.done, props.today, props.washDays, 14, props.uv),
 })
 
 // Une habitude qui ne revient pas tous les jours se compte en fois, pas en jours.

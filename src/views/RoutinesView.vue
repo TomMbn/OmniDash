@@ -34,6 +34,7 @@
       :items="items"
       :done="done"
       :wash-days="washDays"
+      :uv="uv"
       :today="today"
       @toggle="setDone"
       @edit="editing = $event"
@@ -50,6 +51,7 @@
         :items="items"
         :done="done"
         :wash-days="washDays"
+        :uv="uv"
         :workout-days="workoutDays"
         :can-prev="canPrev"
         @select="select"
@@ -66,6 +68,7 @@
           :items="items"
           :done="done"
           :wash-days="washDays"
+          :uv="uv"
           :readonly="selected > today"
           @toggle="setDone"
           @edit="editing = $event"
@@ -86,6 +89,8 @@
             {{ washTonight ? 'Shampooing ce soir.' : 'Cheveux au sec ce soir.' }}<br />
             <span class="banner-title-soft">{{ washHint }}</span>
           </h2>
+
+          <p v-if="uvHint" class="field-label uv-hint">{{ uvHint }}</p>
 
           <fieldset class="choice">
             <legend class="field-label">Mes jours de shampooing</legend>
@@ -115,6 +120,7 @@
           :items="items"
           :done="done"
           :wash-days="washDays"
+          :uv="uv"
           @toggle="setDone"
           @edit="editing = $event"
           @move="move"
@@ -131,7 +137,7 @@
       </div>
     </div>
 
-    <StepDialog :item="editing" :saving="saving" @save="save" @close="editing = null" />
+    <StepDialog :item="editing" :saving="saving" :uv-ready="uvReady" @save="save" @close="editing = null" />
   </div>
 </template>
 
@@ -147,10 +153,10 @@ import '@/components/routines/routines.css'
 import { useRoutines } from '@/composables/useRoutines'
 import { useConfirm } from '@/composables/useConfirm'
 import { localDay } from '@/utils/date'
-import { WEEKDAYS, addDays, dayStats, isWashDay, longDay, weekdayOf } from '@/utils/routines/routines'
+import { WEEKDAYS, addDays, dayStats, isWashDay, longDay, uvIndexFor, weekdayOf } from '@/utils/routines/routines'
 
 const {
-  items, done, washDays, workoutDays, loading, error, ready,
+  items, done, washDays, workoutDays, uv, uvReady, loading, error, ready,
   load, setDone, saveItem, archiveItem, swapPositions, saveWashDays,
 } = useRoutines()
 const { askConfirm } = useConfirm()
@@ -170,7 +176,12 @@ const cursor = ref(monthOf(today.value))
 const editing = ref(null)
 const saving = ref(false)
 
-const todayStats = computed(() => dayStats(items.value, done.value, today.value, washDays.value))
+const todayStats = computed(() => dayStats(items.value, done.value, today.value, washDays.value, uv.value))
+
+const uvHint = computed(() => {
+  const index = uvIndexFor(uv.value, today.value)
+  return index === null ? '' : `Indice UV maximal aujourd’hui : ${index}`
+})
 
 const headline = computed(() => {
   const { total, done: count } = todayStats.value
@@ -203,7 +214,7 @@ const canPrev = computed(() => {
 })
 
 const selectedSummary = computed(() => {
-  const stats = dayStats(items.value, done.value, selected.value, washDays.value)
+  const stats = dayStats(items.value, done.value, selected.value, washDays.value, uv.value)
   const parts = []
   if (!stats.total) parts.push('Aucune étape suivie ce jour-là')
   else if (selected.value > today.value) parts.push(`${stats.total} étapes prévues`)
@@ -329,6 +340,7 @@ onBeforeUnmount(() => document.removeEventListener('visibilitychange', refreshDa
 .banner > :not(.orb) { position: relative; z-index: var(--z-raised); }
 .banner-title { max-width: 80%; font-size: var(--text-xl); font-weight: 600; letter-spacing: -0.02em; line-height: 1.22; }
 .banner-title-soft { color: var(--text-secondary); }
+.uv-hint { padding: 0; }
 .banner-action { width: 100%; min-height: 48px; }
 
 .choice { display: flex; flex-direction: column; min-width: 0; margin: 0; padding: 0; border: none; }

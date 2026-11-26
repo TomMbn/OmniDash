@@ -59,6 +59,7 @@ const props = defineProps({
   items: { type: Array, required: true },
   done: { type: Set, required: true },
   washDays: { type: Array, required: true },
+  uv: { type: Object, default: () => ({}) },
   workoutDays: { type: Set, required: true },
   canPrev: { type: Boolean, default: false },
 })
@@ -70,7 +71,7 @@ const title = computed(() => {
 })
 
 const weeks = computed(() => monthGrid(props.year, props.month).map((week) => week.map((cell) => {
-  const stats = dayStats(props.items, props.done, cell.day, props.washDays)
+  const stats = dayStats(props.items, props.done, cell.day, props.washDays, props.uv)
   const wash = isWashDay(cell.day, props.washDays)
   const workout = props.workoutDays.has(cell.day)
   const showBar = stats.total > 0 && cell.day <= props.today
