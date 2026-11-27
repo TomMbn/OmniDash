@@ -304,7 +304,7 @@ const etat = {
   mcp: null, sample: null, db: null, uid: null,
   pieces: null, source: null, dateCopie: null, generation: 0,
   history: {}, historyState: 'chargement',
-  proposition: null, manquesBrut: null, luA: 0,
+  proposition: null, manquesBrut: null, luA: 0, arrete: false, desabonner: null,
   today: todayParis(new Date()),
   occupe: false, claudeCoupe: false,
   confirmationSuppression: null
@@ -384,11 +384,12 @@ function alerte(texte, grave) {
 }
 
 function majBoutons() {
-  const pret = Array.isArray(etat.pieces) && Boolean(etat.sample) && !etat.claudeCoupe && !etat.occupe
+  const pret = !etat.arrete && Array.isArray(etat.pieces) && Boolean(etat.sample) && !etat.claudeCoupe && !etat.occupe
   $('proposer').disabled = !pret
   $('autre').disabled = !pret
   $('analyser').disabled = !pret
-  $('porter').disabled = etat.occupe || !baseOk()
+  $('porter').disabled = etat.arrete || etat.occupe || !baseOk()
+  if (etat.arrete) $('relire').disabled = true
 }
 
 // Onglets
@@ -473,6 +474,7 @@ async function garderCopie(pieces) {
 }
 
 async function lireDressing() {
+  if (etat.arrete) return
   const generation = ++etat.generation
   $('relire').disabled = true
   $('source').textContent = 'Lecture du dressing en cours.'
@@ -502,6 +504,20 @@ async function lireDressing() {
   if (generation !== etat.generation) return
 
   const panne = connectorFailure(code)
+  if (panne.stop) {
+    // Compte changé : rien n'est affiché et la page ne fait plus aucun appel.
+    etat.arrete = true
+    etat.generation += 1
+    try { etat.desabonner?.() } catch {}
+    retirerDressing()
+    etat.history = {}
+    etat.manquesBrut = null
+    $('historique').replaceChildren()
+    alerte(panne.message, true)
+    afficherSource()
+    majBoutons()
+    return
+  }
   if (!panne.useCache) {
     retirerDressing()
     alerte(panne.message, true)
@@ -632,7 +648,7 @@ async function proposer() {
       dire('etat-tenue', `Claude n’a pas donné de tenue valide après deux essais (${result.error}) Réessayez.`, true)
       return
     }
-    if (!Array.isArray(etat.pieces)) return
+    if (etat.arrete || !Array.isArray(etat.pieces)) return
     etat.proposition = { result, repeats: dispo.repeats, occasion, meteo, today, note: noteRegle() }
     dire('etat-tenue', '')
     afficherTenue()
@@ -739,6 +755,11 @@ $('garder').addEventListener('click', () => {
 
 function afficherHistorique() {
   const liste = $('historique')
+  if (etat.arrete) {
+    liste.replaceChildren()
+    dire('etat-historique', '')
+    return
+  }
   if (etat.historyState === 'absent') {
     dire('etat-historique', 'L’historique n’est pas disponible ici : connectez-vous à claude.ai pour enregistrer et retrouver vos tenues.')
     liste.replaceChildren()
@@ -808,7 +829,7 @@ function suivreHistorique() {
     }
   }, 10000)
   try {
-    etat.db.collection(chemins().jours).onSnapshot((snap) => {
+    etat.desabonner = etat.db.collection(chemins().jours).onSnapshot((snap) => {
       etat.history = historyFromDocs(snap.docs.map((d) => ({ id: d.id, data: d.data() })))
       if (!snap.metadata.fromCache) {
         confirme = true
@@ -886,6 +907,7 @@ async function analyser() {
       dire('etat-manques', `Claude n’a pas donné d’analyse valide après deux essais (${result.error}) Réessayez.`, true)
       return
     }
+    if (etat.arrete || !Array.isArray(etat.pieces)) return
     const brut = { date: etat.today, items: manquesForStorage(result.items) }
     etat.manquesBrut = brut
     afficherManques()

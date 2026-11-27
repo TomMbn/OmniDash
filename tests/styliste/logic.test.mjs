@@ -199,20 +199,42 @@ test('un dressing mal formé est refusé, un vide est accepté', () => {
   assert.deepEqual(normalizePieces({ pieces: [] }), [])
 })
 
-test('refus d’accès : la copie n’est pas utilisée', () => {
-  for (const code of ['needs_reauth', 'server_not_connected', 'blocked_by_policy', 'approval_required', 'not_in_manifest', 'not_granted', 'absent']) {
+test('accès refusé : la copie n’est pas utilisée', () => {
+  for (const code of ['blocked_by_policy', 'approval_required', 'not_in_manifest', 'not_granted', 'consent_required']) {
     const r = connectorFailure(code)
     assert.equal(r.useCache, false, code)
+    assert.equal(r.stop, false, code)
     assert.ok(r.message.length > 0)
   }
 })
 
-test('panne passagère : la copie est utilisée', () => {
+test('connecteur absent ou connexion expirée : la copie datée est utilisée', () => {
+  const messages = new Set()
+  for (const code of ['needs_reauth', 'server_not_connected', 'selection_required', 'server_not_found', 'absent', 'capability_disabled', 'capability_removed']) {
+    const r = connectorFailure(code)
+    assert.equal(r.useCache, true, code)
+    assert.equal(r.stop, false, code)
+    messages.add(r.message)
+  }
+  assert.ok(connectorFailure('needs_reauth').message.includes('Reconnectez'))
+  assert.ok(connectorFailure('server_not_connected').message.includes('Ajoutez'))
+  assert.ok(messages.size >= 4)
+})
+
+test('panne passagère ou code inconnu : la copie est utilisée', () => {
   for (const code of ['server_unavailable', 'upstream_error', 'tool_error', 'rate_limited', 'code_inconnu', undefined]) {
     const r = connectorFailure(code)
     assert.equal(r.useCache, true, String(code))
+    assert.equal(r.stop, false)
     assert.ok(r.message.length > 0)
   }
+})
+
+test('compte changé : rien de la copie et plus aucun appel', () => {
+  const r = connectorFailure('user_changed')
+  assert.equal(r.useCache, false)
+  assert.equal(r.stop, true)
+  assert.ok(r.message.length > 0)
 })
 
 test('la demande de tenue ne contient ni liens ni pièces absentes', () => {

@@ -126,30 +126,35 @@ export function normalizePieces(payload) {
   return pieces
 }
 
-// Refus d'accès : la copie gardée ne doit pas servir. Panne passagère : elle
-// sert, avec sa date. Un code inconnu compte comme une panne passagère.
+// Connecteur absent ou connexion expirée : la copie gardée sert, avec sa date,
+// et le message dit quoi faire. Accès refusé : la copie ne sert pas. Compte
+// changé : rien n'est affiché et la page ne fait plus d'appel. Un code inconnu
+// compte comme une panne passagère.
+const INDISPONIBLE = 'Les connecteurs ne sont pas disponibles ici. Ouvrez l’artefact dans claude.ai pour relire le dressing.'
+const ACCORD = 'La lecture du dressing attend votre accord. Touchez « Relire le dressing » et acceptez la demande.'
+const DESACTIVE = 'La lecture du dressing est désactivée pour cette page. Réactivez OmniDash dans le menu Autorisations de l’artefact.'
 const PANNES = {
-  needs_reauth: [false, 'La connexion à OmniDash a expiré. Reconnectez OmniDash dans les réglages de claude.ai, rubrique Connecteurs, puis rechargez la page.'],
-  server_not_connected: [false, 'Le connecteur OmniDash n’est pas ajouté à votre compte. Ajoutez-le dans les réglages de claude.ai, rubrique Connecteurs.'],
-  server_not_found: [false, 'Le connecteur OmniDash n’existe plus. Ajoutez-le de nouveau dans les réglages de claude.ai, rubrique Connecteurs.'],
-  blocked_by_policy: [false, 'L’accès au connecteur OmniDash est bloqué par une règle de votre organisation.'],
-  approval_required: [false, 'La lecture du dressing attend votre accord. Touchez « Relire le dressing » et acceptez la demande.'],
-  consent_required: [false, 'La lecture du dressing attend votre accord. Touchez « Relire le dressing » et acceptez la demande.'],
-  not_in_manifest: [false, 'La lecture du dressing est désactivée pour cette page. Réactivez OmniDash dans le menu Autorisations de l’artefact.'],
-  not_granted: [false, 'La lecture du dressing n’est pas autorisée pour cette page. Réactivez OmniDash dans le menu Autorisations de l’artefact.'],
-  user_changed: [false, 'Le compte connecté a changé. Rechargez la page.'],
-  absent: [false, 'Les connecteurs ne sont pas disponibles ici. Ouvrez l’artefact dans claude.ai pour lire le dressing.'],
-  capability_disabled: [false, 'Les connecteurs ne sont pas disponibles ici. Ouvrez l’artefact dans claude.ai pour lire le dressing.'],
-  capability_removed: [false, 'Les connecteurs ne sont pas disponibles ici. Ouvrez l’artefact dans claude.ai pour lire le dressing.'],
-  selection_required: [true, 'Plusieurs connecteurs portent le nom OmniDash. Choisissez celui à utiliser dans claude.ai.'],
-  tool_error: [true, 'OmniDash a renvoyé une erreur en lisant le dressing. Réessayez plus tard.'],
-  rate_limited: [true, 'Trop de lectures en peu de temps. Réessayez dans un moment.']
+  needs_reauth: ['copie', 'La connexion à OmniDash a expiré. Reconnectez OmniDash dans les réglages de claude.ai, rubrique Connecteurs, puis rechargez la page.'],
+  server_not_connected: ['copie', 'Le connecteur OmniDash n’est pas ajouté à votre compte. Ajoutez-le dans les réglages de claude.ai, rubrique Connecteurs.'],
+  server_not_found: ['copie', 'Le connecteur OmniDash n’existe plus. Ajoutez-le de nouveau dans les réglages de claude.ai, rubrique Connecteurs.'],
+  selection_required: ['copie', 'Plusieurs connecteurs portent le nom OmniDash. Choisissez celui à utiliser dans claude.ai.'],
+  absent: ['copie', INDISPONIBLE],
+  capability_disabled: ['copie', INDISPONIBLE],
+  capability_removed: ['copie', INDISPONIBLE],
+  tool_error: ['copie', 'OmniDash a renvoyé une erreur en lisant le dressing. Réessayez plus tard.'],
+  rate_limited: ['copie', 'Trop de lectures en peu de temps. Réessayez dans un moment.'],
+  blocked_by_policy: ['refus', 'L’accès au connecteur OmniDash est bloqué par une règle de votre organisation.'],
+  approval_required: ['refus', ACCORD],
+  consent_required: ['refus', ACCORD],
+  not_in_manifest: ['refus', DESACTIVE],
+  not_granted: ['refus', DESACTIVE],
+  user_changed: ['arret', 'Le compte connecté a changé. Rechargez la page.']
 }
-const PANNE_PASSAGERE = [true, 'OmniDash ne répond pas pour le moment. Réessayez dans quelques minutes.']
+const PANNE_PASSAGERE = ['copie', 'OmniDash ne répond pas pour le moment. Réessayez dans quelques minutes.']
 
 export function connectorFailure(code) {
-  const [useCache, message] = Object.hasOwn(PANNES, code) ? PANNES[code] : PANNE_PASSAGERE
-  return { useCache, message }
+  const [nature, message] = Object.hasOwn(PANNES, code) ? PANNES[code] : PANNE_PASSAGERE
+  return { useCache: nature === 'copie', stop: nature === 'arret', message }
 }
 
 const PROFIL = [
