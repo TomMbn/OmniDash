@@ -7,16 +7,22 @@
         Dressing,{{ ' ' }}<br class="view-break" />
         <span class="view-title-soft">{{ activeTab === 'generator' ? 'tenue du moment' : `${pieceCount} pièce${pieceCount > 1 ? 's' : ''}` }}</span>
       </h1>
-      <div class="segmented" role="tablist" aria-label="Sections">
-        <button
-          v-for="tab in tabs"
-          :key="tab.id"
-          role="tab"
-          :aria-selected="activeTab === tab.id"
-          class="segmented-btn"
-          :class="{ 'segmented-btn--active': activeTab === tab.id }"
-          @click="activeTab = tab.id"
-        >{{ tab.label }}</button>
+      <div class="head-actions">
+        <a class="btn btn--light" :href="STYLISTE_CLAUDE_URL" target="_blank" rel="noopener noreferrer">
+          Styliste Claude
+          <ExternalLink :size="16" stroke-width="2" aria-hidden="true" />
+        </a>
+        <div class="segmented" role="tablist" aria-label="Sections">
+          <button
+            v-for="tab in tabs"
+            :key="tab.id"
+            role="tab"
+            :aria-selected="activeTab === tab.id"
+            class="segmented-btn"
+            :class="{ 'segmented-btn--active': activeTab === tab.id }"
+            @click="activeTab = tab.id"
+          >{{ tab.label }}</button>
+        </div>
       </div>
     </header>
 
@@ -250,6 +256,9 @@ const WardrobeIcon = createLucideIcon('Wardrobe', wardrobeNode)
 
 const { user } = useAuth()
 const { askConfirm } = useConfirm()
+
+// Artefact privé claude.ai : seul le compte propriétaire peut l'ouvrir.
+const STYLISTE_CLAUDE_URL = 'https://claude.ai/artifact/Nk9moC5VsDUGqYT8PHXbVj'
 
 // Tabs
 const activeTab = ref('generator')
@@ -579,6 +588,14 @@ onMounted(async () => {
 }
 
 .view-title-soft { color: var(--text-secondary); }
+
+.head-actions {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.head-actions .btn { text-decoration: none; }
 
 .segmented {
   display: flex;
@@ -1059,6 +1076,7 @@ onMounted(async () => {
     line-height: 1.1;
   }
 
+  .head-actions { flex-direction: row; align-items: center; flex-shrink: 0; }
   .segmented { flex-shrink: 0; width: 280px; }
   .banner { padding: var(--space-6); }
   .card { padding: 20px; }
