@@ -1,6 +1,7 @@
 // Refuse les jetons délivrés à un client externe par le serveur OAuth de Supabase.
-// La signature du jeton est vérifiée en amont par la passerelle : ces fonctions
-// lisent seulement la mention client_id et ne valent pas une authentification.
+// La signature du jeton n'est pas vérifiée ici : ces fonctions lisent seulement
+// la mention client_id et ne valent pas une authentification. Chaque fonction
+// vérifie ensuite l'utilisateur auprès du serveur d'authentification.
 
 export function isOAuthClientToken(authorization) {
   if (authorization == null) return false

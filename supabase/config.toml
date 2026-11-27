@@ -1,7 +1,11 @@
+# verify_jwt = false pour toutes les fonctions : la vérification de la passerelle
+# ne reconnaît que l'ancien secret, alors que le projet signe ses jetons en ES256.
+# Chaque fonction vérifie donc elle-même l'appelant avec auth.getUser.
+# check-windows, appelée par la tâche planifiée, exige son secret (CRON_SECRET).
 
 [functions.withings-sync]
 enabled = true
-verify_jwt = true
+verify_jwt = false
 import_map = "./functions/withings-sync/deno.json"
 # Uncomment to specify a custom file path to the entrypoint.
 # Supported file extensions are: .ts, .js, .mjs, .jsx, .tsx
@@ -12,13 +16,13 @@ entrypoint = "./functions/withings-sync/index.ts"
 
 [functions.netatmo-sync]
 enabled = true
-verify_jwt = true
+verify_jwt = false
 import_map = "./functions/netatmo-sync/deno.json"
 entrypoint = "./functions/netatmo-sync/index.ts"
 
 [functions.save-push-subscription]
 enabled = true
-verify_jwt = true
+verify_jwt = false
 import_map = "./functions/save-push-subscription/deno.json"
 entrypoint = "./functions/save-push-subscription/index.ts"
 
@@ -27,3 +31,18 @@ enabled = true
 verify_jwt = false
 import_map = "./functions/check-windows/deno.json"
 entrypoint = "./functions/check-windows/index.ts"
+
+[functions.ai-stylist]
+verify_jwt = false
+
+[functions.analyze-nutrition]
+verify_jwt = false
+
+[functions.categorize-transactions]
+verify_jwt = false
+
+[functions.generate-travel]
+verify_jwt = false
+
+[functions.smart-add-item]
+verify_jwt = false

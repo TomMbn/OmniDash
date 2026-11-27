@@ -1,5 +1,7 @@
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts"
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { refuseOAuthClient } from '../_shared/oauth.js'
+import { requireUser } from '../_shared/session.js'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -24,6 +26,17 @@ serve(async (req) => {
 
   const refus = refuseOAuthClient(req, corsHeaders)
   if (refus) return refus
+
+  const sansSession = await requireUser(req, corsHeaders, async (authorization: string) => {
+    const supabaseClient = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
+      { global: { headers: { Authorization: authorization } } }
+    )
+    const { data: { user } } = await supabaseClient.auth.getUser(authorization.replace(/^Bearer\s+/i, ''))
+    return user
+  })
+  if (sansSession) return sansSession
 
   try {
     const payload: SmartAddPayload = await req.json()
