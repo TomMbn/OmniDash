@@ -2,6 +2,14 @@
 
 Conception du 27 novembre 2026. À valider avant tout développement.
 
+## Évolution du 27 novembre : un connecteur OmniDash par étapes
+
+Le connecteur ne sera pas limité au dressing pour toujours. Il s'appelle `OmniDash` (fonction `omnidash-mcp`) et gagne un outil de lecture par domaine, un domaine à la fois. La première étape reste le dressing et le styliste, telle que décrite plus bas.
+
+Domaines voulus ensuite : sport, nutrition et sommeil ; finances en totaux seulement ; routines, achats, voyages et fenêtres ; puis d'autres.
+
+Règles pour chaque nouveau domaine : lecture seule ; jamais les secrets des services connectés ni les abonnements aux notifications ; pour les finances, le jeton ne doit pas pouvoir lire les opérations, même sans passer par l'outil. Chaque ouverture fait l'objet d'une conception courte et d'un passage de la sonde. Le choix du connecteur Supabase officiel a été écarté, car il ouvrirait potentiellement tout le projet.
+
 ## Intention
 
 Reprendre le styliste IA du Dressing dans un artefact, pour qu'il utilise l'abonnement Claude à la place de la clé Gemini. L'artefact lit le dressing d'OmniDash et compose des tenues avec les pièces qui s'y trouvent.
@@ -50,7 +58,7 @@ Si un point échoue et ne peut pas être corrigé, on désactive ce qui a été 
 
 ## Le connecteur
 
-Une fonction Supabase Edge nommée `dressing-mcp`, qui sert un serveur MCP, avec un seul outil : `lire_dressing`, sans paramètre.
+Une fonction Supabase Edge nommée `omnidash-mcp`, qui sert un serveur MCP, avec un seul outil : `lire_dressing`, sans paramètre.
 
 Il renvoie pour chaque pièce : identifiant, nom, catégorie, sous-catégorie si elle existe, couleur, marque, quantité, style et lien. Il n'existe aucun outil d'écriture. La fonction n'utilise jamais la clé secrète : elle lit la base avec le jeton de l'utilisateur, donc les règles de sécurité par ligne s'appliquent, et filtre en plus sur son identifiant.
 

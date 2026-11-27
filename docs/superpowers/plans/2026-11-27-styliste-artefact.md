@@ -4,7 +4,7 @@
 
 But : un artefact Claude privé qui compose des tenues à partir du dressing d'OmniDash, lu par un connecteur limité à cette seule table.
 
-Architecture : une fonction Edge `dressing-mcp` expose un outil de lecture, protégé par le serveur OAuth de Supabase. La base et les fonctions existantes refusent le reste aux jetons OAuth. L'artefact utilise `mcp`, `sample` et `db`.
+Architecture : une fonction Edge `omnidash-mcp` expose un outil de lecture, protégé par le serveur OAuth de Supabase. La base et les fonctions existantes refusent le reste aux jetons OAuth. L'artefact utilise `mcp`, `sample` et `db`.
 
 Technique : Vue 3, Supabase (Postgres, Auth, Edge Functions Deno), `@supabase/supabase-js` 2.110.1 déjà installé, tests `node --test`.
 
@@ -17,7 +17,7 @@ Conception : `docs/superpowers/specs/2026-11-27-styliste-artefact-design.md`
 - Aucun marqueur d'écriture IA dans le code, les textes et les messages : pas de tiret cadratin, pas de flèche, pas de gras superflu.
 - Interface et messages en français. Pas d'émoji.
 - Le connecteur a un seul outil, `lire_dressing`, sans paramètre, en lecture seule. La clé secrète n'est jamais utilisée.
-- Nom du connecteur dans claude.ai : `Dressing OmniDash`.
+- Nom du connecteur dans claude.ai : `OmniDash`.
 - Occasions : Travail, Sport, Soirée, Détente. Météo : Chaud, Pluie, Froid.
 - Catégories de pièces : `haut`, `veste`, `bas`, `chaussures`, `accessoire`.
 - « La veille » est le jour calendaire précédent à l'heure de Paris. Seules les tenues portées comptent.
@@ -42,7 +42,7 @@ Conception : `docs/superpowers/specs/2026-11-27-styliste-artefact-design.md`
 | `scripts/sonde-oauth.mjs`, `scripts/sonde-regles.mjs` | test d'un vrai jeton et verdicts |
 | `supabase/schema/dressing_mcp.sql`, `dressing_mcp_retrait.sql` | restrictions et leur retrait |
 | `supabase/functions/_shared/oauth.js` | refus des jetons OAuth |
-| `supabase/functions/dressing-mcp/index.ts`, `piece.js` | connecteur |
+| `supabase/functions/omnidash-mcp/index.ts`, `piece.js` | connecteur |
 | `artifacts/styliste/index.html`, `logic.js` | artefact |
 | `tests/styliste/*.test.mjs` | tests |
 
@@ -180,6 +180,39 @@ Ajouter sur `wardrobe` trois règles restrictives, `oauth_sans_ajout` (insert, `
 - [ ] Écrire `dressing_mcp_retrait.sql`, qui supprime exactement ces règles et aucune autre.
 - [ ] `npm test`. Point de contrôle.
 
+### Task 7: vérification de connexion dans les fonctions
+
+À réaliser avant le déploiement de la barrière B. Constat du 27 novembre : « Verify JWT with legacy secret » est désactivé en ligne, et `ai-stylist`, `generate-travel` et `smart-add-item` ne vérifient pas l'utilisateur. Elles sont donc ouvertes à tous.
+
+Fichiers : créer `supabase/functions/_shared/session.js` et `tests/styliste/session.test.mjs` ; modifier les trois fonctions et `supabase/config.toml`.
+
+Produit : `requireUser(req: Request, headers: object, getUser: (authorization: string) => Promise<object | null>): Promise<Response | null>`. Renvoie `null` si un utilisateur est reconnu, sinon une réponse 401 avec le corps `{ "error": "Connexion requise" }` et les en-têtes CORS de la fonction. Sans en-tête `Authorization`, `getUser` n'est pas appelé. Si `getUser` échoue ou lève une erreur, la réponse est 401.
+
+- [ ] Écrire le test.
+
+```js
+const req = (authorization) => new Request('http://local', { method: 'POST', headers: authorization ? { Authorization: authorization } : {} })
+
+test('sans en-tête, refus sans interroger le serveur', async () => {
+  let calls = 0
+  const res = await requireUser(req(), {}, async () => { calls += 1; return { id: 'u' } })
+  assert.equal(res.status, 401)
+  assert.equal(calls, 0)
+})
+
+test('seul un utilisateur reconnu passe', async () => {
+  assert.equal(await requireUser(req('Bearer a'), {}, async () => ({ id: 'u' })), null)
+  assert.equal((await requireUser(req('Bearer a'), {}, async () => null)).status, 401)
+  assert.equal((await requireUser(req('Bearer a'), {}, async () => { throw new Error('x') })).status, 401)
+})
+```
+
+- [ ] Le voir échouer, écrire `requireUser`, le voir passer.
+- [ ] Dans les trois fonctions, après `OPTIONS` et `refuseOAuthClient`, appeler `requireUser` avec un `getUser` construit comme dans les autres fonctions : client Supabase avec la clé `SUPABASE_ANON_KEY` et l'en-tête `Authorization` reçu, puis `auth.getUser(jeton)`. Aucune clé secrète.
+- [ ] Vérifier que `analyze-nutrition`, `categorize-transactions`, `netatmo-sync`, `save-push-subscription` et `withings-sync` refusent bien l'absence d'utilisateur avant tout effet. Corriger sinon et le signaler.
+- [ ] `config.toml` : `verify_jwt = false` pour les neuf fonctions du dépôt, avec un commentaire qui dit que chacune vérifie elle-même l'appelant, car la vérification de la passerelle ne reconnaît que l'ancien secret. `check-windows` garde son secret.
+- [ ] `npm test` et `npm run build`. Point de contrôle.
+
 ### Barrière B : le jeton ne lit-il que le dressing ?
 
 L'utilisateur lance le SQL dans le SQL Editor, avec la commande de copie fournie :
@@ -188,13 +221,13 @@ L'utilisateur lance le SQL dans le SQL Editor, avec la commande de copie fournie
 LC_CTYPE=en_US.UTF-8 pbcopy < supabase/schema/dressing_mcp.sql
 ```
 
-Il déploie les huit fonctions, réactive brièvement l'enregistrement dynamique, lance la sonde en mode `donnees`, puis le désactive et révoque la sonde.
+Il déploie les fonctions protégées sans activer la vérification de l'ancien secret (`--no-verify-jwt`), réactive brièvement l'enregistrement dynamique, lance la sonde en mode `donnees`, puis le désactive et révoque la sonde.
 
 Réussite : zéro échec, résultat de l'audit examiné, et chaque module d'OmniDash fonctionne toujours avec une connexion normale.
 
 ### Task 4: le connecteur
 
-Fichiers : créer `supabase/functions/dressing-mcp/index.ts`, `piece.js`, `tests/styliste/piece.test.mjs` ; modifier `supabase/config.toml`.
+Fichiers : créer `supabase/functions/omnidash-mcp/index.ts`, `piece.js`, `tests/styliste/piece.test.mjs` ; modifier `supabase/config.toml`.
 
 Produit : outil `lire_dressing`, résultat texte JSON `{ "pieces": Piece[] }`, avec `Piece = { id: string, nom: string, categorie: string, sousCategorie: string|null, couleur: string|null, marque: string|null, quantite: number, style: string|null, lien: string|null }`. `toPiece(row): Piece`.
 
@@ -210,14 +243,14 @@ test('seuls les champs prévus sortent de la base', () => {
 
 - [ ] Le voir échouer, écrire `toPiece`, le voir passer.
 - [ ] Écrire `index.ts` sur le modèle officiel : `pipeline([withOAuthProtectedResource(), withSupabase({ auth: 'user' })], handler)` avec `npm:@supabase/server@1` (1.6.0 au minimum), `npm:@supabase/middleware@1` et `createMcpHandler`, `McpServer` de `npm:@modelcontextprotocol/server@^2.0.0`. Lire d'abord l'[exemple officiel](https://github.com/supabase/supabase/tree/master/examples/edge-functions/supabase/functions/mcp/authenticated-mcp-server) et la [documentation](https://supabase.com/docs/guides/ai-tools/byo-mcp), et suivre leurs signatures si elles diffèrent. Outil annoté en lecture seule. Requête `wardrobe.select('*').eq('user_id', <sub du jeton vérifié>)`, puis `toPiece`. Aucune journalisation des données.
-- [ ] `config.toml` : section `[functions.dressing-mcp]` avec `verify_jwt = false`, car la fonction vérifie elle-même le jeton.
+- [ ] `config.toml` : section `[functions.omnidash-mcp]` avec `verify_jwt = false`, car la fonction vérifie elle-même le jeton.
 - [ ] Point de contrôle.
 
 ### Barrière C : claude.ai et un artefact atteignent-ils le connecteur ?
 
-- [ ] L'utilisateur déploie OmniDash (page d'autorisation) et `dressing-mcp`, sans clé secrète. Un appel sans jeton répond 401.
-- [ ] Il réactive l'enregistrement dynamique, ajoute dans claude.ai un connecteur personnalisé nommé `Dressing OmniDash` à l'adresse `https://<référence>.supabase.co/functions/v1/dressing-mcp`, autorise, puis le désactive.
-- [ ] Publier un artefact d'essai privé avec `{ mcp: { servers: [{ server: 'Dressing OmniDash', tools: ['lire_dressing'] }] } }`. Il affiche seulement le nombre de pièces et les noms des champs. Lire `mcp.d.ts` avant d'écrire l'appel et noter la forme réelle du résultat pour la tâche 6.
+- [ ] L'utilisateur déploie OmniDash (page d'autorisation) et `omnidash-mcp`, sans clé secrète. Un appel sans jeton répond 401.
+- [ ] Il réactive l'enregistrement dynamique, ajoute dans claude.ai un connecteur personnalisé nommé `OmniDash` à l'adresse `https://<référence>.supabase.co/functions/v1/omnidash-mcp`, autorise, puis le désactive.
+- [ ] Publier un artefact d'essai privé avec `{ mcp: { servers: [{ server: 'OmniDash', tools: ['lire_dressing'] }] } }`. Il affiche seulement le nombre de pièces et les noms des champs. Lire `mcp.d.ts` avant d'écrire l'appel et noter la forme réelle du résultat pour la tâche 6.
 
 Réussite : l'artefact affiche le bon nombre de pièces.
 
@@ -305,7 +338,7 @@ Capacités : `mcp` (comme à la barrière C), `sample: {}`, `db: {}`, `user: {}`
 
 1. Retirer le connecteur dans claude.ai.
 2. Révoquer les autorisations et désactiver le serveur OAuth.
-3. Supprimer la fonction `dressing-mcp`.
+3. Supprimer la fonction `omnidash-mcp`.
 4. Lancer `dressing_mcp_retrait.sql` une fois le serveur OAuth désactivé et tout jeton expiré.
 
 Les gardes des fonctions et la page d'autorisation sont sans effet sur une connexion normale et peuvent rester.
