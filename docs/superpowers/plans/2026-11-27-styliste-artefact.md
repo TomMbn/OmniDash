@@ -21,7 +21,7 @@ Conception : `docs/superpowers/specs/2026-11-27-styliste-artefact-design.md`
 - Occasions : Travail, Sport, Soirée, Détente. Météo : Chaud, Pluie, Froid.
 - Catégories de pièces : `haut`, `veste`, `bas`, `chaussures`, `accessoire`.
 - « La veille » est le jour calendaire précédent à l'heure de Paris. Seules les tenues portées comptent.
-- Profil d'analyse : 1,90 m, 80 à 85 kg, coupes droites ou légèrement amples, tons terre et noir à parts égales, vert sombre un peu éteint apprécié, matières naturelles de préférence, pas de finitions côtelées sur un blouson. Confirmé le 27 novembre.
+- Profil d'analyse : 1,90 m, 80 à 85 kg, coupes droites ou légèrement amples, tons terre et noir à parts égales, matières naturelles de préférence, pas de finitions côtelées sur un blouson. Le vert n'est pas une couleur favorite et ne doit pas être mis en avant : s'il est proposé, il doit être sombre et éteint, jamais vif. Confirmé le 27 novembre.
 - Trois barrières (A, B, C) arrêtent le travail. Si l'une échoue sans correction possible : suivre « Retour en arrière », puis proposer le copier-coller et attendre l'accord.
 
 ## Points à surveiller
