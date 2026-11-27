@@ -1,5 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import { supabase } from '@/supabase'
+import { safeRedirect } from '@/utils/auth/redirect'
 import Dashboard from '@/views/Dashboard.vue'
 
 const routes = [
@@ -73,6 +74,12 @@ const routes = [
         name: 'Routines',
         component: () => import('@/views/RoutinesView.vue'),
         meta: { requiresAuth: true }
+    },
+    {
+        path: '/oauth/consent',
+        name: 'OAuthConsent',
+        component: () => import('@/views/OAuthConsentView.vue'),
+        meta: { requiresAuth: true }
     }
 ]
 
@@ -88,10 +95,10 @@ router.beforeEach(async (to, from, next) => {
 
     if (to.meta.requiresAuth && !session) {
         // If route requires auth and user is NOT logged in, redirect to login
-        next({ name: 'Login' })
+        next({ name: 'Login', query: { redirect: to.fullPath } })
     } else if (to.name === 'Login' && session) {
-        // If route is login and user IS logged in, redirect to dashboard
-        next({ name: 'Dashboard' })
+        // If route is login and user IS logged in, go back to the requested page
+        next(safeRedirect(to.query.redirect))
     } else {
         // Else let them pass normally
         next()

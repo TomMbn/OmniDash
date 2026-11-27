@@ -57,9 +57,11 @@
 
 <script setup>
 import { ref } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { useAuth } from '@/composables/useAuth'
+import { safeRedirect } from '@/utils/auth/redirect'
 
+const route = useRoute()
 const router = useRouter()
 const { login, signup } = useAuth()
 
@@ -84,7 +86,7 @@ const handleSubmit = async () => {
   try {
     if (isLogin.value) {
       await login(email.value, password.value)
-      router.push('/')
+      router.push(safeRedirect(route.query.redirect))
     } else {
       await signup(email.value, password.value)
       successMsg.value = 'Compte créé. Vérifie ta boîte mail si besoin.'
