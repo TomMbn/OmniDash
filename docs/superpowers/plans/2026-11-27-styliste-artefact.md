@@ -12,7 +12,7 @@ Conception : `docs/superpowers/specs/2026-11-27-styliste-artefact-design.md`
 
 ## Contraintes générales
 
-- Ne rien commiter ni pousser sans demande. Chaque tâche finit par un point de contrôle : tests verts et diff présenté.
+- Commits locaux sur la branche `feat/styliste-artefact`, avec l'accord de l'utilisateur : messages courts, sans ligne `Co-Authored-By`, adresse `tom.mauboussin@icloud.com`. Aucun push ni fusion sans demande.
 - Ne jamais lire `.env`, ne jamais se connecter à Supabase ni exécuter de SQL. L'utilisateur le fait lui-même.
 - Aucun marqueur d'écriture IA dans le code, les textes et les messages : pas de tiret cadratin, pas de flèche, pas de gras superflu.
 - Interface et messages en français. Pas d'émoji.
@@ -48,7 +48,7 @@ Conception : `docs/superpowers/specs/2026-11-27-styliste-artefact-design.md`
 
 ---
 
-### Tâche 1 : page d'autorisation et retour après connexion
+### Task 1: page d'autorisation et retour après connexion
 
 Fichiers : créer `src/utils/auth/redirect.js`, `src/views/OAuthConsentView.vue`, `tests/styliste/redirect.test.mjs` ; modifier `src/router/index.js` et `src/views/LoginView.vue`.
 
@@ -73,7 +73,7 @@ test('seul un chemin interne est accepté', () => {
 - [ ] `npm test` et `npm run build` réussissent. Vérifier en local que `/oauth/consent` sans identifiant affiche le message prévu, si une session est disponible. Sinon le signaler.
 - [ ] Point de contrôle.
 
-### Tâche 2 : sonde d'un vrai jeton
+### Task 2: sonde d'un vrai jeton
 
 Fichiers : créer `scripts/sonde-regles.mjs`, `scripts/sonde-oauth.mjs`, `tests/styliste/sonde.test.mjs`.
 
@@ -125,7 +125,7 @@ Un statut 401 ou 403 vaut `ok` partout sauf pour `lecture-dressing`. Tout statut
 
 Réussite : « compte : ok ». Sinon, arrêt. Chercher dans la documentation s'il existe une protection officielle avant de conclure ; ne rien improviser.
 
-### Tâche 3 : restrictions dans la base et les fonctions
+### Task 3: restrictions dans la base et les fonctions
 
 Fichiers : créer les deux scripts SQL, `supabase/functions/_shared/oauth.js`, `tests/styliste/oauth.test.mjs` ; modifier les fonctions `ai-stylist`, `analyze-nutrition`, `categorize-transactions`, `generate-travel`, `netatmo-sync`, `save-push-subscription`, `smart-add-item`, `withings-sync`. `check-windows` exige déjà son propre secret et ne change pas.
 
@@ -192,7 +192,7 @@ Il déploie les huit fonctions, réactive brièvement l'enregistrement dynamique
 
 Réussite : zéro échec, résultat de l'audit examiné, et chaque module d'OmniDash fonctionne toujours avec une connexion normale.
 
-### Tâche 4 : le connecteur
+### Task 4: le connecteur
 
 Fichiers : créer `supabase/functions/dressing-mcp/index.ts`, `piece.js`, `tests/styliste/piece.test.mjs` ; modifier `supabase/config.toml`.
 
@@ -221,7 +221,7 @@ test('seuls les champs prévus sortent de la base', () => {
 
 Réussite : l'artefact affiche le bon nombre de pièces.
 
-### Tâche 5 : logique du styliste
+### Task 5: logique du styliste
 
 Fichiers : créer `artifacts/styliste/logic.js` et `tests/styliste/logic.test.mjs`. Module sans accès à la page ni au réseau.
 
@@ -283,7 +283,7 @@ test('une seule relance', async () => {
 - [ ] Les voir échouer, écrire le module, les voir passer. Dates avec `Intl.DateTimeFormat` et le fuseau `Europe/Paris`.
 - [ ] Point de contrôle.
 
-### Tâche 6 : l'artefact
+### Task 6: l'artefact
 
 Fichiers : créer `artifacts/styliste/index.html`.
 
