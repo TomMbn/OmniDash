@@ -7,7 +7,9 @@ import { readdirSync, readFileSync } from 'node:fs'
 import { createServer } from 'node:http'
 import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { verdict, tablesDuCode, tablesDuSchema } from './sonde-regles.mjs'
+import {
+  verdict, verdictDressing, verdictRafraichissement, codeServeur, tablesDuCode, tablesDuSchema
+} from './sonde-regles.mjs'
 
 const PORT = 8787
 const RETOUR = `http://127.0.0.1:${PORT}/callback`
@@ -31,9 +33,6 @@ const codeErreur = (err) => {
   const code = String(err?.cause?.code || err?.name || '')
   return /^\w{1,40}$/.test(code) ? code : 'inconnue'
 }
-
-const codeServeur = (body) =>
-  [body?.error_code, body?.error].find((v) => typeof v === 'string' && /^[a-z_]{1,60}$/.test(v))
 
 const reponse = (r) => (r.status ? `HTTP ${r.status}` : `aucune réponse, erreur ${r.erreur}`)
 const detail = (r) => reponse(r) + (codeServeur(r.body) ? `, ${codeServeur(r.body)}` : '')
@@ -183,7 +182,7 @@ async function obtenirJeton() {
       throw new SondeError(`Échange du code refusé (${detail(r)}).`)
     }
     console.log('Jeton obtenu (non affiché).\n')
-    return jeton
+    return { jeton, rafraichissement: r.body.refresh_token }
   } finally {
     retour.fermer()
   }
@@ -264,14 +263,64 @@ async function essayerAjout(entetes, utilisateur, lectureOk) {
   }
 }
 
-async function sonderDonnees(entetes, utilisateur, tables) {
-  const dressing = await appel(`${base}/rest/v1/wardrobe?select=id,name,user_id&limit=1`, { headers: entetes })
+// Dernier contrôle : la rotation du jeton de rafraîchissement ne doit pas perturber les autres.
+async function essayerRafraichissement(rafraichissement) {
+  const nom = 'rafraîchissement sans client_id'
+  console.log('\nRafraîchissement :')
+  if (typeof rafraichissement !== 'string' || !rafraichissement) {
+    return noter(nom, 'echec', 'non effectué, aucun jeton de rafraîchissement reçu')
+  }
+
+  const r = await appel(`${base}/auth/v1/token?grant_type=refresh_token`, {
+    method: 'POST',
+    headers: { apikey: cle, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ refresh_token: rafraichissement })
+  })
+  const { resultat, motif } = verdictRafraichissement(r.status, r.body)
+  const explications = {
+    refus: 'refusé par le serveur',
+    'session-client': 'accepté, le nouveau jeton porte toujours client_id',
+    'session-normale': 'accepté, le nouveau jeton ne porte pas client_id',
+    inattendu: 'réponse inattendue'
+  }
+  noter(nom, resultat, `${detail(r)}, ${explications[motif]}`)
+
+  // Tout jeton rendu sans preuve qu'il reste limité est fermé aussitôt.
+  const obtenu = r.body?.access_token
+  if (resultat === 'ok' || !accepte(r) || typeof obtenu !== 'string' || !obtenu) return
+
+  const constat = motif === 'session-normale'
+    ? 'UNE SESSION NORMALE A ÉTÉ OBTENUE avec le jeton de rafraîchissement du client OAuth.'
+    : 'un jeton illisible a été rendu, peut-être une session normale.'
+  const sortie = await appel(`${base}/auth/v1/logout?scope=local`, {
+    method: 'POST',
+    headers: { apikey: cle, Authorization: `Bearer ${obtenu}` }
+  })
+  if (accepte(sortie)) {
+    console.log(`\nALERTE : ${constat}\nCette session a été fermée (${reponse(sortie)}). Le contrôle reste en échec : n'ajoute pas le connecteur.\n`)
+  } else {
+    alerter(`${constat}\nSa fermeture a échoué (${detail(sortie)}). Aucun jeton n'a été affiché ni écrit. Révoque le client, puis ferme toutes les sessions dans Supabase, SQL Editor (tous les appareils seront déconnectés) :\ndelete from auth.sessions;`)
+  }
+}
+
+async function sonderDonnees(entetes, utilisateur, tables, rafraichissement) {
+  const dressing = await appel(`${base}/rest/v1/wardrobe?select=id,name,user_id`, { headers: entetes })
   const lectureOk = verdict('lecture-dressing', dressing.status, dressing.body) === 'ok'
-  controler('lecture du dressing', 'lecture-dressing', dressing)
+  const proprietaire = verdictDressing(dressing.status, dressing.body, utilisateur)
+  let precision = ''
+  if (proprietaire === 'ok') precision = `, ${dressing.body.length} ligne(s), toutes du compte du jeton`
+  else if (lectureOk) {
+    precision = utilisateur
+      ? ', au moins une ligne appartient à un autre compte ou n\'a pas de user_id'
+      : ', identifiant du compte introuvable dans le jeton'
+  }
+  noter('lecture du dressing', proprietaire, reponse(dressing) + precision)
+  console.log("Avec un seul compte, ce contrôle ne peut pas révéler une règle trop large : lis les lignes de l'audit SQL sur la lecture du dressing.")
   if (!lectureOk) {
     console.log("Attention : sans lecture du dressing, les refus qui suivent ne prouvent rien (le jeton n'est peut-être pas accepté).")
   }
-  const piece = lectureOk ? dressing.body[0] : null
+  // La modification d'essai ne vise qu'une pièce du compte.
+  const piece = lectureOk ? dressing.body.find((ligne) => utilisateur && ligne?.user_id === utilisateur) : null
 
   console.log(`\nLecture des autres tables (${tables.length}) :`)
   const sansLigne = []
@@ -310,6 +359,8 @@ async function sonderDonnees(entetes, utilisateur, tables) {
     controler(`fonction ${fonction}`, 'fonction', r)
   }
 
+  await essayerRafraichissement(rafraichissement)
+
   if (sansLigne.length) {
     console.log(`\nUne table vide ne prouve rien. Vérifie dans Supabase que ces tables contiennent des lignes : ${sansLigne.join(', ')}`)
   }
@@ -334,11 +385,11 @@ async function principal() {
   const tables = mode === 'donnees' ? listerTables() : []
 
   console.log(`Sonde OmniDash, mode ${mode}`)
-  const jeton = await obtenirJeton()
+  const { jeton, rafraichissement } = await obtenirJeton()
   const entetes = { apikey: cle, Authorization: `Bearer ${jeton}` }
 
   if (mode === 'compte') await sonderCompte(entetes)
-  else await sonderDonnees(entetes, lireUtilisateur(jeton), tables)
+  else await sonderDonnees(entetes, lireUtilisateur(jeton), tables, rafraichissement)
 
   console.log(`\nNombre d'échecs : ${echecs}`)
   for (const alerte of alertes) console.log(`\nALERTE, nettoyage à faire : ${alerte}`)

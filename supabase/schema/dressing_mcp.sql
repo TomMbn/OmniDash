@@ -55,8 +55,23 @@ end $$;
 -- La première ligne, « Audit exécuté », est toujours présente. Toutes les autres sont à examiner.
 -- S'il s'affiche moins de lignes qu'annoncé, retirer la limite d'affichage du SQL Editor et relancer.
 with constats as (
+  -- Le jeton lit le dressing : seules ces règles limitent cette lecture, et il suffit qu'une seule soit trop large.
   select 1 as rang,
-         'Fonction security definer exécutable' as constat,
+         'Lecture du dressing : seule une condition équivalente à auth.uid() = user_id est attendue' as constat,
+         format('public.wardrobe, règle « %s »', policyname) as objet,
+         concat_ws(' ; ',
+           'commande : ' || cmd,
+           'rôles : ' || array_to_string(roles, ', '),
+           'using : ' || coalesce(qual, 'aucune')) as detail
+    from pg_policies
+   where schemaname = 'public' and tablename = 'wardrobe'
+     and permissive = 'PERMISSIVE'
+     and cmd in ('SELECT', 'ALL')
+
+  union all
+
+  select 2,
+         'Fonction security definer exécutable',
          format('%I.%I(%s)', n.nspname, p.proname, pg_get_function_identity_arguments(p.oid)) as objet,
          concat_ws(' ; ',
            'exécution : ' || concat_ws(' et ',
@@ -71,7 +86,7 @@ with constats as (
 
   union all
 
-  select 2,
+  select 3,
          case c.relkind when 'm' then 'Vue matérialisée accessible' else 'Vue accessible' end,
          format('%I.%I', n.nspname, c.relname),
          concat_ws(' ; ',
@@ -98,7 +113,7 @@ with constats as (
   union all
 
   -- Dans public, toute table sans sécurité par ligne. Ailleurs, seulement si un de ces rôles y a un droit.
-  select 3,
+  select 4,
          case c.relkind when 'f' then 'Table étrangère, sans sécurité par ligne possible'
            else 'Table sans sécurité par ligne' end,
          format('%I.%I', n.nspname, c.relname),
@@ -120,7 +135,7 @@ with constats as (
   union all
 
   -- Une règle sans « to » vise le rôle public, donc aussi anon : lire sa condition.
-  select 4,
+  select 5,
          'Règle ouverte au rôle anon',
          format('%I.%I, règle « %s »', schemaname, tablename, policyname),
          concat_ws(' ; ',
