@@ -293,7 +293,7 @@ button { font: inherit; color: inherit; }
 import {
   todayParis, previousDay, availableFor, askOutfit, normalizePieces, connectorFailure,
   buildOutfitPrompt, buildManquesPrompt, askManques, manquesForStorage, storedManques,
-  historyFromDocs, historyRows, makeEntry, repeatNotes
+  historyFromDocs, historyRows, makeEntry, repeatNotes, autoRefresh
 } from './logic.js'
 
 const SERVEUR = 'OmniDash'
@@ -304,7 +304,7 @@ const etat = {
   mcp: null, sample: null, db: null, uid: null,
   pieces: null, source: null, dateCopie: null, generation: 0,
   history: {}, historyState: 'chargement',
-  proposition: null, manquesBrut: null, luA: 0, arrete: false, desabonner: null,
+  proposition: null, manquesBrut: null, luA: 0, derniereErreur: null, arrete: false, desabonner: null,
   today: todayParis(new Date()),
   occupe: false, claudeCoupe: false,
   confirmationSuppression: null
@@ -489,6 +489,7 @@ async function lireDressing() {
         etat.source = 'direct'
         etat.dateCopie = null
         etat.luA = Date.now()
+        etat.derniereErreur = null
         alerte(null)
         apresDressing()
         garderCopie(pieces)
@@ -502,6 +503,7 @@ async function lireDressing() {
     code = 'absent'
   }
   if (generation !== etat.generation) return
+  etat.derniereErreur = code
 
   const panne = connectorFailure(code)
   if (panne.stop) {
@@ -560,6 +562,7 @@ $('relire').addEventListener('click', lireDressing)
 document.addEventListener('visibilitychange', () => {
   if (document.visibilityState !== 'visible') return
   verifierJour()
+  if (!autoRefresh(etat.derniereErreur)) return
   if (etat.mcp && !etat.occupe && (!etat.luA || Date.now() - etat.luA > 300000)) lireDressing()
 })
 

@@ -157,6 +157,19 @@ export function connectorFailure(code) {
   return { useCache: nature === 'copie', stop: nature === 'arret', message }
 }
 
+// Relecture automatique (retour sur l'onglet). Après une panne qui demande
+// une action de la personne (reconnexion, ajout, choix, accord, réglage), seul
+// le bouton « Relire le dressing » relance la lecture.
+const ACTION_REQUISE = new Set([
+  'needs_reauth', 'server_not_connected', 'selection_required', 'server_not_found',
+  'approval_required', 'consent_required', 'not_in_manifest', 'not_granted', 'blocked_by_policy',
+  'user_changed', 'absent', 'capability_disabled', 'capability_removed'
+])
+
+export function autoRefresh(lastCode) {
+  return !ACTION_REQUISE.has(lastCode)
+}
+
 const PROFIL = [
   'Profil : 1,90 m, 80 à 85 kg. Coupes droites ou légèrement amples. Matières naturelles de préférence. Pas de finitions côtelées sur un blouson.',
   'Couleurs : tons terre et noir à parts égales.',

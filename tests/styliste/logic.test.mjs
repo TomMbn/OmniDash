@@ -370,3 +370,21 @@ test('répétitions expliquées pour les pièces retenues seulement', () => {
   assert.match(notes[0].message, /hier/)
   assert.match(notes[0].message, /aucun autre bas/)
 })
+
+import { autoRefresh } from '../../artifacts/styliste/logic.js'
+
+test('relecture automatique après un succès ou une panne passagère', () => {
+  for (const code of [null, undefined, 'server_unavailable', 'upstream_error', 'tool_error', 'rate_limited', 'reponse_illisible', 'code_inconnu']) {
+    assert.equal(autoRefresh(code), true, String(code))
+  }
+})
+
+test('pas de relecture automatique quand une personne doit agir', () => {
+  for (const code of [
+    'needs_reauth', 'server_not_connected', 'selection_required', 'server_not_found',
+    'approval_required', 'consent_required', 'not_in_manifest', 'not_granted', 'blocked_by_policy',
+    'user_changed', 'absent', 'capability_disabled', 'capability_removed'
+  ]) {
+    assert.equal(autoRefresh(code), false, code)
+  }
+})
