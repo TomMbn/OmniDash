@@ -1,0 +1,954 @@
+<title>Styliste OmniDash</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600;700&display=swap">
+<style>
+/* Couleurs et rayons repris des jetons Aurore d'OmniDash (thèmes Jour et Soir).
+   Une colonne étroite, des cartes blanches sur fond gris bleuté, un seul bouton noir par action. */
+:root {
+  --bg-base: #EDEEF2;
+  --bg-raised: #FFFFFF;
+  --bg-subtle: #F4F5F8;
+  --border-subtle: #E4E5EA;
+  --border-default: #D9DAE1;
+  --text-primary: #15151A;
+  --text-secondary: #565763;
+  --action: #121216;
+  --on-action: #FFFFFF;
+  --accent: #5B3FD6;
+  --accent-dim: #E8E2FC;
+  --accent-border: rgba(91, 63, 214, 0.22);
+  --module-dress: #A12A5F;
+  --status-warning: #6E5406;
+  --status-warning-dim: #FBF0CC;
+  --status-error: #A12A5F;
+  --status-error-dim: #FBDDE8;
+  --shadow-sm: 0 1px 3px rgba(21, 21, 26, 0.06);
+  --font-sans: 'Onest', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --radius-sm: 10px;
+  --radius-md: 18px;
+  --radius-lg: 28px;
+  --radius-pill: 999px;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --bg-base: #0F1014;
+    --bg-raised: #1A1B21;
+    --bg-subtle: #24252C;
+    --border-subtle: #2E2F38;
+    --border-default: #3A3B45;
+    --text-primary: #F3F3F6;
+    --text-secondary: #B4B5C0;
+    --action: #FFFFFF;
+    --on-action: #15151A;
+    --accent: #B8A9FF;
+    --accent-dim: #2A2448;
+    --accent-border: rgba(184, 169, 255, 0.28);
+    --module-dress: #F5A3C5;
+    --status-warning: #EBCF7A;
+    --status-warning-dim: #3B3113;
+    --status-error: #F5A3C5;
+    --status-error-dim: #45182B;
+    --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.4);
+  }
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --bg-base: #0F1014;
+  --bg-raised: #1A1B21;
+  --bg-subtle: #24252C;
+  --border-subtle: #2E2F38;
+  --border-default: #3A3B45;
+  --text-primary: #F3F3F6;
+  --text-secondary: #B4B5C0;
+  --action: #FFFFFF;
+  --on-action: #15151A;
+  --accent: #B8A9FF;
+  --accent-dim: #2A2448;
+  --accent-border: rgba(184, 169, 255, 0.28);
+  --module-dress: #F5A3C5;
+  --status-warning: #EBCF7A;
+  --status-warning-dim: #3B3113;
+  --status-error: #F5A3C5;
+  --status-error-dim: #45182B;
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.4);
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+body {
+  background: var(--bg-base);
+  color: var(--text-primary);
+  font-family: var(--font-sans);
+  font-size: 15px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+h1, h2, h3 { margin: 0; font-weight: 600; letter-spacing: -0.015em; line-height: 1.2; text-wrap: balance; }
+p { margin: 0; }
+ul, ol { margin: 0; padding: 0; list-style: none; }
+button { font: inherit; color: inherit; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+.page {
+  max-width: 760px;
+  margin: 0 auto;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 24px 48px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.tete { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 12px 20px; }
+.tete h1 { font-size: 1.625rem; }
+.surtitre {
+  font-size: 0.75rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase;
+  color: var(--module-dress); margin-bottom: 4px;
+}
+.source { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; min-width: 0; }
+.source p { font-size: 0.8125rem; color: var(--text-secondary); font-variant-numeric: tabular-nums; }
+
+.alerte {
+  border-radius: var(--radius-sm);
+  padding: 12px 14px;
+  font-size: 0.875rem;
+  background: var(--status-warning-dim);
+  color: var(--status-warning);
+}
+.alerte.erreur { background: var(--status-error-dim); color: var(--status-error); }
+
+.onglets {
+  display: flex; gap: 4px; padding: 4px;
+  background: var(--bg-raised); border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-pill); align-self: flex-start; max-width: 100%;
+}
+.onglets button {
+  border: 0; background: transparent; cursor: pointer;
+  padding: 8px 16px; border-radius: var(--radius-pill);
+  font-size: 0.875rem; font-weight: 500; color: var(--text-secondary);
+}
+.onglets button[aria-selected="true"] { background: var(--action); color: var(--on-action); }
+
+.panneau { display: flex; flex-direction: column; gap: 18px; }
+.choix { border: 0; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.choix legend { padding: 0; margin-bottom: 8px; font-size: 0.75rem; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-secondary); }
+.pastilles { display: flex; flex-wrap: wrap; gap: 8px; }
+.pastilles input { position: absolute; opacity: 0; width: 1px; height: 1px; }
+.pastilles label {
+  cursor: pointer; padding: 7px 14px; border-radius: var(--radius-pill);
+  border: 1px solid var(--border-default); background: var(--bg-raised);
+  font-size: 0.875rem; font-weight: 500;
+}
+.pastilles input:checked + label { background: var(--accent-dim); color: var(--accent); border-color: var(--accent-border); }
+.pastilles input:focus-visible + label { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+.actions { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+.bouton {
+  cursor: pointer; border-radius: var(--radius-pill); padding: 10px 18px;
+  font-size: 0.9375rem; font-weight: 600; border: 1px solid var(--border-default);
+  background: var(--bg-raised); color: var(--text-primary);
+}
+.bouton.principal { background: var(--action); color: var(--on-action); border-color: var(--action); }
+.bouton.discret { padding: 6px 12px; font-size: 0.8125rem; font-weight: 500; }
+.bouton.danger { color: var(--status-error); border-color: var(--status-error); }
+.bouton:disabled { opacity: 0.45; cursor: not-allowed; }
+
+.etat { font-size: 0.875rem; color: var(--text-secondary); min-height: 1.3em; }
+.etat.erreur { color: var(--status-error); }
+.etat:empty { display: none; }
+
+.cartes { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 12px; }
+.carte {
+  background: var(--bg-raised); border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md); box-shadow: var(--shadow-sm);
+  padding: 16px; display: flex; flex-direction: column; gap: 6px; min-width: 0;
+}
+.categorie { font-size: 0.75rem; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--module-dress); }
+.carte h3 { font-size: 1.0625rem; overflow-wrap: anywhere; }
+.detail { font-size: 0.8125rem; color: var(--text-secondary); overflow-wrap: anywhere; }
+.raison { font-size: 0.875rem; overflow-wrap: anywhere; }
+.carte a { font-size: 0.8125rem; color: var(--accent); font-weight: 500; margin-top: auto; padding-top: 4px; }
+
+.resume { font-size: 0.9375rem; max-width: 62ch; overflow-wrap: anywhere; }
+.notes { display: flex; flex-direction: column; gap: 6px; }
+.notes li { font-size: 0.8125rem; color: var(--status-warning); background: var(--status-warning-dim); border-radius: var(--radius-sm); padding: 8px 12px; }
+
+.confirmation {
+  background: var(--bg-subtle); border: 1px solid var(--border-default);
+  border-radius: var(--radius-md); padding: 14px 16px;
+  display: flex; flex-direction: column; gap: 10px;
+}
+.confirmation p { font-size: 0.875rem; overflow-wrap: anywhere; }
+
+.journal { display: flex; flex-direction: column; gap: 10px; }
+.jour {
+  background: var(--bg-raised); border: 1px solid var(--border-subtle); border-radius: var(--radius-md);
+  padding: 14px 16px; display: flex; flex-direction: column; gap: 6px; min-width: 0;
+}
+.jour-tete { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 4px 12px; }
+.jour-date { font-weight: 600; }
+.jour-contexte { font-size: 0.8125rem; color: var(--text-secondary); }
+.jour-pieces { font-size: 0.9375rem; overflow-wrap: anywhere; }
+.jour .actions { margin-top: 4px; }
+
+.vide {
+  border: 1px dashed var(--border-default); border-radius: var(--radius-md);
+  padding: 20px; font-size: 0.875rem; color: var(--text-secondary);
+}
+.manque h3 { font-size: 1.0625rem; }
+.manque dl { margin: 4px 0 0; display: grid; grid-template-columns: auto 1fr; gap: 4px 12px; font-size: 0.8125rem; }
+.manque dt { color: var(--text-secondary); }
+.manque dd { margin: 0; overflow-wrap: anywhere; min-width: 0; }
+.intro { font-size: 0.875rem; color: var(--text-secondary); max-width: 62ch; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { transition-duration: 0.01ms !important; animation-duration: 0.01ms !important; }
+}
+</style>
+
+<div class="page">
+  <header class="tete">
+    <div>
+      <p class="surtitre">Dressing</p>
+      <h1>Styliste</h1>
+    </div>
+    <div class="source">
+      <p id="source" role="status">Lecture du dressing en cours.</p>
+      <button type="button" class="bouton discret" id="relire" disabled>Relire le dressing</button>
+    </div>
+  </header>
+
+  <p id="alerte" class="alerte" role="alert" hidden></p>
+
+  <nav class="onglets" role="tablist" aria-label="Sections">
+    <button type="button" role="tab" id="onglet-tenue" aria-controls="panneau-tenue" aria-selected="true">Tenue</button>
+    <button type="button" role="tab" id="onglet-historique" aria-controls="panneau-historique" aria-selected="false">Historique</button>
+    <button type="button" role="tab" id="onglet-manques" aria-controls="panneau-manques" aria-selected="false">Manques</button>
+  </nav>
+
+  <section class="panneau" id="panneau-tenue" role="tabpanel" aria-labelledby="onglet-tenue">
+    <fieldset class="choix">
+      <legend>Occasion</legend>
+      <div class="pastilles">
+        <input type="radio" name="occasion" id="occ-travail" value="Travail" checked><label for="occ-travail">Travail</label>
+        <input type="radio" name="occasion" id="occ-sport" value="Sport"><label for="occ-sport">Sport</label>
+        <input type="radio" name="occasion" id="occ-soiree" value="Soirée"><label for="occ-soiree">Soirée</label>
+        <input type="radio" name="occasion" id="occ-detente" value="Détente"><label for="occ-detente">Détente</label>
+      </div>
+    </fieldset>
+    <fieldset class="choix">
+      <legend>Météo</legend>
+      <div class="pastilles">
+        <input type="radio" name="meteo" id="met-chaud" value="Chaud"><label for="met-chaud">Chaud</label>
+        <input type="radio" name="meteo" id="met-pluie" value="Pluie"><label for="met-pluie">Pluie</label>
+        <input type="radio" name="meteo" id="met-froid" value="Froid" checked><label for="met-froid">Froid</label>
+      </div>
+    </fieldset>
+    <div class="actions">
+      <button type="button" class="bouton principal" id="proposer" disabled>Proposer une tenue</button>
+      <button type="button" class="bouton" id="arreter-tenue" hidden>Arrêter</button>
+    </div>
+    <p class="etat" id="etat-tenue" role="status"></p>
+
+    <div id="tenue" class="panneau" hidden>
+      <ul class="cartes" id="cartes"></ul>
+      <p class="resume" id="resume"></p>
+      <ul class="notes" id="notes"></ul>
+      <div class="actions">
+        <button type="button" class="bouton principal" id="porter">Je la porte aujourd’hui</button>
+        <button type="button" class="bouton" id="autre">Autre proposition</button>
+      </div>
+      <div class="confirmation" id="confirmer-porter" hidden>
+        <p id="texte-remplacer"></p>
+        <div class="actions">
+          <button type="button" class="bouton principal" id="remplacer">Remplacer</button>
+          <button type="button" class="bouton" id="garder">Garder l’ancienne</button>
+        </div>
+      </div>
+      <p class="etat" id="etat-porter" role="status"></p>
+    </div>
+  </section>
+
+  <section class="panneau" id="panneau-historique" role="tabpanel" aria-labelledby="onglet-historique" hidden>
+    <p class="etat" id="etat-historique" role="status"></p>
+    <ol class="journal" id="historique"></ol>
+  </section>
+
+  <section class="panneau" id="panneau-manques" role="tabpanel" aria-labelledby="onglet-manques" hidden>
+    <p class="intro">Claude repère de 5 à 7 pièces qui manquent au dressing, avec la coupe, la matière, la couleur, une solution de repli et les pièces à associer. L’analyse ne connaît pas la liste d’achats.</p>
+    <div class="actions">
+      <button type="button" class="bouton principal" id="analyser" disabled>Analyser le dressing</button>
+      <button type="button" class="bouton" id="arreter-manques" hidden>Arrêter</button>
+    </div>
+    <p class="etat" id="etat-manques" role="status"></p>
+    <p class="etat" id="date-manques"></p>
+    <ul class="cartes" id="manques"></ul>
+  </section>
+</div>
+
+<script type="module">
+import {
+  todayParis, previousDay, availableFor, askOutfit, normalizePieces, connectorFailure,
+  buildOutfitPrompt, buildManquesPrompt, askManques, manquesForStorage, storedManques,
+  historyFromDocs, historyRows, makeEntry, repeatNotes
+} from './logic.js'
+
+const SERVEUR = 'OmniDash'
+const OUTIL = 'lire_dressing'
+const $ = (id) => document.getElementById(id)
+
+const etat = {
+  mcp: null, sample: null, db: null, uid: null,
+  pieces: null, source: null, dateCopie: null, generation: 0,
+  history: {}, historyState: 'chargement',
+  proposition: null, manquesBrut: null, luA: 0,
+  today: todayParis(new Date()),
+  occupe: false, claudeCoupe: false,
+  confirmationSuppression: null
+}
+
+const chemins = () => ({
+  dressing: `data/users/${etat.uid}/dressing`,
+  manques: `data/users/${etat.uid}/manques`,
+  jours: `data/users/${etat.uid}/tenues/jours`
+})
+const baseOk = () => Boolean(etat.db && etat.uid)
+
+// Dates
+
+const formatJour = new Intl.DateTimeFormat('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', timeZone: 'UTC' })
+const formatHeure = new Intl.DateTimeFormat('fr-FR', { day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Paris' })
+
+function libelleJour(iso) {
+  if (iso === etat.today) return 'Aujourd’hui'
+  if (iso === previousDay(etat.today)) return 'Hier'
+  const texte = formatJour.format(new Date(`${iso}T12:00:00Z`))
+  return texte.charAt(0).toUpperCase() + texte.slice(1)
+}
+
+function libelleCopie(isoComplet) {
+  const date = new Date(isoComplet)
+  return Number.isNaN(date.getTime()) ? 'date inconnue' : formatHeure.format(date)
+}
+
+// La page peut rester ouverte après minuit : la date du jour est recalculée.
+function verifierJour() {
+  const maintenant = todayParis(new Date())
+  if (maintenant === etat.today) return
+  etat.today = maintenant
+  afficherHistorique()
+  if (etat.proposition && etat.proposition.today !== maintenant) {
+    $('etat-porter').textContent = 'Cette proposition date d’hier. Demandez une nouvelle tenue pour aujourd’hui.'
+  }
+}
+setInterval(verifierJour, 60000)
+
+// Petits outils d'affichage
+
+function el(tag, classe, texte) {
+  const noeud = document.createElement(tag)
+  if (classe) noeud.className = classe
+  if (texte !== undefined) noeud.textContent = texte
+  return noeud
+}
+
+function bouton(texte, classe) {
+  const b = el('button', `bouton ${classe ?? ''}`.trim(), texte)
+  b.type = 'button'
+  return b
+}
+
+function lienSur(url) {
+  if (typeof url !== 'string' || !url.startsWith('https://')) return null
+  const a = el('a', '', 'Voir la pièce')
+  a.href = url
+  a.target = '_blank'
+  a.rel = 'noopener noreferrer'
+  return a
+}
+
+function dire(id, texte, erreur = false) {
+  const noeud = $(id)
+  noeud.textContent = texte
+  noeud.classList.toggle('erreur', erreur)
+}
+
+function alerte(texte, grave) {
+  const noeud = $('alerte')
+  noeud.textContent = texte ?? ''
+  noeud.hidden = !texte
+  noeud.classList.toggle('erreur', Boolean(grave))
+}
+
+function majBoutons() {
+  const pret = Array.isArray(etat.pieces) && Boolean(etat.sample) && !etat.claudeCoupe && !etat.occupe
+  $('proposer').disabled = !pret
+  $('autre').disabled = !pret
+  $('analyser').disabled = !pret
+  $('porter').disabled = etat.occupe || !baseOk()
+}
+
+// Onglets
+
+const onglets = ['tenue', 'historique', 'manques']
+function ouvrir(nom) {
+  for (const o of onglets) {
+    $(`onglet-${o}`).setAttribute('aria-selected', String(o === nom))
+    $(`panneau-${o}`).hidden = o !== nom
+  }
+  try { localStorage.setItem('styliste-onglet', nom) } catch {}
+}
+for (const o of onglets) $(`onglet-${o}`).addEventListener('click', () => ouvrir(o))
+try {
+  const garde = localStorage.getItem('styliste-onglet')
+  if (onglets.includes(garde)) ouvrir(garde)
+} catch {}
+
+// Dressing
+
+function afficherSource() {
+  const n = etat.pieces?.length ?? 0
+  const pieces = n === 0 ? 'Aucune pièce' : `${n} pièce${n > 1 ? 's' : ''}`
+  if (etat.source === 'direct') $('source').textContent = n === 0 ? 'Dressing vide dans OmniDash.' : `${pieces}, lue${n > 1 ? 's' : ''} dans OmniDash.`
+  else if (etat.source === 'copie') $('source').textContent = `${pieces}, copie du ${libelleCopie(etat.dateCopie)}.`
+  else $('source').textContent = 'Aucun dressing disponible.'
+}
+
+function retirerDressing() {
+  etat.pieces = null
+  etat.source = null
+  etat.dateCopie = null
+  etat.proposition = null
+  $('tenue').hidden = true
+  $('cartes').replaceChildren()
+  $('notes').replaceChildren()
+  $('resume').textContent = ''
+  $('manques').replaceChildren()
+  $('date-manques').textContent = ''
+  dire('etat-tenue', '')
+  dire('etat-manques', '')
+}
+
+function attendre(ms) { return new Promise((r) => setTimeout(r, ms)) }
+
+async function appelDressing() {
+  try {
+    return await etat.mcp.callTool(SERVEUR, OUTIL, undefined, { cache: false })
+  } catch (e) {
+    if (e?.retryable !== true) throw e
+    const delai = Math.min(Number(e.retryAfterMs) || 0, 60000) + 500 + Math.random() * 1000
+    await attendre(delai)
+    return etat.mcp.callTool(SERVEUR, OUTIL, undefined, { cache: false })
+  }
+}
+
+async function lireCopie() {
+  if (!baseOk()) return null
+  try {
+    const snap = await etat.db.doc(chemins().dressing).get()
+    if (!snap.exists) return null
+    const data = snap.data()
+    const pieces = normalizePieces(data)
+    if (!pieces || typeof data.lu !== 'string') return null
+    return { pieces, lu: data.lu }
+  } catch {
+    return null
+  }
+}
+
+async function garderCopie(pieces) {
+  if (!baseOk()) return
+  try {
+    const copie = await lireCopie()
+    const memes = copie && JSON.stringify(copie.pieces) === JSON.stringify(pieces)
+    const recente = copie && Date.now() - new Date(copie.lu).getTime() < 3600000
+    if (memes && recente) return
+    await etat.db.doc(chemins().dressing).set({ pieces, lu: new Date().toISOString() })
+  } catch {
+    // La copie est une aide en cas de panne : son échec ne bloque pas la page.
+  }
+}
+
+async function lireDressing() {
+  const generation = ++etat.generation
+  $('relire').disabled = true
+  $('source').textContent = 'Lecture du dressing en cours.'
+  let code
+  if (etat.mcp) {
+    try {
+      const resultat = await appelDressing()
+      if (generation !== etat.generation) return
+      const pieces = normalizePieces(resultat?.payload)
+      if (pieces) {
+        etat.pieces = pieces
+        etat.source = 'direct'
+        etat.dateCopie = null
+        etat.luA = Date.now()
+        alerte(null)
+        apresDressing()
+        garderCopie(pieces)
+        return
+      }
+      code = 'reponse_illisible'
+    } catch (e) {
+      code = typeof e?.code === 'string' ? e.code : 'upstream_error'
+    }
+  } else {
+    code = 'absent'
+  }
+  if (generation !== etat.generation) return
+
+  const panne = connectorFailure(code)
+  if (!panne.useCache) {
+    retirerDressing()
+    alerte(panne.message, true)
+    apresDressing()
+    return
+  }
+  const copie = await lireCopie()
+  if (generation !== etat.generation) return
+  if (copie) {
+    etat.pieces = copie.pieces
+    etat.source = 'copie'
+    etat.dateCopie = copie.lu
+    alerte(`${panne.message} La dernière copie du dressing, du ${libelleCopie(copie.lu)}, est utilisée.`, false)
+  } else {
+    retirerDressing()
+    alerte(`${panne.message} Aucune copie du dressing n’est disponible.`, true)
+  }
+  apresDressing()
+}
+
+function apresDressing() {
+  afficherSource()
+  $('relire').disabled = false
+  if (Array.isArray(etat.pieces) && etat.pieces.length === 0) {
+    dire('etat-tenue', 'Le dressing est vide. Ajoutez des pièces dans OmniDash pour recevoir une proposition.')
+  }
+  if (etat.proposition) {
+    // Le dressing a changé : la proposition affichée n'est plus garantie.
+    const ids = new Set(etat.pieces?.map((x) => x.id) ?? [])
+    if (!etat.proposition.result.cards.every((c) => ids.has(c.piece.id))) {
+      etat.proposition = null
+      $('tenue').hidden = true
+    }
+  }
+  afficherManques()
+  majBoutons()
+}
+
+$('relire').addEventListener('click', lireDressing)
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState !== 'visible') return
+  verifierJour()
+  if (etat.mcp && !etat.occupe && (!etat.luA || Date.now() - etat.luA > 300000)) lireDressing()
+})
+
+// Claude
+
+function messageClaude(e) {
+  switch (e?.code) {
+    case 'not_granted':
+    case 'sampling_disabled':
+    case 'not_declared':
+    case 'capability_disabled':
+    case 'capability_removed':
+      etat.claudeCoupe = true
+      return 'Claude n’est pas autorisé pour cette page. Vous pouvez l’autoriser dans le menu Autorisations de l’artefact, puis recharger la page.'
+    case 'rate_limited':
+      return e.reason === 'usage_limit'
+        ? 'La limite d’utilisation de votre abonnement Claude est atteinte. Réessayez plus tard.'
+        : 'Trop de demandes à Claude en peu de temps. Réessayez dans un moment.'
+    case 'session_expired': return 'Votre session claude.ai a expiré. Reconnectez-vous puis rechargez la page.'
+    case 'refused': return 'Claude a refusé cette demande.'
+    case 'empty_completion': return 'Claude n’a rien répondu. Réessayez.'
+    case 'prompt_too_large': return 'Le dressing est trop grand pour une seule demande.'
+    case 'cancelled': return 'Demande arrêtée.'
+    default: return 'Claude ne répond pas pour le moment. Réessayez dans un moment.'
+  }
+}
+
+function demandeur(signal) {
+  return async (prompt) => {
+    const { text } = await etat.sample(prompt, { cache: false, signal })
+    return text
+  }
+}
+
+function verifierAvantDemande(etatId) {
+  if (!Array.isArray(etat.pieces)) {
+    dire(etatId, 'Le dressing n’est pas disponible.', true)
+    return false
+  }
+  if (etat.pieces.length === 0) {
+    dire(etatId, 'Le dressing est vide. Ajoutez des pièces dans OmniDash pour lancer une demande.')
+    return false
+  }
+  if (!etat.sample || etat.claudeCoupe) {
+    dire(etatId, 'Claude n’est pas disponible pour cette page.', true)
+    return false
+  }
+  return true
+}
+
+// Tenue
+
+function valeur(nom) { return document.querySelector(`input[name="${nom}"]:checked`)?.value ?? '' }
+
+function noteRegle() {
+  switch (etat.historyState) {
+    case 'ok': return null
+    case 'provisoire': return 'L’historique n’est pas encore confirmé : la règle des deux jours peut être incomplète.'
+    case 'absent': return 'La règle des deux jours n’a pas pu s’appliquer : l’historique n’est pas disponible ici.'
+    case 'chargement': return 'La règle des deux jours n’a pas pu s’appliquer : l’historique est encore en chargement.'
+    default: return 'La règle des deux jours n’a pas pu s’appliquer : l’historique n’a pas pu être lu.'
+  }
+}
+
+async function proposer() {
+  if (etat.occupe) return
+  verifierJour()
+  if (!verifierAvantDemande('etat-tenue')) return
+  const occasion = valeur('occasion')
+  const meteo = valeur('meteo')
+  const today = etat.today
+  const regleApplicable = etat.historyState === 'ok' || etat.historyState === 'provisoire'
+  const dispo = availableFor(etat.pieces, regleApplicable ? etat.history : {}, today)
+
+  const ctl = new AbortController()
+  etat.occupe = true
+  majBoutons()
+  $('arreter-tenue').hidden = false
+  $('arreter-tenue').onclick = () => ctl.abort()
+  $('confirmer-porter').hidden = true
+  dire('etat-porter', '')
+  dire('etat-tenue', 'Claude prépare une tenue.')
+  try {
+    const result = await askOutfit(demandeur(ctl.signal), buildOutfitPrompt(dispo.pieces, occasion, meteo), dispo.pieces)
+    if (!result.ok) {
+      dire('etat-tenue', `Claude n’a pas donné de tenue valide après deux essais (${result.error}) Réessayez.`, true)
+      return
+    }
+    if (!Array.isArray(etat.pieces)) return
+    etat.proposition = { result, repeats: dispo.repeats, occasion, meteo, today, note: noteRegle() }
+    dire('etat-tenue', '')
+    afficherTenue()
+  } catch (e) {
+    dire('etat-tenue', messageClaude(e), e?.code !== 'cancelled')
+  } finally {
+    etat.occupe = false
+    $('arreter-tenue').hidden = true
+    majBoutons()
+  }
+}
+
+const NOMS_CATEGORIE = { haut: 'haut', bas: 'bas', chaussures: 'chaussures' }
+
+function afficherTenue() {
+  const p = etat.proposition
+  if (!p) { $('tenue').hidden = true; return }
+  const cartes = p.result.cards.map(({ piece, raison }) => {
+    const li = el('li', 'carte')
+    const categorie = piece.sousCategorie ? `${piece.categorie}, ${piece.sousCategorie}` : piece.categorie
+    li.append(el('p', 'categorie', categorie), el('h3', '', piece.nom))
+    const detail = [piece.couleur, piece.marque].filter(Boolean).join(', ')
+    if (detail) li.append(el('p', 'detail', detail))
+    if (raison) li.append(el('p', 'raison', raison))
+    const lien = lienSur(piece.lien)
+    if (lien) li.append(lien)
+    return li
+  })
+  $('cartes').replaceChildren(...cartes)
+  $('resume').textContent = p.result.resume
+  $('resume').hidden = !p.result.resume
+
+  const notes = []
+  for (const categorie of p.result.missing) notes.push(`Pas de ${NOMS_CATEGORIE[categorie]} dans cette tenue.`)
+  for (const { piece, message } of repeatNotes(p.result.cards, p.repeats)) notes.push(`${piece.nom} : ${message}`)
+  if (p.note) notes.push(p.note)
+  if (!baseOk()) notes.push('L’historique ne peut pas être enregistré ici : la tenue ne sera pas gardée.')
+  $('notes').replaceChildren(...notes.map((texte) => el('li', '', texte)))
+  $('tenue').hidden = false
+}
+
+async function porter(confirme) {
+  const p = etat.proposition
+  if (!p || etat.occupe) return
+  verifierJour()
+  if (!baseOk()) {
+    dire('etat-porter', 'L’historique ne peut pas être enregistré ici.', true)
+    return
+  }
+  if (p.today !== etat.today) {
+    dire('etat-porter', 'Cette proposition date d’hier. Demandez une nouvelle tenue pour aujourd’hui.', true)
+    return
+  }
+  etat.occupe = true
+  majBoutons()
+  try {
+    const ref = etat.db.collection(chemins().jours).doc(p.today)
+    if (!confirme) {
+      const snap = await ref.get()
+      if (snap.exists) {
+        const ancienne = historyFromDocs([{ id: snap.id, data: snap.data() }])[p.today]
+        const noms = ancienne?.noms.length ? ancienne.noms.join(', ') : 'tenue sans détail'
+        $('texte-remplacer').textContent = `Une tenue est déjà enregistrée pour aujourd’hui : ${noms}. La remplacer par celle-ci ?`
+        $('confirmer-porter').hidden = false
+        dire('etat-porter', '')
+        return
+      }
+    }
+    await ref.set(makeEntry(p.result, p.occasion, p.meteo))
+    $('confirmer-porter').hidden = true
+    dire('etat-porter', confirme ? 'La tenue du jour a été remplacée.' : 'Tenue enregistrée pour aujourd’hui.')
+  } catch (e) {
+    dire('etat-porter', messageBase(e, 'La tenue n’a pas pu être enregistrée.'), true)
+  } finally {
+    etat.occupe = false
+    majBoutons()
+  }
+}
+
+function messageBase(e, debut) {
+  switch (e?.code) {
+    case 'quota_exceeded': return `${debut} L’espace de stockage est plein : supprimez d’anciennes entrées.`
+    case 'resource_exhausted': return `${debut} Trop d’opérations en peu de temps, réessayez dans un moment.`
+    case 'invalid_argument': return `${debut} L’écriture a été refusée.`
+    case 'revoked':
+    case 'not_granted':
+    case 'capability_disabled':
+    case 'capability_removed':
+      return `${debut} L’accès au stockage a été retiré pour cette page.`
+    default: return `${debut} Réessayez dans un moment.`
+  }
+}
+
+$('proposer').addEventListener('click', proposer)
+$('autre').addEventListener('click', proposer)
+$('porter').addEventListener('click', () => porter(false))
+$('remplacer').addEventListener('click', () => porter(true))
+$('garder').addEventListener('click', () => {
+  $('confirmer-porter').hidden = true
+  dire('etat-porter', 'La tenue déjà enregistrée est conservée.')
+})
+
+// Historique
+
+function afficherHistorique() {
+  const liste = $('historique')
+  if (etat.historyState === 'absent') {
+    dire('etat-historique', 'L’historique n’est pas disponible ici : connectez-vous à claude.ai pour enregistrer et retrouver vos tenues.')
+    liste.replaceChildren()
+    return
+  }
+  if (etat.historyState === 'erreur') dire('etat-historique', 'L’historique n’a pas pu être lu. Rechargez la page pour réessayer.', true)
+  else if (etat.historyState === 'chargement') dire('etat-historique', 'Chargement de l’historique.')
+  else if (etat.historyState === 'lent') dire('etat-historique', 'L’historique ne répond pas encore. Il s’affichera dès qu’il sera lu.')
+  else dire('etat-historique', '')
+
+  const lignes = historyRows(etat.history)
+  if (lignes.length === 0) {
+    liste.replaceChildren()
+    if (etat.historyState === 'ok') {
+      liste.append(el('li', 'vide', 'Aucune tenue portée pour l’instant. Choisissez « Je la porte aujourd’hui » sous une proposition pour l’ajouter ici.'))
+    }
+    return
+  }
+  liste.replaceChildren(...lignes.map(ligneHistorique))
+}
+
+function ligneHistorique(entree) {
+  const li = el('li', 'jour')
+  const tete = el('div', 'jour-tete')
+  tete.append(el('span', 'jour-date', libelleJour(entree.date)))
+  const contexte = [entree.occasion, entree.meteo].filter(Boolean).join(', ')
+  if (contexte) tete.append(el('span', 'jour-contexte', contexte))
+  li.append(tete)
+  li.append(el('p', 'jour-pieces', entree.noms.length ? entree.noms.join(', ') : `${entree.ids.length} pièce${entree.ids.length > 1 ? 's' : ''}`))
+  if (entree.resume) li.append(el('p', 'detail', entree.resume))
+
+  const actions = el('div', 'actions')
+  if (etat.confirmationSuppression === entree.date) {
+    const texte = el('p', 'detail', 'Supprimer cette entrée ? Elle ne pourra pas être récupérée.')
+    const oui = bouton('Supprimer', 'discret danger')
+    const non = bouton('Annuler', 'discret')
+    oui.addEventListener('click', () => supprimer(entree.date))
+    non.addEventListener('click', () => { etat.confirmationSuppression = null; afficherHistorique() })
+    actions.append(texte, oui, non)
+  } else {
+    const suppr = bouton('Supprimer', 'discret')
+    suppr.disabled = !baseOk()
+    suppr.addEventListener('click', () => { etat.confirmationSuppression = entree.date; afficherHistorique() })
+    actions.append(suppr)
+  }
+  li.append(actions)
+  return li
+}
+
+async function supprimer(date) {
+  if (!baseOk()) return
+  try {
+    await etat.db.collection(chemins().jours).doc(date).delete()
+    etat.confirmationSuppression = null
+    dire('etat-historique', 'Entrée supprimée.')
+  } catch (e) {
+    dire('etat-historique', messageBase(e, 'L’entrée n’a pas pu être supprimée.'), true)
+  }
+}
+
+function suivreHistorique() {
+  let confirme = false
+  const minuterie = setTimeout(() => {
+    if (!confirme && etat.historyState === 'chargement') {
+      etat.historyState = 'lent'
+      afficherHistorique()
+    }
+  }, 10000)
+  try {
+    etat.db.collection(chemins().jours).onSnapshot((snap) => {
+      etat.history = historyFromDocs(snap.docs.map((d) => ({ id: d.id, data: d.data() })))
+      if (!snap.metadata.fromCache) {
+        confirme = true
+        clearTimeout(minuterie)
+        etat.historyState = 'ok'
+      } else if (!confirme) {
+        etat.historyState = 'provisoire'
+      }
+      afficherHistorique()
+    }, () => {
+      clearTimeout(minuterie)
+      etat.historyState = 'erreur'
+      afficherHistorique()
+    })
+  } catch {
+    clearTimeout(minuterie)
+    etat.historyState = 'erreur'
+    afficherHistorique()
+  }
+}
+
+// Manques
+
+function afficherManques() {
+  const liste = $('manques')
+  if (!Array.isArray(etat.pieces) || !etat.manquesBrut) {
+    liste.replaceChildren()
+    $('date-manques').textContent = ''
+    return
+  }
+  const gardee = storedManques(etat.manquesBrut, etat.pieces)
+  if (!gardee) { liste.replaceChildren(); return }
+  const valide = /^\d{4}-\d{2}-\d{2}$/.test(gardee.date)
+  $('date-manques').textContent = valide ? `Dernière analyse : ${formatJour.format(new Date(`${gardee.date}T12:00:00Z`))}.` : 'Dernière analyse : date inconnue.'
+  liste.replaceChildren(...gardee.items.map((item) => {
+    const li = el('li', 'carte manque')
+    li.append(el('h3', '', item.piece))
+    const dl = el('dl')
+    for (const [terme, texte] of [['Coupe', item.coupe], ['Matière', item.matiere], ['Couleur', item.couleur], ['Repli', item.repli]]) {
+      dl.append(el('dt', '', terme), el('dd', '', texte))
+    }
+    if (item.associer.length) dl.append(el('dt', '', 'Avec'), el('dd', '', item.associer.map((x) => x.nom).join(', ')))
+    li.append(dl)
+    return li
+  }))
+}
+
+async function lireManques() {
+  if (!baseOk()) return
+  try {
+    const snap = await etat.db.doc(chemins().manques).get()
+    if (snap.exists) {
+      etat.manquesBrut = snap.data()
+      afficherManques()
+    }
+  } catch {
+    dire('etat-manques', 'La dernière analyse n’a pas pu être relue.', true)
+  }
+}
+
+async function analyser() {
+  if (etat.occupe) return
+  verifierJour()
+  if (!verifierAvantDemande('etat-manques')) return
+  const ctl = new AbortController()
+  const pieces = etat.pieces
+  etat.occupe = true
+  majBoutons()
+  $('arreter-manques').hidden = false
+  $('arreter-manques').onclick = () => ctl.abort()
+  dire('etat-manques', 'Claude analyse le dressing.')
+  try {
+    const result = await askManques(demandeur(ctl.signal), buildManquesPrompt(pieces), pieces)
+    if (!result.ok) {
+      dire('etat-manques', `Claude n’a pas donné d’analyse valide après deux essais (${result.error}) Réessayez.`, true)
+      return
+    }
+    const brut = { date: etat.today, items: manquesForStorage(result.items) }
+    etat.manquesBrut = brut
+    afficherManques()
+    if (!baseOk()) {
+      dire('etat-manques', 'L’analyse ne peut pas être gardée ici : elle disparaîtra à la fermeture de la page.')
+      return
+    }
+    try {
+      await etat.db.doc(chemins().manques).set(brut)
+      dire('etat-manques', '')
+    } catch (e) {
+      dire('etat-manques', messageBase(e, 'L’analyse n’a pas pu être gardée.'), true)
+    }
+  } catch (e) {
+    dire('etat-manques', messageClaude(e), e?.code !== 'cancelled')
+  } finally {
+    etat.occupe = false
+    $('arreter-manques').hidden = true
+    majBoutons()
+  }
+}
+
+$('analyser').addEventListener('click', analyser)
+
+// Démarrage
+
+async function utiliser(nom) {
+  try {
+    return (await window.claude?.use?.(nom)) ?? null
+  } catch {
+    return null
+  }
+}
+
+async function demarrer() {
+  afficherHistorique()
+  const [mcp, sample, db, user] = await Promise.all(['mcp', 'sample', 'db', 'user'].map(utiliser))
+  etat.mcp = mcp
+  etat.sample = sample
+  if (!sample) dire('etat-tenue', 'Claude n’est pas disponible ici : ouvrez l’artefact dans claude.ai pour recevoir des propositions.')
+  let uid = null
+  try { uid = user ? await user.id() : null } catch { uid = null }
+  if (db && typeof uid === 'string' && uid) {
+    etat.db = db
+    etat.uid = uid
+    try {
+      chemins()
+      etat.db.collection(chemins().jours)
+    } catch {
+      etat.db = null
+    }
+  }
+  if (baseOk()) {
+    etat.historyState = 'chargement'
+    suivreHistorique()
+    lireManques()
+  } else {
+    etat.historyState = 'absent'
+  }
+  afficherHistorique()
+  majBoutons()
+  await lireDressing()
+}
+
+demarrer()
+</script>

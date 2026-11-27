@@ -23,8 +23,12 @@ export function previousDay(iso) {
 
 // Les hauts et bas portés la veille sont retirés. Une catégorie qui se
 // retrouve vide les récupère, et leurs identifiants sont signalés.
+// Un historique absent ou mal formé ne bloque rien : la page dit elle-même
+// quand la règle n'a pas pu s'appliquer.
 export function availableFor(pieces, history, today) {
-  const veille = new Set(history[previousDay(today)]?.ids ?? [])
+  const entree = history !== null && typeof history === 'object' ? history[previousDay(today)] : undefined
+  const ids = Array.isArray(entree?.ids) ? entree.ids.filter((x) => typeof x === 'string') : []
+  const veille = new Set(ids)
   const bloquees = new Set()
   const repeats = []
 
@@ -85,9 +89,197 @@ export function parseOutfit(text, allowed) {
 
 // Une relance au plus, et seulement si la réponse est refusée. Une erreur de
 // ask (limite atteinte, refus) remonte telle quelle à l'appelant.
-export async function askOutfit(ask, prompt, allowed) {
-  const premier = parseOutfit(await ask(prompt), allowed)
+async function avecRelance(ask, prompt, lire) {
+  const premier = lire(await ask(prompt))
   if (premier.ok) return premier
   const relance = `${prompt}\n\nTa réponse précédente a été refusée. ${premier.error} Réponds uniquement avec le JSON demandé.`
-  return parseOutfit(await ask(relance), allowed)
+  return lire(await ask(relance))
+}
+
+export function askOutfit(ask, prompt, allowed) {
+  return avecRelance(ask, prompt, (texte) => parseOutfit(texte, allowed))
+}
+
+// Dressing reçu du connecteur ou relu depuis la copie gardée. Seuls les
+// champs connus sont repris, et seulement s'ils ont le bon type.
+export function normalizePieces(payload) {
+  if (payload === null || typeof payload !== 'object' || !Array.isArray(payload.pieces)) return null
+  const vus = new Set()
+  const pieces = []
+  for (const x of payload.pieces) {
+    if (x === null || typeof x !== 'object') continue
+    if (typeof x.id !== 'string' || x.id === '' || vus.has(x.id)) continue
+    if (typeof x.nom !== 'string' || typeof x.categorie !== 'string') continue
+    vus.add(x.id)
+    pieces.push({
+      id: x.id,
+      nom: x.nom,
+      categorie: x.categorie,
+      sousCategorie: texteOuVide(x.sousCategorie),
+      couleur: texteOuVide(x.couleur),
+      marque: texteOuVide(x.marque),
+      quantite: Number.isInteger(x.quantite) && x.quantite > 0 ? x.quantite : 1,
+      style: texteOuVide(x.style),
+      lien: texteOuVide(x.lien)
+    })
+  }
+  return pieces
+}
+
+// Refus d'accès : la copie gardée ne doit pas servir. Panne passagère : elle
+// sert, avec sa date. Un code inconnu compte comme une panne passagère.
+const PANNES = {
+  needs_reauth: [false, 'La connexion à OmniDash a expiré. Reconnectez OmniDash dans les réglages de claude.ai, rubrique Connecteurs, puis rechargez la page.'],
+  server_not_connected: [false, 'Le connecteur OmniDash n’est pas ajouté à votre compte. Ajoutez-le dans les réglages de claude.ai, rubrique Connecteurs.'],
+  server_not_found: [false, 'Le connecteur OmniDash n’existe plus. Ajoutez-le de nouveau dans les réglages de claude.ai, rubrique Connecteurs.'],
+  blocked_by_policy: [false, 'L’accès au connecteur OmniDash est bloqué par une règle de votre organisation.'],
+  approval_required: [false, 'La lecture du dressing attend votre accord. Touchez « Relire le dressing » et acceptez la demande.'],
+  consent_required: [false, 'La lecture du dressing attend votre accord. Touchez « Relire le dressing » et acceptez la demande.'],
+  not_in_manifest: [false, 'La lecture du dressing est désactivée pour cette page. Réactivez OmniDash dans le menu Autorisations de l’artefact.'],
+  not_granted: [false, 'La lecture du dressing n’est pas autorisée pour cette page. Réactivez OmniDash dans le menu Autorisations de l’artefact.'],
+  user_changed: [false, 'Le compte connecté a changé. Rechargez la page.'],
+  absent: [false, 'Les connecteurs ne sont pas disponibles ici. Ouvrez l’artefact dans claude.ai pour lire le dressing.'],
+  capability_disabled: [false, 'Les connecteurs ne sont pas disponibles ici. Ouvrez l’artefact dans claude.ai pour lire le dressing.'],
+  capability_removed: [false, 'Les connecteurs ne sont pas disponibles ici. Ouvrez l’artefact dans claude.ai pour lire le dressing.'],
+  selection_required: [true, 'Plusieurs connecteurs portent le nom OmniDash. Choisissez celui à utiliser dans claude.ai.'],
+  tool_error: [true, 'OmniDash a renvoyé une erreur en lisant le dressing. Réessayez plus tard.'],
+  rate_limited: [true, 'Trop de lectures en peu de temps. Réessayez dans un moment.']
+}
+const PANNE_PASSAGERE = [true, 'OmniDash ne répond pas pour le moment. Réessayez dans quelques minutes.']
+
+export function connectorFailure(code) {
+  const [useCache, message] = Object.hasOwn(PANNES, code) ? PANNES[code] : PANNE_PASSAGERE
+  return { useCache, message }
+}
+
+const PROFIL = [
+  'Profil : 1,90 m, 80 à 85 kg. Coupes droites ou légèrement amples. Matières naturelles de préférence. Pas de finitions côtelées sur un blouson.',
+  'Couleurs : tons terre et noir à parts égales.',
+  'Le vert n’est pas une couleur préférée : ne le mets pas en avant et ne choisis jamais une pièce parce qu’elle est verte. Si du vert apparaît malgré tout, il doit être sombre et éteint, jamais vif.'
+].join('\n')
+
+// Les liens ne partent jamais vers Claude.
+function lignesPieces(pieces) {
+  return pieces
+    .map(({ id, nom, categorie, sousCategorie, couleur, marque, style, quantite }) =>
+      JSON.stringify({ id, nom, categorie, sousCategorie, couleur, marque, style, quantite }))
+    .join('\n')
+}
+
+export function buildOutfitPrompt(pieces, occasion, meteo) {
+  return [
+    'Compose une tenue pour aujourd’hui avec les pièces de la liste ci-dessous, et seulement celles-ci.',
+    `Occasion : ${occasion}. Météo : ${meteo}.`,
+    PROFIL,
+    'Règles : un bas au plus et une paire de chaussures au plus ; plusieurs hauts ou vestes possibles en superposition ; tenue adaptée à l’occasion et à la météo ; chaque identifiant une seule fois.',
+    'Réponds uniquement avec un objet JSON, sans texte avant ou après et sans bloc de code, de cette forme :',
+    '{"pieces":[{"id":"identifiant de la liste","raison":"rôle de la pièce dans la tenue, en une phrase"}],"resume":"l’ensemble en deux phrases au plus"}',
+    'Pièces disponibles, une par ligne :',
+    lignesPieces(pieces)
+  ].join('\n')
+}
+
+const associesMin = (wardrobe) => Math.min(2, wardrobe.length)
+
+export function buildManquesPrompt(pieces) {
+  const nombre = associesMin(pieces) === 2 ? '2 ou 3' : 'de 1 à 3'
+  return [
+    'Analyse le dressing ci-dessous et indique de 5 à 7 pièces qui y manquent pour mieux l’utiliser.',
+    PROFIL,
+    `Pour chaque pièce : piece (nom court), coupe, matiere, couleur, repli (une solution plus simple ou moins chère), associer (${nombre} identifiants de pièces du dressing à porter avec).`,
+    'Réponds uniquement avec un objet JSON, sans texte avant ou après et sans bloc de code, de cette forme :',
+    '{"manques":[{"piece":"...","coupe":"...","matiere":"...","couleur":"...","repli":"...","associer":["identifiant","identifiant"]}]}',
+    'Dressing, une pièce par ligne :',
+    lignesPieces(pieces)
+  ].join('\n')
+}
+
+const CHAMPS_MANQUE = ['piece', 'coupe', 'matiere', 'couleur', 'repli']
+const texteRempli = (valeur) => typeof valeur === 'string' && valeur.trim() !== ''
+
+export function parseManques(text, wardrobe) {
+  const liste = lireJson(text)?.manques
+  if (!Array.isArray(liste)) return refus('La réponse n’est pas au format JSON demandé.')
+  if (liste.length < 5 || liste.length > 7) return refus('L’analyse doit compter de 5 à 7 pièces.')
+
+  const parId = new Map(wardrobe.map((x) => [x.id, x]))
+  const min = associesMin(wardrobe)
+  const items = []
+
+  for (const element of liste) {
+    if (element === null || typeof element !== 'object') return refus('Un élément de l’analyse est mal formé.')
+    if (!CHAMPS_MANQUE.every((champ) => texteRempli(element[champ]))) return refus('Un élément de l’analyse a un champ vide ou mal formé.')
+    const ids = element.associer
+    if (!Array.isArray(ids) || ids.length < min || ids.length > 3) return refus(`Chaque pièce doit citer de ${min} à 3 pièces du dressing.`)
+    if (new Set(ids).size !== ids.length) return refus('Une pièce cite deux fois la même pièce du dressing.')
+    const associer = ids.map((id) => parId.get(id))
+    if (associer.some((x) => !x)) return refus('L’analyse cite une pièce qui n’est pas dans le dressing.')
+    items.push({ ...Object.fromEntries(CHAMPS_MANQUE.map((champ) => [champ, element[champ]])), associer })
+  }
+  return { ok: true, items }
+}
+
+export function askManques(ask, prompt, wardrobe) {
+  return avecRelance(ask, prompt, (texte) => parseManques(texte, wardrobe))
+}
+
+export function manquesForStorage(items) {
+  return items.map((x) => ({ ...x, associer: x.associer.map((piece) => piece.id) }))
+}
+
+// Relecture de la dernière analyse : le dressing a pu changer depuis, donc
+// les pièces disparues sont retirées sans refuser l'analyse entière.
+export function storedManques(data, wardrobe) {
+  if (data === null || typeof data !== 'object' || typeof data.date !== 'string' || !Array.isArray(data.items)) return null
+  const parId = new Map(wardrobe.map((x) => [x.id, x]))
+  const items = data.items
+    .filter((x) => x !== null && typeof x === 'object' && CHAMPS_MANQUE.every((champ) => typeof x[champ] === 'string'))
+    .map((x) => ({
+      ...Object.fromEntries(CHAMPS_MANQUE.map((champ) => [champ, x[champ]])),
+      associer: (Array.isArray(x.associer) ? x.associer : []).map((id) => parId.get(id)).filter(Boolean)
+    }))
+  return { date: data.date, items }
+}
+
+const DATE_ISO = /^\d{4}-\d{2}-\d{2}$/
+const textes = (valeur) => (Array.isArray(valeur) ? valeur.filter((x) => typeof x === 'string') : [])
+
+// docs : [{ id, data }], un document par date.
+export function historyFromDocs(docs) {
+  const history = {}
+  if (!Array.isArray(docs)) return history
+  for (const doc of docs) {
+    const data = doc?.data
+    if (typeof doc?.id !== 'string' || !DATE_ISO.test(doc.id)) continue
+    if (data === null || typeof data !== 'object' || !Array.isArray(data.ids)) continue
+    history[doc.id] = {
+      ids: textes(data.ids),
+      noms: textes(data.noms),
+      occasion: texteOuVide(data.occasion),
+      meteo: texteOuVide(data.meteo),
+      resume: texteOuVide(data.resume)
+    }
+  }
+  return history
+}
+
+export function historyRows(history) {
+  return Object.keys(history).sort().reverse().map((date) => ({ date, ...history[date] }))
+}
+
+export function makeEntry(result, occasion, meteo) {
+  return {
+    ids: result.cards.map((x) => x.piece.id),
+    noms: result.cards.map((x) => x.piece.nom),
+    occasion,
+    meteo,
+    resume: result.resume
+  }
+}
+
+export function repeatNotes(cards, repeats) {
+  const repetees = new Set(repeats)
+  return cards
+    .filter((x) => repetees.has(x.piece.id))
+    .map(({ piece }) => ({ piece, message: `Portée hier : aucun autre ${piece.categorie} n’est disponible dans le dressing.` }))
 }
