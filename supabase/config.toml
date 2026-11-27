@@ -46,3 +46,6 @@ verify_jwt = false
 
 [functions.smart-add-item]
 verify_jwt = false
+
+[functions.omnidash-mcp]
+verify_jwt = false
