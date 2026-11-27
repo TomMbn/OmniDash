@@ -24,7 +24,7 @@ La structure de l'objet JSON DOIT être EXACTEMENT celle-ci :
 
 Règles strictes :
 - "protein", "carbs", "fats" et "calories" doivent être des nombres entiers.
-- "is_exceptional_meal" : identifie si le repas est un écart / plaisir (true) ou un repas habituel / équilibré (false).
+- "is_exceptional_meal" : un Burger King est typiquement une consommation exceptionnelle (true), contrairement aux muffins et au shaker qui sont des habitudes (false). Adapte ta classification selon cette logique pour tous les repas.
 - PORTIONS PAR DÉFAUT (CRITIQUE) : Si le poids exact n'est pas précisé (ex: "2 tournedos", "du riz"), base-toi strictement sur des portions standards européennes moyennes (1 pièce de viande = 150g maximum, 1 portion de féculents = 200g cuits). Ne surestime JAMAIS les quantités sous prétexte que l'utilisateur est sportif.
 - Ne rajoute AUCUN texte en dehors de l'objet JSON.`;
 
