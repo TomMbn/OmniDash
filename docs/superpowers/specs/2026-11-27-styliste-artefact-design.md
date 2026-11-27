@@ -108,7 +108,7 @@ Proposition à confirmer : le haut et le bas portés la veille ne sont pas repro
 ### Onglet Manques
 
 - Un bouton lance l'analyse de 5 à 7 pièces, affichées en cartes : pièce, coupe, matière, couleur, solution de repli et deux ou trois pièces du dressing à associer.
-- Le profil donné à Claude, à confirmer : 1,90 m, 80 à 85 kg, coupes droites ou légèrement amples, tons terre et noir à parts égales, matières naturelles de préférence, pas de finitions côtelées sur un blouson.
+- Le profil donné à Claude, à confirmer : 1,90 m, 80 à 85 kg, coupes droites ou légèrement amples, tons terre et noir à parts égales, vert sombre un peu éteint apprécié, matières naturelles de préférence, pas de finitions côtelées sur un blouson.
 - L'analyse ne connaît pas la liste d'achats : elle peut proposer une pièce déjà prévue.
 - La dernière analyse est gardée avec sa date.
 
