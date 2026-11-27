@@ -87,7 +87,8 @@ Il est privé et utilise trois capacités : `mcp` (le connecteur « Dressing Omn
 
 ### Onglet Tenue
 
-- Choix de l'occasion (travail, sport, soirée, détente) et de la météo (chaud, pluie, froid).
+- Choix de l'occasion (travail, sport, soirée, détente, habillé) et de la météo (chaud, pluie, froid).
+- Les chaussures de style « habillé » dans OmniDash, comme les richelieus, ne sont proposées que pour l'occasion « Habillé » : elles font trop pour le quotidien. La page les retire elle-même avant la demande, même s'il n'y a pas d'autre paire. Les autres pièces habillées ne sont pas concernées.
 - Bouton « Proposer une tenue ».
 - Résultat : une carte par pièce avec son nom, sa couleur, son rôle dans la tenue et son lien s'il commence par https, puis une courte explication de l'ensemble.
 - Boutons « Je la porte aujourd'hui » et « Autre proposition ».

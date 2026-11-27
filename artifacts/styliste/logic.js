@@ -44,6 +44,15 @@ export function availableFor(pieces, history, today) {
   return { pieces: pieces.filter((x) => !bloquees.has(x.id)), repeats }
 }
 
+// Les chaussures de style « habillé » (richelieus par exemple) font trop pour le
+// quotidien : elles ne sont proposées que pour l'occasion Habillé, même s'il
+// n'y a pas d'autre paire.
+const chaussureHabillee = (x) => x.categorie === 'chaussures' && String(x.style).trim().toLowerCase() === 'habillé'
+
+export function forOccasion(pieces, occasion) {
+  return occasion === 'Habillé' ? pieces : pieces.filter((x) => !chaussureHabillee(x))
+}
+
 const refus = (error) => ({ ok: false, error })
 const texteOuVide = (valeur) => (typeof valeur === 'string' ? valeur : '')
 

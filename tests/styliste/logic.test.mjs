@@ -371,7 +371,7 @@ test('répétitions expliquées pour les pièces retenues seulement', () => {
   assert.match(notes[0].message, /aucun autre bas/)
 })
 
-import { autoRefresh } from '../../artifacts/styliste/logic.js'
+import { autoRefresh, forOccasion } from '../../artifacts/styliste/logic.js'
 
 test('relecture automatique après un succès ou une panne passagère', () => {
   for (const code of [null, undefined, 'server_unavailable', 'upstream_error', 'tool_error', 'rate_limited', 'reponse_illisible', 'code_inconnu']) {
@@ -387,4 +387,23 @@ test('pas de relecture automatique quand une personne doit agir', () => {
   ]) {
     assert.equal(autoRefresh(code), false, code)
   }
+})
+
+const souliers = [
+  { id: 'r', categorie: 'chaussures', style: 'habillé' },
+  { id: 'b', categorie: 'chaussures', style: 'casual' },
+  { id: 'p', categorie: 'haut', style: 'habillé' },
+  { id: 'm', categorie: 'accessoire', style: 'habillé' }
+]
+
+test('forOccasion réserve les chaussures habillées à l’occasion Habillé', () => {
+  for (const occasion of ['Travail', 'Sport', 'Soirée', 'Détente']) {
+    assert.deepEqual(forOccasion(souliers, occasion).map((x) => x.id), ['b', 'p', 'm'], occasion)
+  }
+  assert.deepEqual(forOccasion(souliers, 'Habillé').map((x) => x.id), ['r', 'b', 'p', 'm'])
+})
+
+test('forOccasion ne rend pas les chaussures habillées même sans autre paire', () => {
+  const seules = [{ id: 'r', categorie: 'chaussures', style: ' Habillé ' }]
+  assert.deepEqual(forOccasion(seules, 'Travail'), [])
 })

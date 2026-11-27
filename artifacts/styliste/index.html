@@ -237,6 +237,7 @@ button { font: inherit; color: inherit; }
         <input type="radio" name="occasion" id="occ-sport" value="Sport"><label for="occ-sport">Sport</label>
         <input type="radio" name="occasion" id="occ-soiree" value="Soirée"><label for="occ-soiree">Soirée</label>
         <input type="radio" name="occasion" id="occ-detente" value="Détente"><label for="occ-detente">Détente</label>
+        <input type="radio" name="occasion" id="occ-habille" value="Habillé"><label for="occ-habille">Habillé</label>
       </div>
     </fieldset>
     <fieldset class="choix">
@@ -293,7 +294,7 @@ button { font: inherit; color: inherit; }
 import {
   todayParis, previousDay, availableFor, askOutfit, normalizePieces, connectorFailure,
   buildOutfitPrompt, buildManquesPrompt, askManques, manquesForStorage, storedManques,
-  historyFromDocs, historyRows, makeEntry, repeatNotes, autoRefresh
+  historyFromDocs, historyRows, makeEntry, repeatNotes, autoRefresh, forOccasion
 } from './logic.js'
 
 const SERVEUR = 'OmniDash'
@@ -635,7 +636,7 @@ async function proposer() {
   const meteo = valeur('meteo')
   const today = etat.today
   const regleApplicable = etat.historyState === 'ok' || etat.historyState === 'provisoire'
-  const dispo = availableFor(etat.pieces, regleApplicable ? etat.history : {}, today)
+  const dispo = availableFor(forOccasion(etat.pieces, occasion), regleApplicable ? etat.history : {}, today)
 
   const ctl = new AbortController()
   etat.occupe = true
