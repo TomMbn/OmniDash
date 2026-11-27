@@ -47,10 +47,20 @@ export function availableFor(pieces, history, today) {
 // Les chaussures de style « habillé » (richelieus par exemple) font trop pour le
 // quotidien : elles ne sont proposées que pour l'occasion Habillé, même s'il
 // n'y a pas d'autre paire.
-const chaussureHabillee = (x) => x.categorie === 'chaussures' && String(x.style).trim().toLowerCase() === 'habillé'
+const chaussureHabillee = (x) =>
+  x.categorie === 'chaussures' && String(x.style).normalize('NFC').trim().toLowerCase() === 'habillé'
 
 export function forOccasion(pieces, occasion) {
   return occasion === 'Habillé' ? pieces : pieces.filter((x) => !chaussureHabillee(x))
+}
+
+// Sans cette raison, une tenue sans chaussures laisserait croire que le
+// dressing n'en a pas.
+export function reservedShoesNote(pieces, occasion, missing) {
+  const ecartees = forOccasion(pieces, occasion).length < pieces.length
+  return ecartees && missing.includes('chaussures')
+    ? 'Les chaussures habillées sont réservées à l’occasion Habillé.'
+    : null
 }
 
 const refus = (error) => ({ ok: false, error })

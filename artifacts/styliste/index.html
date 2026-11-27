@@ -294,7 +294,8 @@ button { font: inherit; color: inherit; }
 import {
   todayParis, previousDay, availableFor, askOutfit, normalizePieces, connectorFailure,
   buildOutfitPrompt, buildManquesPrompt, askManques, manquesForStorage, storedManques,
-  historyFromDocs, historyRows, makeEntry, repeatNotes, autoRefresh, forOccasion
+  historyFromDocs, historyRows, makeEntry, repeatNotes, autoRefresh, forOccasion,
+  reservedShoesNote
 } from './logic.js'
 
 const SERVEUR = 'OmniDash'
@@ -636,7 +637,8 @@ async function proposer() {
   const meteo = valeur('meteo')
   const today = etat.today
   const regleApplicable = etat.historyState === 'ok' || etat.historyState === 'provisoire'
-  const dispo = availableFor(forOccasion(etat.pieces, occasion), regleApplicable ? etat.history : {}, today)
+  const dressing = etat.pieces
+  const dispo = availableFor(forOccasion(dressing, occasion), regleApplicable ? etat.history : {}, today)
 
   const ctl = new AbortController()
   etat.occupe = true
@@ -653,7 +655,8 @@ async function proposer() {
       return
     }
     if (etat.arrete || !Array.isArray(etat.pieces)) return
-    etat.proposition = { result, repeats: dispo.repeats, occasion, meteo, today, note: noteRegle() }
+    const noteChaussures = reservedShoesNote(dressing, occasion, result.missing)
+    etat.proposition = { result, repeats: dispo.repeats, occasion, meteo, today, note: noteRegle(), noteChaussures }
     dire('etat-tenue', '')
     afficherTenue()
   } catch (e) {
@@ -687,6 +690,7 @@ function afficherTenue() {
 
   const notes = []
   for (const categorie of p.result.missing) notes.push(`Pas de ${NOMS_CATEGORIE[categorie]} dans cette tenue.`)
+  if (p.noteChaussures) notes.push(p.noteChaussures)
   for (const { piece, message } of repeatNotes(p.result.cards, p.repeats)) notes.push(`${piece.nom} : ${message}`)
   if (p.note) notes.push(p.note)
   if (!baseOk()) notes.push('L’historique ne peut pas être enregistré ici : la tenue ne sera pas gardée.')

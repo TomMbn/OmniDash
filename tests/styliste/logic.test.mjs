@@ -407,3 +407,26 @@ test('forOccasion ne rend pas les chaussures habillées même sans autre paire',
   const seules = [{ id: 'r', categorie: 'chaussures', style: ' Habillé ' }]
   assert.deepEqual(forOccasion(seules, 'Travail'), [])
 })
+
+test('forOccasion reconnaît « habillé » saisi avec un accent combinant', () => {
+  const nfd = [{ id: 'r', categorie: 'chaussures', style: 'Habillé'.normalize('NFD') }]
+  assert.deepEqual(forOccasion(nfd, 'Travail'), [])
+})
+
+import { reservedShoesNote } from '../../artifacts/styliste/logic.js'
+
+const RAISON_CHAUSSURES = 'Les chaussures habillées sont réservées à l’occasion Habillé.'
+
+test('la raison est dite quand les chaussures écartées manquent à la tenue', () => {
+  assert.equal(reservedShoesNote(souliers, 'Travail', ['chaussures']), RAISON_CHAUSSURES)
+})
+
+test('pas de raison si la tenue a des chaussures', () => {
+  assert.equal(reservedShoesNote(souliers, 'Travail', []), null)
+  assert.equal(reservedShoesNote(souliers, 'Travail', ['bas']), null)
+})
+
+test('pas de raison si aucune chaussure n’a été écartée', () => {
+  assert.equal(reservedShoesNote(souliers, 'Habillé', ['chaussures']), null)
+  assert.equal(reservedShoesNote(souliers.filter((x) => x.id !== 'r'), 'Travail', ['chaussures']), null)
+})
