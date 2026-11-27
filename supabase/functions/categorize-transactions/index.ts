@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { refuseOAuthClient } from '../_shared/oauth.js'
 
 // Classement de libellés bancaires par Gemini.
 // Reçoit { labels: string[], categories: string[] } ; renvoie { results: [{ label, category, kind, confidence }] }.
@@ -30,6 +31,9 @@ serve(async (req) => {
     if (req.method === 'OPTIONS') {
         return new Response('ok', { headers: corsHeaders })
     }
+
+    const refus = refuseOAuthClient(req, corsHeaders)
+    if (refus) return refus
 
     try {
         const supabaseClient = createClient(

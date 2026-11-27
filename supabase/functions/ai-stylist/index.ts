@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts"
+import { refuseOAuthClient } from '../_shared/oauth.js'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -22,6 +23,9 @@ serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
   }
+
+  const refus = refuseOAuthClient(req, corsHeaders)
+  if (refus) return refus
 
   try {
     const payload: StylistPayload = await req.json()
